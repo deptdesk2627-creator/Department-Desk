@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import "./Pages/admin/styles/Shared.css";
-import Header from "./Components/Header";
-import SideBar from "./Components/Sidebar";
-import Dashboard from "./Pages/admin/Dashboard";
-import Inventory from "./Pages/admin/Inventory";
-import TaskManagement from "./Pages/admin/TaskManagement";
-import Transactions from "./Pages/admin/Transactions";
+import "./pages/admin/shared.css";
+import Header from "./components/header/Header";
+import SideBar from "./components/sidebar/Sidebar";
+import Dashboard from "./pages/admin/dashboard/Dashboard";
+import Inventory from "./pages/admin/inventory/Inventory";
+import TaskManagement from "./pages/admin/task-management/TaskManagement";
+import Transactions from "./pages/admin/transactions/Transactions";
 import { useStoredState } from "./hooks/useStoredState";
 import {
   initialInventory,
   initialRequests,
   initialTasks,
-} from "./mockData";
+} from "./utils/mockData";
 
 const asArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
 

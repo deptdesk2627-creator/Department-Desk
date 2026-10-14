@@ -17,6 +17,8 @@ function normalizeStoredValue(key, storedValue, initialValue) {
 
 export function useStoredState(key, initialValue) {
   const [value, setValue] = useState(() => {
+    if (typeof window === "undefined") return initialValue;
+
     try {
       const storedValue = window.localStorage.getItem(key);
       if (storedValue === null) return initialValue;
@@ -30,12 +32,39 @@ export function useStoredState(key, initialValue) {
   });
 
   useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
     try {
       window.localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
       console.error(`Could not save data for "${key}".`, error);
     }
+
+    return undefined;
   }, [key, value]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    function handleStorage(event) {
+      if (event.key !== null && event.key !== key) return;
+
+      if (event.key === null || event.newValue === null) {
+        setValue(initialValue);
+        return;
+      }
+
+      try {
+        const parsedValue = JSON.parse(event.newValue);
+        setValue(normalizeStoredValue(key, parsedValue, initialValue));
+      } catch (error) {
+        console.error(`Could not read saved data for "${key}".`, error);
+      }
+    }
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [key, initialValue]);
 
   return [value, setValue];
 }
