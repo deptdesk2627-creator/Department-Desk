@@ -1,0 +1,506 @@
+/* DeptDesk Theme Layout & Colors */
+.deptdesk-task-container {
+  padding: 32px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  color: #1e293b;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.deptdesk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.deptdesk-header h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.subtitle {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Completion Progress Bar */
+.progress-card {
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #635bff;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Metric Cards */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.metric-label {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Base Card Container */
+.deptdesk-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+}
+
+/* Form and Filters */
+.add-and-filter-card {
+  padding: 20px;
+}
+
+.quick-add-form {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.input-field {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: #635bff;
+  background: #ffffff;
+}
+
+.title-input {
+  flex: 1;
+}
+
+.btn-primary {
+  background: #635bff; /* DeptDesk Accent Purple */
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #4f46e5;
+}
+
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 14px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.filter-group select {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #fff;
+  color: #0f172a;
+}
+
+.bulk-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.selected-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-danger {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Table View */
+.table-card {
+  overflow: hidden;
+}
+
+.deptdesk-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.deptdesk-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  padding: 12px 16px;
+  font-size: 12px;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.deptdesk-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.deptdesk-table tr.row-completed {
+  background: #f8fafc;
+  opacity: 0.7;
+}
+
+.deptdesk-table tr.row-completed .inline-text-edit {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.row-overdue {
+  background-color: #fff5f5;
+}
+
+.overdue-tag {
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.due-date-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* Inline Editable Inputs */
+.inline-text-edit {
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+  font-size: 14px;
+  color: #0f172a;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+.inline-text-edit:hover,
+.inline-text-edit:focus {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+.inline-date-edit,
+.inline-select-edit {
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 13px;
+  color: #475569;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.inline-date-edit:hover,
+.inline-select-edit:hover {
+  border-color: #cbd5e1;
+}
+
+/* Checkbox */
+.deptdesk-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #635bff;
+  cursor: pointer;
+}
+
+/* Light Mode Badges (Matching DeptDesk Design) */
+.deptdesk-badge {
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+/* Priorities */
+.priority-high {
+  background: #fef2f2;
+  color: #ef4444;
+}
+.priority-medium {
+  background: #fffbebfb;
+  color: #d97706;
+}
+.priority-low {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+/* Statuses */
+.status-not-started {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.status-in-progress {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.status-waiting {
+  background: #fef3c7;
+  color: #d97706;
+}
+.status-done {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.deptdesk-tag {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* View Switcher */
+.view-toggle-buttons {
+  display: flex;
+  background: #e2e8f0;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.toggle-btn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.toggle-btn svg {
+  height: 16px;
+  width: 16px;
+}
+
+.toggle-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Status Group Section */
+.status-groups-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.status-group-card {
+  padding: 16px 20px;
+}
+
+.status-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.count-pill {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.btn-icon-delete {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.btn-icon-delete:hover {
+  color: #ef4444;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: #94a3b8;
+}
+
+/* Multi-Page To-Do Tabs Bar */
+.todo-pages-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.todo-page-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.todo-page-tab__name {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+}
+
+.todo-page-tab__name svg {
+  flex: 0 0 16px;
+  height: 16px;
+  width: 16px;
+}
+
+.todo-page-tab:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.todo-page-tab.active {
+  background: #ffffff;
+  border-color: #635bff;
+  color: #635bff;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(99, 91, 255, 0.08);
+}
+
+.close-tab-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.close-tab-btn:hover {
+  color: #ef4444;
+}
+
+.add-page-tab-btn {
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #635bff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-page-tab-btn:hover {
+  background: #e2e8f0;
+}
