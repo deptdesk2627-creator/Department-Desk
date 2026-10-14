@@ -104,12 +104,14 @@ export function useTodoListManager(setTasks) {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  function addList() {
-    if (typeof window === "undefined") return;
-    const listName = window.prompt("Enter a name for your new To-Do List page:");
-    if (!listName || !listName.trim()) return;
+  function addList(name) {
+    const listName = typeof name === "string" ? name.trim() : "";
+    if (!listName) return;
 
-    const newList = { id: `list-${Date.now()}`, name: listName.trim() };
+    const newList = {
+      id: `list-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: listName,
+    };
     setLists((current) => [...current, newList]);
     setActiveListId(newList.id);
   }

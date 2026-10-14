@@ -38,3 +38,17 @@ test("loads custom lists and synchronizes list changes across tabs", () => {
   ]);
   expect(result.current.activeListId).toBe("remote");
 });
+
+test("adds and activates a named list without using a browser prompt", () => {
+  const { result } = renderHook(() => useTodoListManager(jest.fn()));
+
+  act(() => result.current.addList("  Projects  "));
+
+  expect(result.current.lists).toHaveLength(3);
+  expect(result.current.lists[2].name).toBe("Projects");
+  expect(result.current.activeListId).toBe(result.current.lists[2].id);
+
+  const listCount = result.current.lists.length;
+  act(() => result.current.addList("  "));
+  expect(result.current.lists).toHaveLength(listCount);
+});

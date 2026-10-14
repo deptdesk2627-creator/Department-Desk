@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 function TaskIcon({ name }) {
   const props = {
     "aria-hidden": true,
@@ -44,6 +46,18 @@ function TaskTabBar({
   onAddList,
   onDeleteList,
 }) {
+  const [isAddingList, setIsAddingList] = useState(false);
+  const [newListName, setNewListName] = useState("");
+
+  function submitNewList(event) {
+    event.preventDefault();
+    const name = newListName.trim();
+    if (!name) return;
+    onAddList(name);
+    setNewListName("");
+    setIsAddingList(false);
+  }
+
   return (
     <>
       <div className="deptdesk-header">
@@ -97,11 +111,50 @@ function TaskTabBar({
         <button
           className="add-page-tab-btn"
           type="button"
-          onClick={onAddList}
+          onClick={() => setIsAddingList(true)}
         >
           + New List
         </button>
       </div>
+      {isAddingList && (
+        <div className="new-list-dialog-backdrop">
+          <section
+            className="new-list-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-list-dialog-title"
+          >
+            <h2 id="new-list-dialog-title">Create a task list</h2>
+            <p>Give your new list a name to keep tasks organized.</p>
+            <form onSubmit={submitNewList}>
+              <label htmlFor="new-task-list-name">List name</label>
+              <input
+                autoFocus
+                id="new-task-list-name"
+                value={newListName}
+                onChange={(event) => setNewListName(event.target.value)}
+                placeholder="e.g. Projects"
+                required
+              />
+              <div className="new-list-dialog-actions">
+                <button
+                  className="new-list-cancel-btn"
+                  type="button"
+                  onClick={() => {
+                    setNewListName("");
+                    setIsAddingList(false);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button className="new-list-submit-btn" type="submit">
+                  Create list
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </>
   );
 }
