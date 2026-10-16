@@ -3,12 +3,25 @@ import "./Sidebar.css";
 import SidebarNavigation from "./SidebarNavigation";
 import SidebarProfile from "./SidebarProfile";
 
-function SideBar({ currentPage, onNavigate, isOpen = true, onToggle }) {
+function SideBar({
+  role,
+  currentPage,
+  onNavigate,
+  onLogout,
+  isOpen = true,
+  onToggle,
+}) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const homePage = role?.pages?.[0] || "dashboard";
 
   function navigateTo(page) {
     setIsProfileMenuOpen(false);
     onNavigate?.(page);
+  }
+
+  function handleLogout() {
+    setIsProfileMenuOpen(false);
+    onLogout?.();
   }
 
   return (
@@ -22,7 +35,7 @@ function SideBar({ currentPage, onNavigate, isOpen = true, onToggle }) {
           <button
             className="workspace-sidebar__brand"
             type="button"
-            onClick={() => navigateTo("dashboard")}
+            onClick={() => navigateTo(homePage)}
             aria-label="DeptDesk home"
             title={!isOpen ? "DeptDesk home" : undefined}
           >
@@ -63,13 +76,16 @@ function SideBar({ currentPage, onNavigate, isOpen = true, onToggle }) {
           currentPage={currentPage}
           isOpen={isOpen}
           onNavigate={navigateTo}
+          allowedPages={role?.pages}
         />
       </div>
 
       <SidebarProfile
+        role={role}
         isMenuOpen={isProfileMenuOpen}
         onToggleMenu={() => setIsProfileMenuOpen((open) => !open)}
         onNavigate={navigateTo}
+        onLogout={handleLogout}
       />
     </aside>
   );

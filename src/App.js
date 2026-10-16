@@ -1,118 +1,89 @@
-import { useEffect, useMemo, useState } from "react";
-import "./pages/admin/shared.css";
-import Header from "./components/header/Header";
-import SideBar from "./components/sidebar/Sidebar";
-import Dashboard from "./pages/admin/dashboard/Dashboard";
-import Inventory from "./pages/admin/inventory/Inventory";
-import TaskManagement from "./pages/admin/task-management/TaskManagement";
-import Transactions from "./pages/admin/transactions/Transactions";
+import { useState } from "react";
+import { useOfficeData } from "./hooks/useOfficeData";
 import { useStoredState } from "./hooks/useStoredState";
-import {
-  initialInventory,
-  initialRequests,
-  initialTasks,
-} from "./utils/mockData";
+import AuthLayout from "./layouts/AuthLayout";
+import MainLayout from "./layouts/MainLayout";
+import Login from "./pages/auth/Login";
+import { getDeanPages } from "./pages/dean";
+import { getSecretaryPages } from "./pages/secretary";
+import { getStaffPages } from "./pages/staff";
+import { canAccessPage, getHomePage, getRole } from "./utils/roles";
 
-const asArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
+// Each role owns its own set of pages (see src/pages/<role>/index.js).
+const PAGES_BY_ROLE = {
+  secretary: getSecretaryPages,
+  dean: getDeanPages,
+  staff: getStaffPages,
+};
 
 function App() {
-  const [page, setPage] = useState("dashboard");
-  const [search, setSearch] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [requests, setRequests] = useStoredState("officeflow.requests", initialRequests);
-  const [tasks, setTasks] = useStoredState("officeflow.tasks", initialTasks);
-  const [inventory, setInventory] = useStoredState("officeflow.inventory", initialInventory);
-  const [inventoryRecords, setInventoryRecords] = useStoredState("officeflow.inventory-records", []);
-
-  const safeTasks = asArray(tasks);
-  const safeInventory = asArray(inventory);
-  const safeInventoryRecords = asArray(inventoryRecords);
-  const safeSearch = typeof search === "string" ? search : "";
-  const normalizedRequests = useMemo(
-    () =>
-      (Array.isArray(requests) ? requests : [])
-        .filter(Boolean)
-        .map((request) => {
-          const sample = initialRequests.find((item) => item.id === request.id);
-          return {
-            ...sample,
-            ...request,
-            dateTime:
-              request.dateTime ||
-              sample?.dateTime ||
-              request.history?.[0]?.dateTime ||
-              "",
-            type: request.type || sample?.type || "Document",
-            office: request.office || request.location || sample?.location || "",
-            history: Array.isArray(request.history)
-              ? request.history
-              : sample?.history || [],
-          };
-        }),
-    [requests],
+  const [isAuthenticated, setIsAuthenticated] = useStoredState(
+    "officeflow.authenticated",
+    false,
   );
+  const [roleId, setRoleId] = useStoredState("officeflow.role", "secretary");
+  const role = getRole(roleId);
+  const [page, setPage] = useState(() => getHomePage(roleId));
+  const [search, setSearch] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth > 768 : true,
+  );
+  const data = useOfficeData();
+  const safeSearch = typeof search === "string" ? search : "";
 
-  useEffect(() => {
-    if (JSON.stringify(requests) !== JSON.stringify(normalizedRequests)) {
-      setRequests(normalizedRequests);
+  // Never show a page the current role is not allowed to open.
+  const activePage = canAccessPage(role.id, page) ? page : getHomePage(role.id);
+
+  function navigate(nextPage) {
+    if (canAccessPage(role.id, nextPage)) {
+      setPage(nextPage);
+      if (typeof window !== "undefined" && window.innerWidth <= 768) {
+        setIsSidebarOpen(false);
+      }
     }
-  }, [requests, normalizedRequests, setRequests]);
+  }
 
-  const pages = {
-    dashboard: (
-      <Dashboard
-        requests={normalizedRequests}
-        tasks={safeTasks}
-        inventory={safeInventory}
-        search={safeSearch}
-        onNavigate={setPage}
-      />
-    ),
-    transactions: (
-      <Transactions
-        requests={normalizedRequests}
-        setRequests={setRequests}
-        search={safeSearch}
-      />
-    ),
-    tasks: (
-      <TaskManagement
-        tasks={safeTasks}
-        setTasks={setTasks}
-        search={safeSearch}
-      />
-    ),
-    inventory: (
-      <Inventory
-        inventory={safeInventory}
-        setInventory={setInventory}
-        records={safeInventoryRecords}
-        setRecords={setInventoryRecords}
-        search={safeSearch}
-      />
-    ),
-  };
+  function handleLogin(nextRoleId) {
+    const resolvedRole = getRole(nextRoleId).id;
+    setRoleId(resolvedRole);
+    setSearch("");
+    setPage(getHomePage(resolvedRole));
+    setIsAuthenticated(true);
+  }
+
+  function handleLogout() {
+    setSearch("");
+    setIsAuthenticated(false);
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <AuthLayout>
+        <Login onLogin={handleLogin} defaultRoleId={role.id} />
+      </AuthLayout>
+    );
+  }
+
+  const getPages = PAGES_BY_ROLE[role.id] || getSecretaryPages;
+  const pages = getPages({ role, data, search: safeSearch, navigate });
 
   return (
-    <div className={`main-layout${isSidebarOpen ? "" : " main-layout--sidebar-closed"}`}>
-      <SideBar
-        currentPage={page}
-        onNavigate={setPage}
-        isOpen={isSidebarOpen}
-        onToggle={() => setIsSidebarOpen((open) => !open)}
-      />
-      <div className="main-layout-container">
-        <Header
-          requests={normalizedRequests}
-          tasks={safeTasks}
-          inventory={safeInventory}
-          search={safeSearch}
-          onSearchChange={setSearch}
-          onNavigate={setPage}
-        />
-        <main id="dashboard" key={page}>{pages[page]}</main>
-      </div>
-    </div>
+    <MainLayout
+      role={role}
+      onLogout={handleLogout}
+      currentPage={activePage}
+      requests={data.requests}
+      tasks={data.tasks}
+      inventory={data.inventory}
+      search={safeSearch}
+      onSearchChange={setSearch}
+      onNavigate={navigate}
+      isOpen={isSidebarOpen}
+      onToggle={() => setIsSidebarOpen((open) => !open)}
+      onCloseSidebar={() => setIsSidebarOpen(false)}
+    >
+      {pages[activePage]}
+    </MainLayout>
   );
 }
 

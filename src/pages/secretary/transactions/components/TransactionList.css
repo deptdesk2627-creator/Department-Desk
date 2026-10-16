@@ -1,0 +1,234 @@
+.request-tracker-panel {
+  overflow: hidden;
+  padding: 0;
+}
+
+.request-toolbar {
+  padding: 22px 24px 18px;
+}
+
+.request-toolbar-heading,
+.request-controls {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.request-toolbar-heading {
+  gap: 18px;
+  margin-bottom: 19px;
+}
+
+.request-toolbar-heading h2 {
+  color: var(--request-ink);
+  font-size: 16px;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.request-toolbar-heading p {
+  color: var(--request-muted);
+  font-size: 11px;
+  margin: 6px 0 0;
+}
+
+.request-view-toggle {
+  background: #f4f5f9;
+  border: 1px solid var(--request-line);
+  border-radius: 9px;
+  display: flex;
+  padding: 3px;
+}
+
+.request-view-toggle button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--request-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 10px;
+  gap: 5px;
+  padding: 8px 11px;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.request-view-toggle button svg {
+  height: 14px;
+  width: 14px;
+}
+
+.request-view-toggle button.is-active {
+  background: var(--request-surface);
+  box-shadow: 0 1px 4px rgb(32 36 58 / 10%);
+  color: var(--request-ink);
+}
+
+.request-controls {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.request-display-controls {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 9px;
+}
+
+.request-filter-list {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.request-filter {
+  background: #fff;
+  border: 1px solid var(--request-line);
+  border-radius: 20px;
+  color: #667186;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 8px 12px;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  white-space: nowrap;
+}
+
+.request-filter:hover {
+  border-color: #c9c3fb;
+  color: var(--purple);
+}
+
+.request-filter.is-active {
+  background: var(--purple-soft);
+  border-color: #ded9ff;
+  color: var(--purple);
+}
+
+.request-view-toggle button:focus-visible,
+.request-filter:focus-visible {
+  outline: 3px solid rgb(var(--purple-rgb) / 35%);
+  outline-offset: 2px;
+}
+
+.request-search {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--request-line);
+  border-radius: 9px;
+  color: #9aa2b0;
+  display: flex;
+  flex: 0 0 200px;
+  gap: 8px;
+  min-height: 37px;
+  padding: 0 11px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.request-search:focus-within {
+  border-color: #a79bf4;
+  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 10%);
+}
+
+.request-search-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.request-search input {
+  background: transparent;
+  border: 0;
+  color: var(--request-ink);
+  font: inherit;
+  font-size: 10px;
+  min-width: 0;
+  outline: none;
+  width: 100%;
+}
+
+.request-search input::placeholder {
+  color: #9aa2b0;
+}
+
+.request-empty-state {
+  color: var(--request-muted);
+  font-size: 11px;
+  margin: 0;
+  padding: 28px 24px;
+  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  .request-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .request-search {
+    flex-basis: auto;
+    max-width: 320px;
+    width: 100%;
+  }
+
+  .request-display-controls {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 700px) {
+  .request-toolbar {
+    padding: 18px 16px 15px;
+  }
+
+  .request-toolbar-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .request-filter-list {
+    flex-wrap: nowrap;
+    margin: 0 -16px;
+    overflow-x: auto;
+    padding: 0 16px 4px;
+  }
+
+  .request-filter {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .request-toolbar-heading {
+    gap: 13px;
+  }
+
+  .request-view-toggle {
+    width: 100%;
+  }
+
+  .request-view-toggle button {
+    flex: 1;
+  }
+
+  .request-display-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .request-search {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .request-filter,
+  .request-view-toggle button,
+  .request-search {
+    transition: none;
+  }
+}

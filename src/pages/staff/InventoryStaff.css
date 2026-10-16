@@ -1,0 +1,36 @@
+.staff-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.staff-identity label {
+  display: flex;
+  flex: 1 1 320px;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.staff-identity input {
+  padding: 10px 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 400;
+}
+
+.staff-identity-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 0.85rem;
+  color: #667085;
+}
+
+.staff-identity-stats strong {
+  color: #101828;
+  font-size: 1rem;
+}

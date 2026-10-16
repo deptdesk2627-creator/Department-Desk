@@ -1,3 +1,5 @@
+import "./HeaderSearch.css";
+
 function HeaderSearch({
   isOpen,
   onClose,

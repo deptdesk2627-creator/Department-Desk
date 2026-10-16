@@ -1,0 +1,199 @@
+.request-table-wrap {
+  overflow-x: auto;
+}
+
+.request-tracker-table {
+  border-collapse: collapse;
+  min-width: 970px;
+  text-align: left;
+  width: 100%;
+}
+
+.request-tracker-table th {
+  background: #fafbfe;
+  border-bottom: 1px solid var(--request-line);
+  color: #8992a2;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  padding: 12px 14px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.request-tracker-table th:first-child,
+.request-tracker-table td:first-child {
+  padding-left: 24px;
+}
+
+.request-tracker-table th:last-child,
+.request-tracker-table td:last-child {
+  padding-right: 24px;
+}
+
+.request-tracker-table td {
+  border-bottom: 1px solid #f0f1f5;
+  color: #606b7f;
+  font-size: 10px;
+  padding: 13px 14px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.request-tracker-table tbody tr {
+  transition: background-color 140ms ease;
+}
+
+.request-tracker-table tbody tr:hover {
+  background: #fcfcff;
+}
+
+.request-tracker-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.request-id-badge {
+  background: var(--purple-soft);
+  border: 1px solid #e4e0ff;
+  border-radius: 6px;
+  color: var(--purple);
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.request-name-cell {
+  max-width: 240px;
+  min-width: 180px;
+  white-space: normal !important;
+}
+
+.request-name-cell strong,
+.request-name-cell span {
+  display: block;
+}
+
+.request-name-cell strong {
+  color: var(--request-ink);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.request-name-cell span {
+  color: var(--request-muted);
+  font-size: 9px;
+  margin-top: 3px;
+}
+
+.request-category {
+  background: #f4f5f8;
+  border-radius: 5px;
+  color: #667186;
+  display: inline-block;
+  font-size: 9px;
+  padding: 5px 7px;
+}
+
+.request-status-select,
+.request-status-badge {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  display: inline-block;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.2;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+.request-status-select {
+  cursor: pointer;
+  padding-right: 22px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 10px) 11px, calc(100% - 7px) 11px;
+  background-repeat: no-repeat;
+  background-size: 3px 3px, 3px 3px;
+}
+
+.request-status-select:focus-visible,
+.request-icon-button:focus-visible {
+  outline: 3px solid rgb(var(--purple-rgb) / 35%);
+  outline-offset: 2px;
+}
+
+.request-status-select.status-pending,
+.request-status-badge.status-pending {
+  border-color: #ffe4c0;
+}
+
+.request-status-select.status-under-review,
+.request-status-badge.status-under-review {
+  border-color: #d8d2ff;
+}
+
+.request-status-select.status-action-needed,
+.request-status-badge.status-action-needed {
+  border-color: #ffdddd;
+}
+
+.request-status-select.status-approved,
+.request-status-badge.status-approved {
+  border-color: #d7efdf;
+}
+
+.request-status-select.status-archived,
+.request-status-badge.status-archived {
+  border-color: #e5e8ee;
+}
+
+.request-actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.request-icon-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #788397;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 15px;
+  height: 30px;
+  justify-content: center;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+  width: 30px;
+}
+
+.request-icon-button svg {
+  height: 16px;
+  width: 16px;
+}
+
+.request-icon-button:hover {
+  background: var(--purple-soft);
+  border-color: #e4e0ff;
+  color: var(--purple);
+}
+
+.request-icon-button.request-delete-button:hover {
+  background: #fff0f0;
+  border-color: #ffdddd;
+  color: var(--request-red);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .request-tracker-table tbody tr,
+  .request-icon-button {
+    transition: none;
+  }
+}

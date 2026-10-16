@@ -1,3 +1,5 @@
+import "./SidebarNavigation.css";
+
 const workspaceItems = [
   { id: "dashboard", label: "Dashboard", icon: "dashboard" },
   {
@@ -7,6 +9,7 @@ const workspaceItems = [
   },
   { id: "tasks", label: "Task Management", icon: "tasks" },
   { id: "inventory", label: "Supply & Inventory", icon: "inventory" },
+  { id: "staff-inventory", label: "Office Supplies", icon: "inventory" },
 ];
 
 const systemItems = [
@@ -111,12 +114,16 @@ function NavigationSection({ label, items, currentPage, isOpen, onNavigate, syst
   );
 }
 
-function SidebarNavigation({ currentPage, isOpen, onNavigate }) {
+function SidebarNavigation({ currentPage, isOpen, onNavigate, allowedPages }) {
+  const visibleItems = Array.isArray(allowedPages)
+    ? workspaceItems.filter((item) => allowedPages.includes(item.id))
+    : workspaceItems;
+
   return (
     <>
       <NavigationSection
         label="Workspace"
-        items={workspaceItems}
+        items={visibleItems}
         currentPage={currentPage}
         isOpen={isOpen}
         onNavigate={onNavigate}

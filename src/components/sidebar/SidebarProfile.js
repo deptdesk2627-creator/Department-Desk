@@ -1,21 +1,34 @@
-function SidebarProfile({ isMenuOpen, onToggleMenu, onNavigate }) {
+import "./SidebarProfile.css";
+
+function SidebarProfile({
+  role,
+  isMenuOpen,
+  onToggleMenu,
+  onNavigate,
+  onLogout,
+}) {
+  const name = role?.name || "Office Staff";
+  const subtitle = role
+    ? `${role.label} · ${role.description}`
+    : "Dean · Secretary · Assistants";
+
   return (
     <footer className="workspace-sidebar__footer">
       <div className="workspace-sidebar__profile-summary">
         <span className="workspace-sidebar__avatar" aria-hidden="true">
-          OS
+          {role?.initials || "OS"}
           <span className="workspace-sidebar__online-indicator" />
         </span>
         <span className="workspace-sidebar__profile">
-          <strong>Office Staff</strong>
-          <span>Dean · Secretary · Assistants</span>
+          <strong>{name}</strong>
+          <span>{subtitle}</span>
         </span>
       </div>
       <div className="workspace-sidebar__profile-actions">
         <button
           className="workspace-sidebar__profile-menu-button"
           type="button"
-          aria-label="Office Staff menu"
+          aria-label={`${name} menu`}
           aria-expanded={isMenuOpen}
           aria-haspopup="menu"
           onClick={onToggleMenu}
@@ -41,6 +54,15 @@ function SidebarProfile({ isMenuOpen, onToggleMenu, onNavigate }) {
               onClick={() => onNavigate("help")}
             >
               Help &amp; Support
+            </button>
+            <div className="workspace-sidebar__profile-divider" />
+            <button
+              className="workspace-sidebar__logout"
+              type="button"
+              role="menuitem"
+              onClick={onLogout}
+            >
+              Log out
             </button>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import "./HeaderNotifications.css";
 import { getNotifications } from "../../utils/headerHelpers";
 
 function HeaderNotifications({

@@ -1,0 +1,145 @@
+.app-header__profile {
+  position: relative;
+}
+
+.app-header__profile-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: #29364a;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 11px;
+  padding: 4px 2px 4px 5px;
+  transition: background-color 150ms ease;
+}
+
+.app-header__profile-button:focus-visible {
+  outline: 3px solid rgb(var(--purple-rgb) / 35%);
+  outline-offset: 2px;
+}
+
+.app-header__avatar {
+  align-items: center;
+  background: #fde8e1;
+  border-radius: 50%;
+  color: #bd6e5c;
+  display: inline-flex;
+  flex: 0 0 38px;
+  font-size: 12px;
+  font-weight: 700;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.app-header__name {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-header__chevron {
+  height: 17px;
+  stroke: #7d8796;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+  transition: transform 150ms ease;
+  width: 17px;
+}
+
+.app-header__chevron--open {
+  transform: rotate(180deg);
+}
+
+.app-header__menu {
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgb(32 36 58 / 14%);
+  min-width: 210px;
+  padding: 9px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  z-index: 200;
+}
+
+.app-header__menu-heading {
+  display: grid;
+  gap: 4px;
+  padding: 10px 11px 12px;
+}
+
+.app-header__menu-heading span {
+  color: #929baa;
+  font-size: 10px;
+}
+
+.app-header__menu-heading strong {
+  color: #29364a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.app-header__menu-divider {
+  background: #edf0f4;
+  height: 1px;
+  margin: 0 2px 6px;
+}
+
+.app-header__menu button {
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: #465164;
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  font-size: 12px;
+  padding: 9px 11px;
+  text-align: left;
+  width: 100%;
+}
+
+.app-header__menu button:hover,
+.app-header__menu button:focus-visible {
+  background: #f7f8fc;
+  outline: none;
+}
+
+.app-header__menu button.app-header__logout {
+  color: #cb4f58;
+}
+
+@media (max-width: 768px) {
+  .app-header__profile-button {
+    height: 36px;
+    padding: 3px 8px 3px 3px;
+    gap: 6px;
+  }
+
+  .app-header__avatar {
+    height: 30px;
+    width: 30px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header__name {
+    display: none;
+  }
+
+  .app-header__profile-button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .app-header__chevron {
+    display: none;
+  }
+}

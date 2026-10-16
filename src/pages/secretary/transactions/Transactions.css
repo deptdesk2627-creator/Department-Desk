@@ -1,0 +1,70 @@
+.transactions-page {
+  --request-ink: #20253a;
+  --request-muted: #778196;
+  --request-line: #e9ecf3;
+  --request-surface: #fff;
+  --request-orange: #bd7622;
+  --request-blue: #3976c5;
+  --request-red: #cb525c;
+  --request-green: #25885d;
+  gap: 20px;
+}
+
+.transaction-form {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.transaction-form .transaction-description {
+  grid-column: span 3;
+}
+
+.transaction-form .transaction-form-name {
+  grid-column: span 2;
+}
+
+.transaction-form-actions {
+  align-items: flex-end;
+  display: flex;
+}
+
+@media (max-width: 1100px) {
+  .transaction-form {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .transaction-form .transaction-description {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 700px) {
+  .transaction-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .transaction-form .transaction-description {
+    grid-column: 1 / -1;
+  }
+
+  .transaction-form .transaction-form-name {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .transaction-form {
+    grid-template-columns: 1fr;
+  }
+
+  .transaction-form .transaction-description {
+    grid-column: auto;
+  }
+
+  .transaction-form .transaction-form-name {
+    grid-column: auto;
+  }
+
+  .transaction-form-actions .primary-button {
+    width: 100%;
+  }
+}

@@ -1,0 +1,180 @@
+/* Cards, panels, metric cards, status pills, priority badges, and empty states. */
+
+.card {
+  background: #fff;
+  border: 1px solid #eff1f4;
+  border-radius: 13px;
+  box-shadow: 0 3px 14px rgb(32 36 58 / 3%);
+}
+
+.panel {
+  padding: 21px 22px;
+}
+
+.panel-heading {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.panel-heading h2 {
+  font-size: 14px;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.panel-heading p {
+  color: var(--muted);
+  font-size: 10px;
+  margin: 5px 0 0;
+}
+
+.metric-card {
+  background: #fff;
+  border: 1px solid #eff1f4;
+  border-radius: var(--radius-card);
+  box-shadow: 0 3px 14px rgb(32 36 58 / 3%);
+  padding: 19px 20px;
+}
+
+.metric-top {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 11px;
+  justify-content: space-between;
+}
+
+.metric-icon {
+  align-items: center;
+  background: var(--purple-soft);
+  border-radius: 9px;
+  color: var(--purple);
+  display: inline-flex;
+  font-size: 14px;
+  height: 31px;
+  justify-content: center;
+  width: 31px;
+}
+
+.metric-icon svg {
+  height: 17px;
+  width: 17px;
+}
+
+.metric-icon.green {
+  background: #e8f7ef;
+  color: var(--green);
+}
+
+.metric-icon.orange {
+  background: #fff3e5;
+  color: var(--orange);
+}
+
+.metric-value {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  margin: 13px 0 7px;
+}
+
+.metric-foot {
+  color: var(--muted);
+  font-size: 10px;
+  margin: 0;
+}
+
+.metric-change {
+  color: var(--green);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.status-pill {
+  border-radius: var(--radius-pill);
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 5px 8px;
+}
+
+.status-not-started,
+.status-archived {
+  background: #f1f2f5;
+  color: #687386;
+}
+
+.status-started,
+.status-in-progress,
+.status-under-review {
+  background: #eef0ff;
+  color: #4338ca;
+}
+
+.status-waiting,
+.status-pending {
+  background: #fff4e6;
+  color: #8a4b08;
+}
+
+.status-done,
+.status-approved {
+  background: #e9f7ef;
+  color: #166534;
+}
+
+.status-action-needed {
+  background: #fff0f0;
+  color: #b42318;
+}
+
+.priority-high {
+  background: #fdd8d8;
+  color: #b42318;
+}
+
+.priority-medium {
+  background: #fde6b4;
+  color: #9a5d00;
+}
+
+.priority-low {
+  background: #d8f5e2;
+  color: #0f7c45;
+}
+
+.count-badge {
+  background: var(--purple-soft);
+  border-radius: 20px;
+  color: var(--purple);
+  display: inline-block;
+  font-size: 9px;
+  margin-left: 5px;
+  padding: 3px 7px;
+  vertical-align: 1px;
+}
+
+.muted-text {
+  color: #a0a8b4;
+}
+
+.empty-state {
+  background: #fafbfc;
+  border: 1px dashed #e2e6ed;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  margin: 16px 0 0;
+  padding: 20px;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .metric-card {
+    padding: 15px;
+  }
+  .metric-value {
+    font-size: 20px;
+  }
+}
