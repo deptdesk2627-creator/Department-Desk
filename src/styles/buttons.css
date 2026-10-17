@@ -2,36 +2,44 @@
 
 .primary-button,
 .secondary-button {
-  border-radius: var(--radius-md);
+  align-items: center;
+  border-radius: 9px;
   cursor: pointer;
   display: inline-flex;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
+  gap: 6px;
   justify-content: center;
-  padding: 11px 15px;
+  min-height: 40px;
+  padding: 9px 16px;
+  white-space: nowrap;
 }
 
 .primary-button {
   background: var(--purple);
   border: 1px solid var(--purple);
+  box-shadow: 0 2px 6px rgb(var(--purple-rgb) / 22%);
   color: #fff;
-  transition: background-color 150ms ease;
+  transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
 .primary-button:hover {
   background: var(--purple-hover);
+  box-shadow: 0 4px 12px rgb(var(--purple-rgb) / 30%);
+  transform: translateY(-1px);
 }
 
 .secondary-button {
   background: #fff;
   border: 1px solid var(--line);
-  color: var(--ink);
-  transition: background-color 150ms ease, border-color 150ms ease;
+  color: var(--ink-secondary);
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
 .secondary-button:hover {
-  background: var(--canvas);
-  border-color: #d9deea;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--ink);
 }
 
 .text-button {
@@ -39,20 +47,38 @@
   border: 0;
   color: var(--purple);
   cursor: pointer;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
   padding: 0;
+  transition: color 140ms ease;
+}
+
+.text-button:hover {
+  color: var(--purple-hover);
+  text-decoration: underline;
 }
 
 .danger-outline-button {
+  align-items: center;
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 8px;
+  border-radius: 9px;
   color: #dc2626;
   cursor: pointer;
-  font-size: 10px;
+  display: inline-flex;
+  font-size: 13px;
   font-weight: 600;
-  padding: 6px 14px;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  text-decoration: none !important;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.danger-outline-button:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
 }
 
 .select-button {
@@ -60,8 +86,8 @@
   border: 1px solid var(--line);
   border-radius: 7px;
   color: #647083;
-  font-size: 10px;
-  padding: 7px 9px;
+  font-size: 13px;
+  padding: 7px 10px;
 }
 
 .icon-button {
@@ -94,22 +120,24 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 6px;
-  color: #9aa2ae;
+  border-radius: 7px;
+  color: #94a3b8;
   cursor: pointer;
   display: inline-flex;
   font-size: 18px;
-  height: 28px;
+  height: 32px;
   justify-content: center;
-  width: 28px;
+  transition: background-color 140ms ease, color 140ms ease;
+  width: 32px;
 }
 
 .delete-button:hover {
-  background: #fff0f0;
-  color: #d34c56;
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .primary-button:focus-visible,
+.secondary-button:focus-visible,
 .text-button:focus-visible,
 .icon-button:focus-visible,
 .details-button:focus-visible,

@@ -86,6 +86,19 @@ function Header({
         searchRef={searchRef}
       />
       <div className="app-header__actions">
+        {role && (
+          <span
+            className={`app-header__role-badge app-header__role-badge--${role.id}`}
+            title={role.description}
+          >
+            <span className="app-header__role-badge-dot" aria-hidden="true" />
+            {role.id === "dean"
+              ? "Executive · View Only"
+              : role.id === "staff"
+                ? "Staff Portal"
+                : "Admin Workspace"}
+          </span>
+        )}
         {canCreateRequests && (
           <button
             className="app-header__new-request"

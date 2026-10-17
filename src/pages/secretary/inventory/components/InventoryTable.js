@@ -36,12 +36,38 @@ function InventoryTable({
             </thead>
             <tbody>
               {items.map((item) => {
-                const lowStock = Number(item.quantity) <= Number(item.lowStockAt);
+                const qty = Number(item.quantity) || 0;
+                const threshold = Math.max(1, Number(item.lowStockAt) || 2);
+                const lowStock = qty <= Number(item.lowStockAt);
+                const meterPercent = Math.min(
+                  100,
+                  Math.round((qty / (threshold * 3)) * 100),
+                );
                 return (
                   <tr key={item.id}>
-                    <td><strong>{getProductId(item)}</strong></td>
-                    <td>{item.name}</td>
-                    <td><strong>{item.quantity} {item.unit}</strong></td>
+                    <td>
+                      <span className="request-id-badge">{getProductId(item)}</span>
+                    </td>
+                    <td>
+                      <strong className="inventory-item-name">{item.name}</strong>
+                    </td>
+                    <td>
+                      <div className="stock-quantity-cell">
+                        <strong>
+                          {item.quantity} {item.unit}
+                        </strong>
+                        <span
+                          className="stock-meter"
+                          aria-hidden="true"
+                          title={`Low-stock alert at ${item.lowStockAt} ${item.unit}`}
+                        >
+                          <span
+                            className={`stock-meter__fill ${lowStock ? "stock-meter__fill--low" : ""}`}
+                            style={{ width: `${meterPercent}%` }}
+                          />
+                        </span>
+                      </div>
+                    </td>
                     <td>
                       <span className={`status-pill ${lowStock ? "status-waiting" : "status-done"}`}>
                         {lowStock ? "Low stock" : "In stock"}
@@ -97,7 +123,7 @@ function InventoryTable({
         <p className="empty-state">
           {totalItems
             ? "No products match your search."
-            : "No products yet. Add one above to start tracking inventory."}
+            : "No products yet. Click '+ Add product' above to start tracking inventory."}
         </p>
       )}
     </section>

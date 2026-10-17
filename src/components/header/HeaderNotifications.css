@@ -57,14 +57,15 @@
 }
 
 .app-header__notification-heading h2 {
-  color: #29364a;
-  font-size: 14px;
-  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 3px;
 }
 
 .app-header__notification-heading span {
-  color: #929baa;
-  font-size: 10px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .app-header__notification-heading button {
@@ -73,7 +74,7 @@
   color: var(--purple);
   cursor: pointer;
   font: inherit;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   padding: 6px;
 }
@@ -91,7 +92,7 @@
 
 .app-header__notification-row:hover,
 .app-header__notification-row:focus-within {
-  background: #f7f8fc;
+  background: #f8fafc;
 }
 
 .app-header__notification-item {
@@ -118,7 +119,7 @@
   background: transparent;
   border: 0;
   border-radius: 6px;
-  color: #7c8798;
+  color: #64748b;
   cursor: pointer;
   display: inline-flex;
   flex: 0 0 30px;
@@ -132,7 +133,7 @@
 
 .app-header__notification-delete:hover {
   background: #fff;
-  color: #cb4f58;
+  color: #dc2626;
 }
 
 .app-header__notification-delete:focus-visible {
@@ -143,10 +144,10 @@
 .app-header__notification-item-dot {
   background: transparent;
   border-radius: 50%;
-  flex: 0 0 7px;
-  height: 7px;
-  margin-top: 4px;
-  width: 7px;
+  flex: 0 0 8px;
+  height: 8px;
+  margin-top: 5px;
+  width: 8px;
 }
 
 .app-header__notification-item--unread .app-header__notification-item-dot {
@@ -155,26 +156,26 @@
 
 .app-header__notification-item > span:last-child {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .app-header__notification-item strong {
-  color: #29364a;
-  font-size: 11px;
+  color: var(--ink);
+  font-size: 13px;
   font-weight: 600;
 }
 
 .app-header__notification-item > span:last-child > span {
-  color: #7c8798;
-  font-size: 10px;
+  color: var(--muted);
+  font-size: 12px;
   line-height: 1.45;
 }
 
 .app-header__notification-empty {
-  color: #7c8798;
-  font-size: 11px;
+  color: var(--muted);
+  font-size: 13px;
   margin: 0;
-  padding: 22px 16px;
+  padding: 24px 16px;
   text-align: center;
 }
 

@@ -3,20 +3,31 @@ function TransactionForm({
   setForm,
   formError,
   onSubmit,
+  onCancel,
   offices,
   categories,
   statuses,
 }) {
   return (
     <section
-      className="card panel module-form-panel"
+      className="card panel module-form-panel collapsible-form-panel"
       aria-labelledby="new-transaction-title"
     >
       <div className="panel-heading">
         <div>
-          <h2 id="new-transaction-title">Add a request</h2>
-          <p>Log a document or request and its destination office.</p>
+          <h2 id="new-transaction-title">Log a new request</h2>
+          <p>Record a document or service request and assign its destination office.</p>
         </div>
+        {onCancel && (
+          <button
+            type="button"
+            className="delete-button"
+            onClick={onCancel}
+            aria-label="Close form"
+          >
+            ×
+          </button>
+        )}
       </div>
       <form className="module-form transaction-form" onSubmit={onSubmit}>
         <label>
@@ -104,6 +115,15 @@ function TransactionForm({
           />
         </label>
         <div className="transaction-form-actions">
+          {onCancel && (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
+          )}
           <button className="primary-button" type="submit">
             ＋ Add request
           </button>

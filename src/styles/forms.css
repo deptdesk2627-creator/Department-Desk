@@ -2,36 +2,43 @@
 
 .module-form {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 20px;
 }
 
 .module-form label {
-  color: #596577;
+  color: var(--ink-secondary);
   display: grid;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
-  gap: 7px;
+  gap: 6px;
   min-width: 0;
 }
 
 .module-form input,
 .module-form select,
 .module-form textarea {
-  background: #fff;
-  border: 1px solid #e5e8ee;
-  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 9px;
   color: var(--ink);
-  font-size: 11px;
-  min-height: 38px;
+  font-size: 14px;
+  min-height: 42px;
   outline: none;
-  padding: 9px 10px;
+  padding: 9px 12px;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
   width: 100%;
 }
 
+.module-form input:hover,
+.module-form select:hover,
+.module-form textarea:hover {
+  border-color: #cbd5e1;
+}
+
 .module-form textarea {
-  min-height: 60px;
+  min-height: 70px;
   resize: vertical;
 }
 
@@ -40,8 +47,9 @@
 .module-form textarea:focus,
 .inline-input:focus,
 .inline-select:focus {
+  background: #fff;
   border-color: var(--purple);
-  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 10%);
+  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 14%);
 }
 
 .form-wide {
@@ -51,20 +59,21 @@
 .form-actions {
   align-items: flex-end;
   display: flex;
+  gap: 10px;
 }
 
 .inline-input,
 .inline-select {
   background: #fff;
-  border: 1px solid #e7eaf0;
-  border-radius: 6px;
-  color: #596577;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink-secondary);
   font: inherit;
-  font-size: 10px;
-  max-width: 170px;
-  min-height: 30px;
+  font-size: 13px;
+  max-width: 180px;
+  min-height: 34px;
   outline: none;
-  padding: 5px 7px;
+  padding: 5px 9px;
 }
 
 .inline-select {
@@ -74,29 +83,29 @@
 .status-select {
   border-color: transparent;
   border-radius: 20px;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 5px 7px;
+  padding: 5px 10px;
 }
 
 .status-select.status-not-started {
-  background: #f1f2f5;
-  color: #687386;
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .status-select.status-started {
-  background: #eef0ff;
-  color: #6053cc;
+  background: #eef2ff;
+  color: #4338ca;
 }
 
 .status-select.status-waiting {
-  background: #fff4e6;
-  color: #bd7622;
+  background: #fffbeb;
+  color: #b45309;
 }
 
 .status-select.status-done {
-  background: #e9f7ef;
-  color: #25885d;
+  background: #dcfce7;
+  color: #15803d;
 }
 
 @media (max-width: 900px) {

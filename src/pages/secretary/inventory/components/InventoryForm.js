@@ -1,14 +1,24 @@
-function InventoryForm({ form, setForm, formError, onSubmit }) {
+function InventoryForm({ form, setForm, formError, onSubmit, onCancel }) {
   return (
     <section
-      className="card panel module-form-panel"
+      className="card panel module-form-panel collapsible-form-panel"
       aria-labelledby="new-supply-title"
     >
       <div className="panel-heading">
         <div>
-          <h2 id="new-supply-title">Add a product</h2>
+          <h2 id="new-supply-title">Add a new supply item</h2>
           <p>Product ID is generated automatically when you add the item.</p>
         </div>
+        {onCancel && (
+          <button
+            type="button"
+            className="delete-button"
+            onClick={onCancel}
+            aria-label="Close form"
+          >
+            ×
+          </button>
+        )}
       </div>
       <form className="module-form inventory-form" onSubmit={onSubmit}>
         <label>
@@ -69,6 +79,15 @@ function InventoryForm({ form, setForm, formError, onSubmit }) {
           />
         </label>
         <div className="form-actions">
+          {onCancel && (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
+          )}
           <button className="primary-button" type="submit">
             ＋ Add product
           </button>

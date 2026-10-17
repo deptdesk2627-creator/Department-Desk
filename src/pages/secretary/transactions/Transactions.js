@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./Transactions.css";
 import PageHeader from "../../../components/ui/PageHeader";
 import TransactionDrawer from "./components/TransactionDrawer";
@@ -14,6 +15,19 @@ function Transactions({
   readOnly = false,
 }) {
   const manager = useTransactionManager({ requests, setRequests, search });
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  function handleFormSubmit(event) {
+    const previousCount = Array.isArray(requests) ? requests.length : 0;
+    manager.addRequest(event);
+    if (
+      manager.form.student?.trim() &&
+      manager.form.document?.trim() &&
+      previousCount >= 0
+    ) {
+      setIsFormOpen(false);
+    }
+  }
 
   return (
     <div className="dashboard module-page transactions-page">
@@ -25,13 +39,28 @@ function Transactions({
             ? "Monitor every request and document. View only — updates are made by the Secretary."
             : "Follow every request from submission through approval."
         }
+        actions={
+          !readOnly && (
+            <div className="page-heading__actions">
+              <button
+                type="button"
+                className={isFormOpen ? "secondary-button" : "primary-button"}
+                aria-expanded={isFormOpen}
+                onClick={() => setIsFormOpen((open) => !open)}
+              >
+                {isFormOpen ? "✕ Close form" : "＋ New request"}
+              </button>
+            </div>
+          )
+        }
       />
-      {!readOnly && (
+      {!readOnly && isFormOpen && (
         <TransactionForm
           form={manager.form}
           setForm={manager.setForm}
           formError={manager.formError}
-          onSubmit={manager.addRequest}
+          onSubmit={handleFormSubmit}
+          onCancel={() => setIsFormOpen(false)}
           offices={manager.offices}
           categories={manager.categories}
           statuses={manager.statuses}

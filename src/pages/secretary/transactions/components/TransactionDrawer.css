@@ -80,15 +80,15 @@
   align-items: center;
   background: var(--purple);
   border: 1px solid var(--purple);
-  border-radius: 8px;
+  border-radius: 9px;
   color: #fff;
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: 10px;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 600;
   gap: 7px;
-  padding: 9px 12px;
+  padding: 9px 14px;
   transition: background-color 150ms ease, transform 150ms ease;
 }
 
@@ -104,20 +104,20 @@
 }
 
 .request-drawer-section {
-  margin-top: 25px;
+  margin-top: 24px;
 }
 
 .request-drawer-section h3,
 .request-notes-box h3 {
   color: var(--request-ink);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   margin: 0 0 14px;
 }
 
 .request-summary-grid {
   display: grid;
-  gap: 18px 14px;
+  gap: 18px 16px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
 }
@@ -128,34 +128,35 @@
 
 .request-summary-grid dt {
   color: var(--request-muted);
-  font-size: 9px;
-  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 5px;
 }
 
 .request-summary-grid dd {
   color: var(--request-ink);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .request-notes-box {
-  background: #f7f6ff;
-  border: 1px solid #e8e4ff;
-  border-radius: 10px;
-  margin-top: 25px;
-  padding: 15px;
+  background: #f8f7ff;
+  border: 1px solid #e4e0ff;
+  border-radius: 12px;
+  margin-top: 24px;
+  padding: 16px;
 }
 
 .request-notes-box h3 {
-  margin-bottom: 7px;
+  margin-bottom: 6px;
 }
 
 .request-notes-box p {
-  color: #626b7c;
-  font-size: 10px;
-  line-height: 1.65;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
   margin: 0;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
@@ -174,49 +175,49 @@
 
 .request-timeline li {
   display: flex;
-  gap: 12px;
-  min-height: 59px;
+  gap: 14px;
+  min-height: 62px;
   position: relative;
 }
 
 .request-timeline li:not(:last-child)::before {
-  background: #e2e5ee;
+  background: #cbd5e1;
   content: "";
-  left: 4px;
+  left: 5px;
   position: absolute;
-  top: 11px;
+  top: 12px;
   bottom: -1px;
-  width: 1px;
+  width: 1.5px;
 }
 
 .request-timeline-marker {
-  background: #c9ceda;
+  background: #cbd5e1;
   border: 2px solid #fff;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px #dce0e9;
+  box-shadow: 0 0 0 1px #cbd5e1;
   flex: 0 0 auto;
-  height: 10px;
-  margin-top: 2px;
+  height: 11px;
+  margin-top: 3px;
   position: relative;
-  width: 10px;
+  width: 11px;
   z-index: 1;
 }
 
 .request-timeline li.is-current .request-timeline-marker {
   background: var(--purple);
-  box-shadow: 0 0 0 3px var(--purple-soft);
+  box-shadow: 0 0 0 4px var(--purple-soft);
 }
 
 .request-timeline li > div {
   display: grid;
   gap: 4px;
-  padding-bottom: 15px;
+  padding-bottom: 16px;
 }
 
 .request-timeline strong {
-  color: #424c60;
-  font-size: 10px;
-  font-weight: 650;
+  color: var(--request-ink);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .request-timeline li.is-current strong {
@@ -226,7 +227,7 @@
 .request-timeline li > div span,
 .request-timeline time {
   color: var(--request-muted);
-  font-size: 9px;
+  font-size: 12px;
 }
 
 @keyframes request-fade-in {

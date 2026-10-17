@@ -31,7 +31,11 @@ function TransactionTable({
         </thead>
         <tbody>
           {requests.map((request) => (
-            <tr key={request.id}>
+            <tr
+              key={request.id}
+              className="request-tracker-row"
+              onClick={() => onSelect(request)}
+            >
               <td>
                 <span className="request-id-badge">{request.id}</span>
               </td>
@@ -46,7 +50,7 @@ function TransactionTable({
                   {requestCategory(request)}
                 </span>
               </td>
-              <td>
+              <td onClick={(event) => event.stopPropagation()}>
                 {readOnly ? (
                   <span
                     className={`request-status-badge ${statusClass(request.status)}`}
@@ -68,7 +72,7 @@ function TransactionTable({
                   </select>
                 )}
               </td>
-              <td>
+              <td onClick={(event) => event.stopPropagation()}>
                 <div className="request-actions">
                   <button
                     type="button"

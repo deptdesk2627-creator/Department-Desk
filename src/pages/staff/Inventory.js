@@ -78,30 +78,69 @@ function StaffInventory({
     (item) => getMyBorrowedBalance(item) > 0,
   ).length;
 
+  const suggestedStaffNames = useMemo(() => {
+    const defaults = [
+      "Prof. Juan Dela Cruz",
+      "Prof. Maria Clara",
+      "Engr. Paolo Reyes",
+    ];
+    const fromRecords = recordItems
+      .map((r) => String(r.person || "").trim())
+      .filter(Boolean);
+    return Array.from(new Set([...defaults, ...fromRecords])).slice(0, 5);
+  }, [recordItems]);
+
   return (
     <div className="dashboard module-page staff-inventory-page">
       <PageHeader
-        eyebrow="FACULTY & STAFF · INVENTORY PORTAL"
+        eyebrow="FACULTY & STAFF · SELF-SERVICE PORTAL"
         title="Office supplies"
-        subtitle="Borrow, return, or record the supplies you use."
+        subtitle="Select or enter your name below to borrow, return, or record supplies used."
       />
 
       <section className="card panel staff-identity" aria-label="Your name">
-        <label>
-          Recording as
-          <input
-            value={staffName}
-            onChange={(event) => setStaffName(event.target.value)}
-            placeholder="Enter your full name (e.g. Prof. Juan Dela Cruz)"
-          />
-        </label>
+        <div className="staff-identity__main">
+          <label>
+            <span className="staff-identity__label-row">
+              <span>Recording as</span>
+              <span
+                className={`status-pill ${person ? "status-done" : "status-waiting"}`}
+              >
+                {person ? "● Active borrower session" : "Identify yourself to unlock actions"}
+              </span>
+            </span>
+            <input
+              value={staffName}
+              onChange={(event) => setStaffName(event.target.value)}
+              placeholder="Enter your full name (e.g. Prof. Juan Dela Cruz)"
+            />
+          </label>
+          <div className="staff-identity__quick-picks" aria-label="Quick select staff member">
+            <span className="staff-identity__quick-label">Quick select:</span>
+            {suggestedStaffNames.map((name) => {
+              const isSelected = person.toLowerCase() === name.toLowerCase();
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  className={`staff-chip ${isSelected ? "staff-chip--active" : ""}`}
+                  onClick={() => setStaffName(name)}
+                >
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <div className="staff-identity-stats">
-          <span>
-            <strong>{myRecords.length}</strong> of my records
-          </span>
-          <span>
-            <strong>{outstandingCount}</strong> item(s) still borrowed
-          </span>
+          <div className="staff-stat-box">
+            <strong>{myRecords.length}</strong>
+            <span>logged activity</span>
+          </div>
+          <div className="staff-stat-box">
+            <strong>{outstandingCount}</strong>
+            <span>currently borrowed</span>
+          </div>
         </div>
       </section>
 

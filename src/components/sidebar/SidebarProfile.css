@@ -54,15 +54,15 @@
 }
 
 .workspace-sidebar__profile strong {
-  color: #f2f6fc;
-  font-size: 11px;
+  color: #f8fafc;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .workspace-sidebar__profile > span {
   color: #9cb1ce;
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.4;
   white-space: nowrap;
 }

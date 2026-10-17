@@ -1,10 +1,10 @@
 .login-card {
   background: #fff;
-  border: 1px solid #edf0f4;
-  border-radius: 16px;
-  box-shadow: 0 20px 50px rgb(18 23 39 / 8%);
-  max-width: 440px;
-  padding: 34px 32px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgb(15 23 42 / 8%);
+  max-width: 460px;
+  padding: 36px 34px;
   width: 100%;
 }
 
@@ -14,24 +14,24 @@
 
 .login-card__eyebrow {
   color: var(--purple);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.9px;
+  letter-spacing: 0.08em;
   margin: 0 0 6px;
   text-transform: uppercase;
 }
 
 .login-card__header h2 {
   color: var(--ink);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
-  letter-spacing: -0.5px;
-  margin: 0 0 6px;
+  letter-spacing: -0.6px;
+  margin: 0 0 8px;
 }
 
 .login-card__header p {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
   margin: 0;
 }
@@ -42,9 +42,9 @@
 }
 
 .login-form__field {
-  color: #475467;
+  color: var(--ink-secondary);
   display: grid;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   gap: 6px;
 }
@@ -52,14 +52,14 @@
 .login-form__field input,
 .login-form__field select {
   background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
-  min-height: 40px;
+  font-size: 14px;
+  min-height: 44px;
   outline: none;
-  padding: 9px 12px;
+  padding: 10px 13px;
   transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
   width: 100%;
 }
@@ -68,40 +68,40 @@
 .login-form__field select:focus {
   background: #fff;
   border-color: var(--purple);
-  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 12%);
+  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 14%);
 }
 
 .login-form__error {
-  background: #fff0f0;
+  background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 8px;
-  color: #b42318;
-  font-size: 11px;
+  border-radius: 9px;
+  color: #b91c1c;
+  font-size: 13px;
   margin: 0;
   padding: 10px 12px;
 }
 
 .login-form__submit {
-  font-size: 12px;
-  min-height: 42px;
+  font-size: 14px;
+  min-height: 44px;
   width: 100%;
 }
 
 .login-divider {
   align-items: center;
-  color: #94a3b8;
+  color: #64748b;
   display: flex;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   gap: 12px;
-  letter-spacing: 0.6px;
-  margin: 22px 0 14px;
+  letter-spacing: 0.05em;
+  margin: 24px 0 14px;
   text-transform: uppercase;
 }
 
 .login-divider::before,
 .login-divider::after {
-  background: #edf0f4;
+  background: var(--line);
   content: "";
   flex: 1;
   height: 1px;
@@ -109,27 +109,28 @@
 
 .login-demo-roles {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .login-demo-role {
   align-items: center;
   background: #f8fafc;
-  border: 1px solid #e8edf3;
-  border-radius: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
   color: var(--ink);
   cursor: pointer;
   display: flex;
-  gap: 11px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 12px 14px;
   text-align: left;
-  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
   width: 100%;
 }
 
 .login-demo-role:hover {
   background: var(--purple-soft);
-  border-color: #d6cffc;
+  border-color: #c4b5fd;
+  box-shadow: 0 4px 12px rgb(var(--purple-rgb) / 10%);
   transform: translateY(-1px);
 }
 
@@ -139,35 +140,35 @@
   border-radius: 50%;
   color: #fff;
   display: inline-flex;
-  flex: 0 0 34px;
-  font-size: 11px;
+  flex: 0 0 38px;
+  font-size: 13px;
   font-weight: 700;
-  height: 34px;
+  height: 38px;
   justify-content: center;
-  width: 34px;
+  width: 38px;
 }
 
 .login-demo-role__info {
   display: grid;
   flex: 1;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
 .login-demo-role__info strong {
   color: var(--ink);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .login-demo-role__info span {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .login-demo-role__action {
   color: var(--purple);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }

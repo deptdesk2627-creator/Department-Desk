@@ -4,20 +4,25 @@
 
 .office-task-list {
   display: grid;
-  margin-top: 15px;
+  margin-top: 14px;
 }
 
 .office-task {
   align-items: center;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-subtle);
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: space-between;
-  padding: 15px 0;
+  padding: 14px 0;
 }
 
 .office-task:first-child {
-  padding-top: 5px;
+  padding-top: 4px;
+}
+
+.office-task:last-child {
+  border-bottom: 0;
+  padding-bottom: 2px;
 }
 
 .office-task-content {
@@ -28,8 +33,8 @@
 .office-task-content h3,
 .supply-details h3,
 .budget-note h3 {
-  color: #344052;
-  font-size: 10px;
+  color: var(--ink);
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.45;
   margin: 0;
@@ -39,8 +44,8 @@
 .supply-details p,
 .budget-note p {
   color: var(--muted);
-  font-size: 9px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.45;
   margin: 4px 0 0;
 }
 
@@ -55,7 +60,7 @@
 .inventory-summary {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   margin-top: 18px;
 }
 
@@ -63,30 +68,36 @@
 .budget-note {
   align-items: center;
   background: #f8fafc;
-  border: 1px solid #f1f5f9;
-  border-radius: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
   display: flex;
-  gap: 12px;
-  min-height: 76px;
+  gap: 13px;
+  min-height: 78px;
   min-width: 0;
-  padding: 14px;
+  padding: 14px 16px;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.supply-item:hover {
+  background: #fff;
+  border-color: #cbd5e1;
 }
 
 .supply-icon,
 .budget-icon {
   align-items: center;
   background: var(--purple-soft);
-  border-radius: 9px;
+  border-radius: 10px;
   color: var(--purple);
   display: flex;
-  flex: 0 0 32px;
-  font-size: 13px;
-  height: 32px;
+  flex: 0 0 38px;
+  font-size: 15px;
+  height: 38px;
   justify-content: center;
 }
 
 .supply-icon-low {
-  background: #fff3e5;
+  background: var(--orange-soft);
   color: var(--orange);
 }
 
@@ -97,17 +108,17 @@
 
 .supply-status {
   background: #dcfce7;
-  border-radius: 20px;
-  color: #166534;
+  border-radius: var(--radius-pill);
+  color: #15803d;
   flex: 0 0 auto;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 5px 8px;
+  padding: 4px 10px;
 }
 
 .supply-status-low {
   background: #fef3c7;
-  color: #92400e;
+  color: #b45309;
 }
 
 @media (max-width: 520px) {

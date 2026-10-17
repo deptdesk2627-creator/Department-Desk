@@ -42,8 +42,12 @@ function StaffSupplyList({
                 const borrowed = getMyBorrowedBalance(item);
                 return (
                   <tr key={item.id}>
-                    <td><strong>{getProductId(item)}</strong></td>
-                    <td>{item.name}</td>
+                    <td>
+                      <span className="request-id-badge">{getProductId(item)}</span>
+                    </td>
+                    <td>
+                      <strong className="inventory-item-name">{item.name}</strong>
+                    </td>
                     <td>
                       <span
                         className={`status-pill ${available > 0 ? "status-done" : "status-waiting"}`}
@@ -51,7 +55,15 @@ function StaffSupplyList({
                         {available > 0 ? `${available} ${item.unit}` : "Out of stock"}
                       </span>
                     </td>
-                    <td>{borrowed > 0 ? `${borrowed} ${item.unit}` : "—"}</td>
+                    <td>
+                      {borrowed > 0 ? (
+                        <span className="status-pill status-started">
+                          {borrowed} {item.unit} borrowed
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td>
                       <div className="stock-actions">
                         <button

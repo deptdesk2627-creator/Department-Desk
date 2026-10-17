@@ -2,179 +2,203 @@
 
 .card {
   background: #fff;
-  border: 1px solid #eff1f4;
-  border-radius: 13px;
-  box-shadow: 0 3px 14px rgb(32 36 58 / 3%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
 }
 
 .panel {
-  padding: 21px 22px;
+  padding: 22px 24px;
 }
 
 .panel-heading {
   align-items: flex-start;
   display: flex;
+  gap: 12px;
   justify-content: space-between;
 }
 
 .panel-heading h2 {
-  font-size: 14px;
-  letter-spacing: -0.2px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.25px;
   margin: 0;
 }
 
 .panel-heading p {
   color: var(--muted);
-  font-size: 10px;
-  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 4px 0 0;
 }
 
 .metric-card {
   background: #fff;
-  border: 1px solid #eff1f4;
+  border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  box-shadow: 0 3px 14px rgb(32 36 58 / 3%);
-  padding: 19px 20px;
+  box-shadow: var(--shadow-sm);
+  padding: 20px 22px;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.metric-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .metric-top {
   align-items: center;
   color: var(--muted);
   display: flex;
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 600;
   justify-content: space-between;
 }
 
 .metric-icon {
   align-items: center;
   background: var(--purple-soft);
-  border-radius: 9px;
+  border-radius: 10px;
   color: var(--purple);
   display: inline-flex;
-  font-size: 14px;
-  height: 31px;
+  font-size: 15px;
+  height: 36px;
   justify-content: center;
-  width: 31px;
+  width: 36px;
 }
 
 .metric-icon svg {
-  height: 17px;
-  width: 17px;
+  height: 18px;
+  width: 18px;
 }
 
 .metric-icon.green {
-  background: #e8f7ef;
+  background: var(--green-soft);
   color: var(--green);
 }
 
 .metric-icon.orange {
-  background: #fff3e5;
+  background: var(--orange-soft);
   color: var(--orange);
 }
 
 .metric-value {
-  font-size: 25px;
+  color: var(--ink);
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: -0.8px;
-  margin: 13px 0 7px;
+  line-height: 1.2;
+  margin: 12px 0 6px;
 }
 
 .metric-foot {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
+  line-height: 1.4;
   margin: 0;
 }
 
 .metric-change {
   color: var(--green);
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
-  margin-right: 4px;
+  margin-right: 5px;
 }
 
 .status-pill {
+  align-items: center;
   border-radius: var(--radius-pill);
-  display: inline-block;
-  font-size: 9px;
+  display: inline-flex;
+  font-size: 12px;
   font-weight: 600;
-  padding: 5px 8px;
+  gap: 5px;
+  line-height: 1.2;
+  padding: 5px 10px;
+  white-space: nowrap;
 }
 
 .status-not-started,
 .status-archived {
-  background: #f1f2f5;
-  color: #687386;
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .status-started,
 .status-in-progress,
 .status-under-review {
-  background: #eef0ff;
+  background: #eef2ff;
   color: #4338ca;
 }
 
 .status-waiting,
 .status-pending {
-  background: #fff4e6;
-  color: #8a4b08;
+  background: #fffbeb;
+  color: #b45309;
 }
 
 .status-done,
 .status-approved {
-  background: #e9f7ef;
-  color: #166534;
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .status-action-needed {
-  background: #fff0f0;
-  color: #b42318;
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .priority-high {
-  background: #fdd8d8;
-  color: #b42318;
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .priority-medium {
-  background: #fde6b4;
-  color: #9a5d00;
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .priority-low {
-  background: #d8f5e2;
-  color: #0f7c45;
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .count-badge {
   background: var(--purple-soft);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   color: var(--purple);
   display: inline-block;
-  font-size: 9px;
-  margin-left: 5px;
-  padding: 3px 7px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  margin-left: 6px;
+  padding: 2px 9px;
   vertical-align: 1px;
 }
 
 .muted-text {
-  color: #a0a8b4;
+  color: var(--muted);
 }
 
 .empty-state {
-  background: #fafbfc;
-  border: 1px dashed #e2e6ed;
-  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
+  line-height: 1.5;
   margin: 16px 0 0;
-  padding: 20px;
+  padding: 24px 20px;
   text-align: center;
 }
 
 @media (max-width: 520px) {
   .metric-card {
-    padding: 15px;
+    padding: 16px;
   }
   .metric-value {
-    font-size: 20px;
+    font-size: 22px;
   }
 }

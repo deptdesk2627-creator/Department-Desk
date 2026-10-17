@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./Inventory.css";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import PageHeader from "../../../components/ui/PageHeader";
@@ -46,6 +47,15 @@ function Inventory({
     search,
   });
 
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  function handleAddSubmit(event) {
+    addItem(event);
+    if (form.name?.trim() && form.unit?.trim()) {
+      setIsFormOpen(false);
+    }
+  }
+
   return (
     <div className="dashboard module-page">
       <PageHeader
@@ -58,13 +68,23 @@ function Inventory({
         }
         actions={
           !readOnly && (
-            <button
-              type="button"
-              className="text-button danger-outline-button"
-              onClick={() => setIsResetConfirmOpen(true)}
-            >
-              ↺ Reset / Clear inventory
-            </button>
+            <div className="page-heading__actions">
+              <button
+                type="button"
+                className={isFormOpen ? "secondary-button" : "primary-button"}
+                aria-expanded={isFormOpen}
+                onClick={() => setIsFormOpen((open) => !open)}
+              >
+                {isFormOpen ? "✕ Close form" : "＋ Add product"}
+              </button>
+              <button
+                type="button"
+                className="text-button danger-outline-button"
+                onClick={() => setIsResetConfirmOpen(true)}
+              >
+                ↺ Reset inventory
+              </button>
+            </div>
           )
         }
       />
@@ -74,12 +94,13 @@ function Inventory({
         usageValue={loggedUsageValue}
         recordCount={recordItems.length}
       />
-      {!readOnly && (
+      {!readOnly && isFormOpen && (
         <InventoryForm
           form={form}
           setForm={setForm}
           formError={formError}
-          onSubmit={addItem}
+          onSubmit={handleAddSubmit}
+          onCancel={() => setIsFormOpen(false)}
         />
       )}
       <InventoryTable

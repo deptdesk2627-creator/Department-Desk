@@ -39,6 +39,25 @@ function HeaderSearch({
             onSearchChange?.(event.target.value);
           }}
         />
+        {search ? (
+          <button
+            type="button"
+            className="app-header__search-clear"
+            aria-label="Clear search"
+            title="Clear search"
+            onClick={(event) => {
+              event.preventDefault();
+              onSearchChange?.("");
+              searchInputRef?.current?.focus();
+            }}
+          >
+            ×
+          </button>
+        ) : (
+          <kbd className="app-header__search-kbd" aria-hidden="true">
+            Ctrl K
+          </kbd>
+        )}
       </label>
       {isOpen && (
         <div
