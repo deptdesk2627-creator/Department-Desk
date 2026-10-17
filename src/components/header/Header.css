@@ -1,7 +1,6 @@
 .app-header {
   align-items: center;
-  backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.88);
+  background: #ffffff;
   border-bottom: 1px solid var(--line);
   box-shadow: var(--shadow-xs);
   display: flex;
@@ -11,6 +10,8 @@
   padding: 12px 40px;
   position: sticky;
   top: 0;
+  transform: translateZ(0);
+  will-change: transform;
   z-index: 100;
 }
 
@@ -128,9 +129,7 @@
     position: sticky;
     top: 0;
     z-index: 900;
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
