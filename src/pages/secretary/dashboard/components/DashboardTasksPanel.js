@@ -22,13 +22,20 @@ function DashboardTasksPanel({ tasks, hasQuery, onNavigate }) {
         <div className="office-task-list">
           {tasks.map((task) => {
             const status = task.done ? "Done" : task.status || "Not started";
+            const metaParts = [
+              task.category,
+              task.assignee ||
+                (task.priority ? `${task.priority} priority` : ""),
+              task.dueDate || task.due,
+            ]
+              .map((part) => String(part || "").trim())
+              .filter(Boolean);
+
             return (
               <article className="office-task" key={task.id}>
                 <div className="office-task-content">
                   <h3>{task.title}</h3>
-                  <p>
-                    {task.category} · {task.assignee}
-                  </p>
+                  {metaParts.length > 0 && <p>{metaParts.join(" · ")}</p>}
                 </div>
                 <StatusPill status={status} />
               </article>

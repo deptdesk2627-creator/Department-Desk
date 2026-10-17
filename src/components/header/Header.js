@@ -18,7 +18,6 @@ function Header({
   isSidebarOpen = false,
 }) {
   const isStaff = role?.id === "staff";
-  const canCreateRequests = role ? role.can.createRequests : true;
   const {
     areNotificationsOpen,
     closeNotifications,
@@ -98,15 +97,6 @@ function Header({
                 ? "Staff Portal"
                 : "Admin Workspace"}
           </span>
-        )}
-        {canCreateRequests && (
-          <button
-            className="app-header__new-request"
-            type="button"
-            onClick={() => onNavigate?.("transactions")}
-          >
-            <span aria-hidden="true">＋</span> <span className="app-header__new-request-label">New request</span>
-          </button>
         )}
         {!isStaff && (
           <HeaderNotifications

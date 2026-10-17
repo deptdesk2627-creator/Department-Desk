@@ -1,7 +1,12 @@
 import "./DashboardPanels.css";
 import EmptyState from "../../../../components/ui/EmptyState";
 
-function DashboardInventoryPanel({ items, hasQuery, onNavigate }) {
+function DashboardInventoryPanel({
+  items,
+  hasQuery,
+  onNavigate,
+  readOnly = false,
+}) {
   return (
     <section
       className="card panel inventory-panel"
@@ -14,7 +19,7 @@ function DashboardInventoryPanel({ items, hasQuery, onNavigate }) {
           type="button"
           onClick={() => onNavigate("inventory")}
         >
-          Manage inventory →
+          {readOnly ? "View inventory →" : "Manage inventory →"}
         </button>
       </div>
       {items.length > 0 ? (
@@ -48,7 +53,11 @@ function DashboardInventoryPanel({ items, hasQuery, onNavigate }) {
         <EmptyState
           hasQuery={hasQuery}
           queryMessage="No inventory items match your search."
-          defaultMessage="No inventory items yet. Add supplies to start tracking stock."
+          defaultMessage={
+            readOnly
+              ? "No inventory items are currently recorded."
+              : "No inventory items yet. Add supplies to start tracking stock."
+          }
         />
       )}
     </section>

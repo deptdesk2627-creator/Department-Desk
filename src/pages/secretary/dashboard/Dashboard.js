@@ -32,6 +32,8 @@ function Dashboard({
 
   const displayName = userName || role?.name || "Ma'am Aubrey";
   const hasQuery = Boolean(query);
+  const canCreateRequests = role ? Boolean(role.can?.createRequests) : true;
+  const canManageInventory = role ? Boolean(role.can?.manageInventory) : true;
 
   return (
     <div className="dashboard">
@@ -41,6 +43,7 @@ function Dashboard({
           displayName={displayName}
           dateTime={dateTime}
           formattedDate={formattedDate}
+          role={role}
         />
         <DashboardMetrics metrics={metrics} />
       </div>
@@ -56,7 +59,11 @@ function Dashboard({
             onNavigate={onNavigate}
             hasQuery={hasQuery}
             emptyQueryMessage="No requests match your search."
-            emptyDefaultMessage="No requests yet. Create the first one to get started."
+            emptyDefaultMessage={
+              canCreateRequests
+                ? "No requests yet. Create the first one to get started."
+                : "No requests are currently logged in the tracker."
+            }
           />
 
           <DashboardRecentTable
@@ -69,13 +76,18 @@ function Dashboard({
             onNavigate={onNavigate}
             hasQuery={hasQuery}
             emptyQueryMessage="No documents match your search."
-            emptyDefaultMessage="No documents yet. Add a document transaction to get started."
+            emptyDefaultMessage={
+              canCreateRequests
+                ? "No documents yet. Add a document transaction to get started."
+                : "No document transactions are currently being tracked."
+            }
           />
 
           <DashboardInventoryPanel
             items={recentInventory}
             hasQuery={hasQuery}
             onNavigate={onNavigate}
+            readOnly={!canManageInventory}
           />
         </div>
 

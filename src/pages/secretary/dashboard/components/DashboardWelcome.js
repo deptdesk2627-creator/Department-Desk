@@ -1,7 +1,20 @@
-function DashboardWelcome({ greeting, displayName, dateTime, formattedDate }) {
+function DashboardWelcome({
+  greeting,
+  displayName,
+  dateTime,
+  formattedDate,
+  role,
+}) {
+  const isDean = role?.id === "dean";
+
   return (
     <section className="dashboard-welcome" aria-label="Dashboard welcome">
       <div className="dashboard-welcome-copy">
+        {isDean && (
+          <p className="eyebrow dashboard-welcome-eyebrow">
+            EXECUTIVE OVERSIGHT · READ-ONLY WORKSPACE
+          </p>
+        )}
         <h1>
           {greeting}, {displayName}{" "}
           <svg
@@ -13,7 +26,11 @@ function DashboardWelcome({ greeting, displayName, dateTime, formattedDate }) {
             <path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" />
           </svg>
         </h1>
-        <p>Here’s what’s happening in your department today.</p>
+        <p>
+          {isDean
+            ? "Monitor departmental requests, approval turnarounds, tasks, and supply thresholds."
+            : "Here’s what’s happening in your department today."}
+        </p>
       </div>
       <div className="dashboard-date-badge">
         <svg viewBox="0 0 24 24" aria-hidden="true">

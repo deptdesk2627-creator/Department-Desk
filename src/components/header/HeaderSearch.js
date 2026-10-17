@@ -10,6 +10,25 @@ function HeaderSearch({
   searchInputRef,
   searchRef,
 }) {
+  const hasQuery = Boolean(String(search || "").trim());
+
+  function handleSelectResult(result) {
+    if (!result) return;
+    onClose(false);
+    onSearchChange?.(result.title);
+    onNavigate?.(result.page);
+    searchInputRef?.current?.blur();
+  }
+
+  function handleKeyDown(event) {
+    if (event.key === "Enter" && hasQuery && results.length > 0) {
+      event.preventDefault();
+      handleSelectResult(results[0]);
+    } else if (event.key === "Escape") {
+      onClose(false);
+    }
+  }
+
   return (
     <div className="app-header__search-container" ref={searchRef}>
       <label className="app-header__search">
@@ -33,10 +52,14 @@ function HeaderSearch({
           aria-controls="search-results-dropdown"
           placeholder="Search documents, tasks, inventory..."
           value={search}
-          onFocus={() => onClose(true)}
+          onFocus={() => {
+            if (hasQuery) onClose(true);
+          }}
+          onKeyDown={handleKeyDown}
           onChange={(event) => {
-            onClose(true);
-            onSearchChange?.(event.target.value);
+            const nextValue = event.target.value;
+            onSearchChange?.(nextValue);
+            onClose(Boolean(String(nextValue || "").trim()));
           }}
         />
         {search ? (
@@ -48,6 +71,7 @@ function HeaderSearch({
             onClick={(event) => {
               event.preventDefault();
               onSearchChange?.("");
+              onClose(false);
               searchInputRef?.current?.focus();
             }}
           >
@@ -59,7 +83,7 @@ function HeaderSearch({
           </kbd>
         )}
       </label>
-      {isOpen && (
+      {isOpen && hasQuery && (
         <div
           className="search-results-dropdown"
           id="search-results-dropdown"
@@ -72,10 +96,7 @@ function HeaderSearch({
                 <button
                   className="search-result-card"
                   type="button"
-                  onClick={() => {
-                    onClose(false);
-                    onNavigate?.(result.page);
-                  }}
+                  onClick={() => handleSelectResult(result)}
                 >
                   <span className="search-result-card__icon" aria-hidden="true">
                     {result.type === "request" && (

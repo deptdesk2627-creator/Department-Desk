@@ -24,7 +24,9 @@
   border-radius: 9px;
   color: var(--ink);
   font-size: 14px;
+  max-width: 100%;
   min-height: 42px;
+  min-width: 0;
   outline: none;
   padding: 9px 12px;
   transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;

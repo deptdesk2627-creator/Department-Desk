@@ -50,19 +50,24 @@ export function getNotifications(requests, tasks, inventory) {
 
 export function getSearchResults(requests, tasks, inventory, search) {
   const query = String(search || "").trim().toLowerCase();
-  const matchesQuery = (item) =>
-    !query ||
-    Object.values(item).some(
+  if (!query) {
+    return [];
+  }
+
+  const matchesFields = (...fields) =>
+    fields.some(
       (value) =>
-        (typeof value === "string" ||
-          typeof value === "number" ||
-          typeof value === "boolean") &&
+        (typeof value === "string" || typeof value === "number") &&
         String(value).toLowerCase().includes(query),
     );
 
   return [
     ...(Array.isArray(requests) ? requests : [])
-      .filter((request) => request && matchesQuery(request))
+      .filter(
+        (request) =>
+          request &&
+          matchesFields(request.document, request.student, request.id),
+      )
       .map((request) => ({
         id: `request:${request.id}`,
         type: "request",
@@ -71,7 +76,7 @@ export function getSearchResults(requests, tasks, inventory, search) {
         page: "transactions",
       })),
     ...(Array.isArray(tasks) ? tasks : [])
-      .filter((task) => task && matchesQuery(task))
+      .filter((task) => task && matchesFields(task.title))
       .map((task) => ({
         id: `task:${task.id}`,
         type: "task",
@@ -80,7 +85,7 @@ export function getSearchResults(requests, tasks, inventory, search) {
         page: "tasks",
       })),
     ...(Array.isArray(inventory) ? inventory : [])
-      .filter((item) => item && matchesQuery(item))
+      .filter((item) => item && matchesFields(item.name, item.productId))
       .map((item) => ({
         id: `inventory:${item.id}`,
         type: "inventory",

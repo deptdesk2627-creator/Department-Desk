@@ -28,20 +28,13 @@ export function useTaskManager({ tasks = [], setTasks, search = "" }) {
     [tasks],
   );
 
-  const listTasks = useMemo(
-    () =>
-      taskItems.filter((task) => {
-        if ((task.listId || "main") !== activeListId) return false;
-        return matchesQuery(
-          search,
-          task.title,
-          task.priority,
-          task.status,
-          task.due,
-        );
-      }),
-    [taskItems, activeListId, search],
-  );
+  const listTasks = useMemo(() => {
+    const hasSearch = Boolean(String(search || "").trim());
+    return taskItems.filter((task) => {
+      if (!hasSearch && (task.listId || "main") !== activeListId) return false;
+      return matchesQuery(search, task.title);
+    });
+  }, [taskItems, activeListId, search]);
 
   const progressPercent = useMemo(() => {
     if (!listTasks.length) return 0;

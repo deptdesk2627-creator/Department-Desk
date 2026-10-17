@@ -83,20 +83,29 @@ test("deletes a notification without navigating from it", () => {
   expect(onNavigate).not.toHaveBeenCalled();
 });
 
-test("updates global search and navigates to a new request", () => {
+test("updates global search and does not show dropdown suggestions when search is empty", () => {
   const onSearchChange = jest.fn();
-  const onNavigate = jest.fn();
-  render(<Header search="" onSearchChange={onSearchChange} onNavigate={onNavigate} />);
+  render(
+    <Header
+      requests={[{ id: "DOC-1", document: "Transcript" }]}
+      search=""
+      onSearchChange={onSearchChange}
+    />,
+  );
 
-  fireEvent.change(screen.getByRole("searchbox"), { target: { value: "invoice" } });
+  const searchInput = screen.getByRole("searchbox");
+  fireEvent.focus(searchInput);
+  expect(
+    screen.queryByRole("list", { name: "Search results" }),
+  ).not.toBeInTheDocument();
+
+  fireEvent.change(searchInput, { target: { value: "invoice" } });
   expect(onSearchChange).toHaveBeenCalledWith("invoice");
-
-  fireEvent.click(screen.getByRole("button", { name: /new request/i }));
-  expect(onNavigate).toHaveBeenCalledWith("transactions");
 });
 
-test("shows matching live-search previews and navigates from a result", () => {
+test("shows matching live-search previews and navigates directly to the selected result", () => {
   const onNavigate = jest.fn();
+  const onSearchChange = jest.fn();
   render(
     <Header
       requests={[
@@ -118,6 +127,7 @@ test("shows matching live-search previews and navigates from a result", () => {
         },
       ]}
       search="bond"
+      onSearchChange={onSearchChange}
       onNavigate={onNavigate}
     />,
   );
@@ -130,12 +140,18 @@ test("shows matching live-search previews and navigates from a result", () => {
   expect(screen.queryByText("Certificate of Good Moral")).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: /bond paper/i }));
+  expect(onSearchChange).toHaveBeenCalledWith("Bond paper");
   expect(onNavigate).toHaveBeenCalledWith("inventory");
   expect(screen.queryByRole("list", { name: "Search results" })).not.toBeInTheDocument();
 });
 
 test("closes live-search previews when clicking outside", () => {
-  render(<Header requests={[{ id: "DOC-1", document: "Transcript" }]} />);
+  render(
+    <Header
+      requests={[{ id: "DOC-1", document: "Transcript" }]}
+      search="Transcript"
+    />,
+  );
 
   fireEvent.focus(screen.getByRole("searchbox"));
   expect(screen.getByRole("list", { name: "Search results" })).toBeInTheDocument();

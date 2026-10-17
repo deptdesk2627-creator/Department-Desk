@@ -30,15 +30,15 @@ function TransactionForm({
         )}
       </div>
       <form className="module-form transaction-form" onSubmit={onSubmit}>
-        <label>
-          Date and time
+        <label className="transaction-form-name">
+          Form name
           <input
             required
-            type="datetime-local"
-            value={form.dateTime}
+            value={form.document}
             onChange={(event) =>
-              setForm({ ...form, dateTime: event.target.value })
+              setForm({ ...form, document: event.target.value })
             }
+            placeholder="Name of the form or request"
           />
         </label>
         <label>
@@ -50,6 +50,17 @@ function TransactionForm({
               setForm({ ...form, student: event.target.value });
             }}
             placeholder="Student or staff name"
+          />
+        </label>
+        <label>
+          Date and time
+          <input
+            required
+            type="datetime-local"
+            value={form.dateTime}
+            onChange={(event) =>
+              setForm({ ...form, dateTime: event.target.value })
+            }
           />
         </label>
         <label>
@@ -91,17 +102,6 @@ function TransactionForm({
               <option key={status}>{status}</option>
             ))}
           </select>
-        </label>
-        <label className="transaction-form-name">
-          Form name
-          <input
-            required
-            value={form.document}
-            onChange={(event) =>
-              setForm({ ...form, document: event.target.value })
-            }
-            placeholder="Name of the form or request"
-          />
         </label>
         <label className="transaction-description">
           Request notes

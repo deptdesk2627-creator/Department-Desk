@@ -14,7 +14,7 @@ function DashboardMetrics({ metrics }) {
         icon="◷"
         iconVariant="orange"
         value={metrics.waitingRequests}
-        footer="Requests waiting on a person or office"
+        footer="Awaiting review or action"
       />
       <MetricCard
         label="Open tasks"
@@ -28,7 +28,7 @@ function DashboardMetrics({ metrics }) {
         icon="!"
         iconVariant="orange"
         value={metrics.lowStockItems}
-        footer="Items at or below their reorder level"
+        footer="At or below reorder level"
       />
     </section>
   );

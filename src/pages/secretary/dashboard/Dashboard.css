@@ -84,125 +84,25 @@
   min-width: 0;
 }
 
+.dashboard-welcome-eyebrow {
+  margin: 0 0 6px;
+}
+
+.dashboard-overview .metrics-grid .metric-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+}
+
 .recent-module .request-table th,
 .recent-module .request-table td {
   border-bottom: 1px solid var(--line);
 }
 
-.dean-executive-banner {
-  align-items: center;
-  background: linear-gradient(135deg, #172b4d 0%, #1e293b 100%);
-  border: 1px solid #334155;
-  border-radius: 16px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
-  color: #f8fafc;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: space-between;
-  margin: 28px auto -8px;
-  max-width: calc(1440px - 80px);
-  padding: 22px 26px;
-}
-
-.dean-executive-banner__copy {
-  flex: 1 1 320px;
-}
-
-.dean-executive-banner__pill {
-  background: rgba(105, 87, 232, 0.28);
-  border: 1px solid rgba(167, 139, 250, 0.4);
-  border-radius: 9999px;
-  color: #ddd6fe;
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  margin-bottom: 8px;
-  padding: 4px 10px;
-}
-
-.dean-executive-banner__copy h2 {
-  color: #fff;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  margin: 0 0 5px;
-}
-
-.dean-executive-banner__copy p {
-  color: #cbd5e1;
-  font-size: 13px;
-  margin: 0;
-}
-
-.dean-executive-banner__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.dean-stat-chip {
-  align-items: flex-start;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 138px;
-  padding: 12px 15px;
-  text-align: left;
-  transition: background-color 150ms ease, transform 150ms ease, border-color 150ms ease;
-}
-
-.dean-stat-chip:hover {
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(167, 139, 250, 0.55);
-  transform: translateY(-1px);
-}
-
-.dean-stat-chip__label {
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.dean-stat-chip strong {
-  color: #fff;
-  font-size: 22px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.dean-stat-chip__meta {
-  color: #cbd5e1;
-  font-size: 12px;
-}
-
-@media (max-width: 1100px) {
-  .dean-executive-banner {
-    margin-left: 26px;
-    margin-right: 26px;
-    max-width: none;
-  }
-}
-
 @media (max-width: 1000px) {
   .dashboard-columns {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .dean-executive-banner {
-    margin: 16px 14px 0;
-    padding: 18px;
   }
 }
 

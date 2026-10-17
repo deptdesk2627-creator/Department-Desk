@@ -51,11 +51,50 @@ const QUICK_ACTIONS = [
   },
 ];
 
+const DEAN_QUICK_ACTIONS = [
+  {
+    label: "Review Requests & Documents",
+    targetPage: "transactions",
+    iconClass: "quick-action-document",
+    svg: (
+      <>
+        <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+        <path d="M14 3v6h6M8 13h8M8 17h8" />
+      </>
+    ),
+  },
+  {
+    label: "Inspect Supply & Inventory",
+    targetPage: "inventory",
+    iconClass: "quick-action-inventory",
+    svg: (
+      <>
+        <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+        <path d="m3 8 9 5 9-5M3 8v9l9 5 9-5V8M12 13v9" />
+      </>
+    ),
+  },
+  {
+    label: "Add To-Do List",
+    targetPage: "tasks",
+    iconClass: "quick-action-task",
+    svg: (
+      <>
+        <rect x="4" y="4" width="16" height="17" rx="2" />
+        <path d="m8 10 2 2 5-5M8 16h8" />
+      </>
+    ),
+  },
+];
+
 function QuickActionsPanel({ onNavigate, role }) {
-  // Without a role (e.g. in tests), show every action.
-  const actions = role?.can
-    ? QUICK_ACTIONS.filter((action) => role.can[action.permission])
-    : QUICK_ACTIONS;
+  // Without a role (e.g. in tests), show every action; for Dean, show executive actions.
+  const actions =
+    role?.id === "dean"
+      ? DEAN_QUICK_ACTIONS
+      : role?.can
+        ? QUICK_ACTIONS.filter((action) => role.can[action.permission])
+        : QUICK_ACTIONS;
 
   if (!actions.length) return null;
 

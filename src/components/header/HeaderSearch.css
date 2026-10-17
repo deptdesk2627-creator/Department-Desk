@@ -48,6 +48,13 @@
   opacity: 1;
 }
 
+.app-header__search input::-webkit-search-cancel-button,
+.app-header__search input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
 .app-header__search-kbd {
   background: #fff;
   border: 1px solid #cbd5e1;
