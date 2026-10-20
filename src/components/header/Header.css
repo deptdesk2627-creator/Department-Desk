@@ -19,27 +19,6 @@
   display: none;
 }
 
-.app-header__heading {
-  min-width: 0;
-}
-
-.app-header__breadcrumb {
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  margin: 0 0 4px;
-}
-
-.app-header__title {
-  color: var(--ink);
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.35px;
-  line-height: 1.25;
-  margin: 0;
-}
-
 .app-header__actions {
   align-items: center;
   display: flex;
@@ -78,35 +57,6 @@
   border-radius: 50%;
   height: 6px;
   width: 6px;
-}
-
-.app-header__new-request {
-  align-items: center;
-  background: var(--purple);
-  border: 1px solid var(--purple);
-  border-radius: 9px;
-  box-shadow: 0 2px 6px rgb(var(--purple-rgb) / 22%);
-  color: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 13px;
-  font-weight: 600;
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 14px;
-  transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
-  white-space: nowrap;
-}
-
-.app-header__new-request:hover {
-  background: var(--purple-hover);
-  box-shadow: 0 4px 12px rgb(var(--purple-rgb) / 28%);
-  transform: translateY(-1px);
-}
-
-.app-header__new-request:focus-visible {
-  outline: 3px solid rgb(var(--purple-rgb) / 35%);
-  outline-offset: 2px;
 }
 
 @media (max-width: 1100px) and (min-width: 769px) {
@@ -190,17 +140,6 @@
     width: 32px;
   }
 
-  .app-header__brand-title {
-    color: #1e293b;
-    font-size: 16px;
-    font-weight: 500;
-    letter-spacing: -0.3px;
-  }
-
-  .app-header__brand-title strong {
-    font-weight: 700;
-  }
-
   .app-header__actions {
     display: flex;
     align-items: center;
@@ -208,33 +147,11 @@
     margin-left: auto;
     order: 2;
   }
-
-  .app-header__new-request {
-    height: 36px;
-    padding: 0 12px;
-    font-size: 12px;
-    border-radius: 9px;
-  }
 }
 
 @media (max-width: 480px) {
   .app-header {
     padding: 10px 12px;
     gap: 8px;
-  }
-
-  .app-header__new-request-label {
-    display: none;
-  }
-
-  .app-header__new-request {
-    width: 36px;
-    padding: 0;
-    justify-content: center;
-    font-size: 18px;
-  }
-
-  .app-header__brand-title {
-    display: none;
   }
 }

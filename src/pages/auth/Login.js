@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./Login.css";
-import { ROLE_LIST } from "../../utils/roles";
+import { ROLE_LIST } from "../../constants/roles";
 
 const DEMO_ACCOUNTS = {
   "secretary@deptdesk.edu": "secretary",

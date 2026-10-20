@@ -101,13 +101,6 @@
   margin: 0;
 }
 
-.metric-change {
-  color: var(--green);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  margin-right: 5px;
-}
-
 .status-pill {
   align-items: center;
   border-radius: var(--radius-pill);
@@ -176,10 +169,6 @@
   margin-left: 6px;
   padding: 2px 9px;
   vertical-align: 1px;
-}
-
-.muted-text {
-  color: var(--muted);
 }
 
 .empty-state {

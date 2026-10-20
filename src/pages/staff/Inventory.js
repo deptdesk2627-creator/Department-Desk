@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import "../secretary/inventory/Inventory.css";
+import "../inventory/Inventory.css";
 import "./InventoryStaff.css";
-import PageHeader from "../../components/ui/PageHeader";
+import { PageHeader } from "../../components/ui";
 import {
   getProductId,
   useInventoryActions,

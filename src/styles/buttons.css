@@ -81,41 +81,6 @@
   color: #b91c1c;
 }
 
-.select-button {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  color: #647083;
-  font-size: 13px;
-  padding: 7px 10px;
-}
-
-.icon-button {
-  align-items: center;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  color: #687386;
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 16px;
-  height: 38px;
-  justify-content: center;
-  position: relative;
-  width: 38px;
-}
-
-.notification-dot {
-  background: #f36c72;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  height: 9px;
-  position: absolute;
-  right: 7px;
-  top: 6px;
-  width: 9px;
-}
-
 .delete-button {
   align-items: center;
   background: transparent;
@@ -139,10 +104,7 @@
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
 .text-button:focus-visible,
-.icon-button:focus-visible,
-.details-button:focus-visible,
 .stock-adjust-button:focus-visible,
-.view-toggle button:focus-visible,
 .delete-button:focus-visible {
   outline: 3px solid rgb(var(--purple-rgb) / 45%);
   outline-offset: 2px;

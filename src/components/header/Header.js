@@ -67,7 +67,7 @@ function Header({
         </button>
         <span
           className="app-header__brand-mobile"
-          onClick={() => onNavigate?.("dashboard")}
+          onClick={() => onNavigate?.(role?.pages?.[0] || "dashboard")}
           aria-hidden="true"
         >
           <span className="app-header__brand-mark">D</span>

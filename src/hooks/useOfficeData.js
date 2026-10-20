@@ -1,26 +1,22 @@
 import { useEffect, useMemo } from "react";
-import {
-  initialInventory,
-  initialRequests,
-  initialTasks,
-} from "../utils/mockData";
 import { useStoredState } from "./useStoredState";
 
+const EMPTY_ARRAY = [];
 const asArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
 
 export function useOfficeData() {
   const [requests, setRequests] = useStoredState(
     "officeflow.requests.v2",
-    initialRequests,
+    EMPTY_ARRAY,
   );
-  const [tasks, setTasks] = useStoredState("officeflow.tasks.v2", initialTasks);
+  const [tasks, setTasks] = useStoredState("officeflow.tasks.v2", EMPTY_ARRAY);
   const [inventory, setInventory] = useStoredState(
     "officeflow.inventory.v5",
-    initialInventory,
+    EMPTY_ARRAY,
   );
   const [inventoryRecords, setInventoryRecords] = useStoredState(
     "officeflow.inventory-records.v5",
-    [],
+    EMPTY_ARRAY,
   );
 
   const safeTasks = useMemo(() => asArray(tasks), [tasks]);
@@ -32,23 +28,13 @@ export function useOfficeData() {
 
   const normalizedRequests = useMemo(
     () =>
-      asArray(requests).map((request) => {
-        const sample = initialRequests.find((item) => item.id === request.id);
-        return {
-          ...sample,
-          ...request,
-          dateTime:
-            request.dateTime ||
-            sample?.dateTime ||
-            request.history?.[0]?.dateTime ||
-            "",
-          type: request.type || sample?.type || "Document",
-          office: request.office || request.location || sample?.location || "",
-          history: Array.isArray(request.history)
-            ? request.history
-            : sample?.history || [],
-        };
-      }),
+      asArray(requests).map((request) => ({
+        ...request,
+        dateTime: request.dateTime || request.history?.[0]?.dateTime || "",
+        type: request.type || "Document",
+        office: request.office || request.location || "",
+        history: Array.isArray(request.history) ? request.history : [],
+      })),
     [requests],
   );
 

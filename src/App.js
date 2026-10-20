@@ -1,20 +1,11 @@
 import { useState } from "react";
+import { canAccessPage, getHomePage, getRole } from "./constants/roles";
 import { useOfficeData } from "./hooks/useOfficeData";
 import { useStoredState } from "./hooks/useStoredState";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
+import { getRolePages } from "./pages";
 import Login from "./pages/auth/Login";
-import { getDeanPages } from "./pages/dean";
-import { getSecretaryPages } from "./pages/secretary";
-import { getStaffPages } from "./pages/staff";
-import { canAccessPage, getHomePage, getRole } from "./utils/roles";
-
-// Each role owns its own set of pages (see src/pages/<role>/index.js).
-const PAGES_BY_ROLE = {
-  secretary: getSecretaryPages,
-  dean: getDeanPages,
-  staff: getStaffPages,
-};
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useStoredState(
@@ -64,8 +55,7 @@ function App() {
     );
   }
 
-  const getPages = PAGES_BY_ROLE[role.id] || getSecretaryPages;
-  const pages = getPages({ role, data, search: safeSearch, navigate });
+  const pages = getRolePages({ role, data, search: safeSearch, navigate });
 
   return (
     <MainLayout

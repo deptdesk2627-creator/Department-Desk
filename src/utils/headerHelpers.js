@@ -1,7 +1,9 @@
 import {
   getRequestStatus,
   isRequestWaiting,
-} from "./requestStatus";
+} from "../constants/requestStatus";
+import { isLowStock } from "./inventory";
+import { matchesQuery, normalizeQuery } from "./search";
 
 export function getNotifications(requests, tasks, inventory) {
   const waitingRequests = (Array.isArray(requests) ? requests : [])
@@ -14,12 +16,7 @@ export function getNotifications(requests, tasks, inventory) {
     }));
 
   const lowStockItems = (Array.isArray(inventory) ? inventory : [])
-    .filter(
-      (item) =>
-        item &&
-        Number.isFinite(Number(item.quantity)) &&
-        Number(item.quantity) <= Number(item.lowStockAt || 0),
-    )
+    .filter(isLowStock)
     .map((item) => ({
       id: `inventory:${item.id}:${item.quantity}`,
       title: "Low stock",
@@ -49,17 +46,12 @@ export function getNotifications(requests, tasks, inventory) {
 }
 
 export function getSearchResults(requests, tasks, inventory, search) {
-  const query = String(search || "").trim().toLowerCase();
+  const query = normalizeQuery(search);
   if (!query) {
     return [];
   }
 
-  const matchesFields = (...fields) =>
-    fields.some(
-      (value) =>
-        (typeof value === "string" || typeof value === "number") &&
-        String(value).toLowerCase().includes(query),
-    );
+  const matchesFields = (...fields) => matchesQuery(query, ...fields);
 
   return [
     ...(Array.isArray(requests) ? requests : [])

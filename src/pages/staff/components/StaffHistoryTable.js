@@ -1,10 +1,5 @@
 import { formatDateTime } from "../../../utils/formatters";
-
-function statusClass(status) {
-  if (status === "Returned") return "status-done";
-  if (status === "Borrowed") return "status-waiting";
-  return "status-started";
-}
+import { recordStatusClass as statusClass } from "../../../utils/inventory";
 
 function StaffHistoryTable({ records, hasName }) {
   return (

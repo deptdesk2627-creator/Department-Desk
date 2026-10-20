@@ -8,7 +8,7 @@ export function matchesQuery(search, ...values) {
   const query = normalizeQuery(search);
   if (!query) return true;
   return values.some((value) =>
-    String(value || "")
+    String(value ?? "")
       .toLowerCase()
       .includes(query),
   );
