@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./TaskManagement.css";
 import TaskMetrics from "./components/TaskMetrics";
 import TaskQuickAdd from "./components/TaskQuickAdd";
@@ -38,6 +39,15 @@ function TaskManagement({
     view,
   } = useTaskManager({ tasks, setTasks, search });
 
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const activeList = lists.find((list) => list.id === activeListId);
+
+  function handleAddTask(event) {
+    if (addTask(event)) {
+      setIsTaskModalOpen(false);
+    }
+  }
+
   return (
     <div className="deptdesk-task-container">
       <TaskTabBar
@@ -48,12 +58,16 @@ function TaskManagement({
         onSelectList={selectList}
         onAddList={addList}
         onDeleteList={deleteList}
+        onOpenAddTask={() => setIsTaskModalOpen(true)}
       />
       <TaskMetrics progressPercent={progressPercent} stats={stats} />
       <TaskQuickAdd
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        listName={activeList?.name}
         form={form}
         setForm={setForm}
-        onSubmit={addTask}
+        onSubmit={handleAddTask}
         selectedCount={selectedTaskIds.length}
         onBulkComplete={bulkComplete}
         onBulkDelete={bulkDelete}

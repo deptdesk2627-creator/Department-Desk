@@ -26,6 +26,10 @@
   width: 100%;
 }
 
+.form-modal {
+  max-width: 620px;
+}
+
 .modal-heading {
   align-items: flex-start;
   display: flex;
@@ -38,6 +42,13 @@
   font-weight: 700;
   letter-spacing: -0.4px;
   margin: 0;
+}
+
+.modal-subtitle {
+  color: var(--ink-secondary, #64748b);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 6px 0 0;
 }
 
 .modal-heading .eyebrow {

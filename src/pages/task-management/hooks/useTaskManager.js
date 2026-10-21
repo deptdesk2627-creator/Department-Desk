@@ -80,7 +80,7 @@ export function useTaskManager({ tasks = [], setTasks, search = "" }) {
 
   function addTask(event) {
     event.preventDefault();
-    if (!form.title.trim()) return;
+    if (!form.title.trim()) return false;
     const newTask = {
       ...form,
       id: `task-${Date.now()}`,
@@ -92,6 +92,7 @@ export function useTaskManager({ tasks = [], setTasks, search = "" }) {
       ...(Array.isArray(current) ? current : []),
     ]);
     setForm(createInitialForm());
+    return true;
   }
 
   function deleteTask(id) {

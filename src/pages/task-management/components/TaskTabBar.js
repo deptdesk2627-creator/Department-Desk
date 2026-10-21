@@ -47,6 +47,7 @@ function TaskTabBar({
   onSelectList,
   onAddList,
   onDeleteList,
+  onOpenAddTask,
 }) {
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -71,23 +72,35 @@ function TaskTabBar({
           <h2>Task Management</h2>
           <p className="subtitle">Organize tasks across custom to-do lists.</p>
         </div>
-        <div className="view-toggle-buttons">
-          <button
-            className={`toggle-btn ${view === "table" ? "active" : ""}`}
-            type="button"
-            onClick={() => setView("table")}
-          >
-            <TaskIcon name="table" />
-            Table View
-          </button>
-          <button
-            className={`toggle-btn ${view === "status" ? "active" : ""}`}
-            type="button"
-            onClick={() => setView("status")}
-          >
-            <TaskIcon name="status" />
-            By Status
-          </button>
+        <div className="deptdesk-header-actions">
+          <div className="view-toggle-buttons">
+            <button
+              className={`toggle-btn ${view === "table" ? "active" : ""}`}
+              type="button"
+              onClick={() => setView("table")}
+            >
+              <TaskIcon name="table" />
+              Table View
+            </button>
+            <button
+              className={`toggle-btn ${view === "status" ? "active" : ""}`}
+              type="button"
+              onClick={() => setView("status")}
+            >
+              <TaskIcon name="status" />
+              By Status
+            </button>
+          </div>
+          {onOpenAddTask && (
+            <button
+              type="button"
+              className="primary-button"
+              aria-haspopup="dialog"
+              onClick={onOpenAddTask}
+            >
+              ＋ Add task
+            </button>
+          )}
         </div>
       </div>
       <div className="todo-pages-tab-bar">
