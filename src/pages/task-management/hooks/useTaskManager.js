@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { matchesQuery } from "../../../utils/search";
-import { useTodoListManager } from "./useTodoListManager";
 
 function getTodayStr() {
   return new Date().toISOString().split("T")[0];
@@ -16,8 +15,6 @@ function createInitialForm() {
 }
 
 export function useTaskManager({ tasks = [], setTasks, search = "" }) {
-  const { activeListId, addList, deleteList, lists, setActiveListId } =
-    useTodoListManager(setTasks);
   const [view, setView] = useState("table");
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
   const [form, setForm] = useState(createInitialForm);
@@ -28,13 +25,13 @@ export function useTaskManager({ tasks = [], setTasks, search = "" }) {
     [tasks],
   );
 
-  const listTasks = useMemo(() => {
-    const hasSearch = Boolean(String(search || "").trim());
-    return taskItems.filter((task) => {
-      if (!hasSearch && (task.listId || "main") !== activeListId) return false;
-      return matchesQuery(search, task.title);
-    });
-  }, [taskItems, activeListId, search]);
+  const listTasks = useMemo(
+    () =>
+      taskItems.filter((task) =>
+        matchesQuery(search, task.title, task.status, task.priority),
+      ),
+    [taskItems, search],
+  );
 
   const progressPercent = useMemo(() => {
     if (!listTasks.length) return 0;
@@ -84,7 +81,6 @@ export function useTaskManager({ tasks = [], setTasks, search = "" }) {
     const newTask = {
       ...form,
       id: `task-${Date.now()}`,
-      listId: activeListId,
       done: form.status === "Done",
     };
     setTasks((current) => [
@@ -136,26 +132,16 @@ export function useTaskManager({ tasks = [], setTasks, search = "" }) {
     setSelectedTaskIds([]);
   }
 
-  function selectList(listId) {
-    setActiveListId(listId);
-    setSelectedTaskIds([]);
-  }
-
   return {
-    activeListId,
-    addList,
     addTask,
     bulkComplete,
     bulkDelete,
-    deleteList,
     deleteTask,
     form,
-    lists,
     listTasks,
     progressPercent,
     selectedTaskIds,
     selectAll,
-    selectList,
     selectOne,
     setForm,
     setView,

@@ -5,7 +5,6 @@ import { TASK_PRIORITIES, TASK_STATUSES } from "./TaskRow";
 function TaskQuickAdd({
   isOpen = false,
   onClose,
-  listName,
   form,
   setForm,
   onSubmit,
@@ -41,11 +40,7 @@ function TaskQuickAdd({
         onClose={onClose}
         eyebrow="OFFICE WORKSPACE · TASK MANAGEMENT"
         title="Add a new task"
-        subtitle={
-          listName
-            ? `Adding to "${listName}". Set priority, status, and due date.`
-            : "Set the task title, priority, status, and due date."
-        }
+        subtitle="Set the task title, priority, status, and due date."
         titleId="new-task-dialog-title"
         className="transaction-modal form-modal"
       >

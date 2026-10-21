@@ -15,20 +15,15 @@ function TaskManagement({
   search = "",
 }) {
   const {
-    activeListId,
-    addList,
     addTask,
     bulkComplete,
     bulkDelete,
-    deleteList,
     deleteTask,
     form,
-    lists,
     listTasks,
     progressPercent,
     selectedTaskIds,
     selectAll,
-    selectList,
     selectOne,
     setForm,
     setView,
@@ -40,7 +35,6 @@ function TaskManagement({
   } = useTaskManager({ tasks, setTasks, search });
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const activeList = lists.find((list) => list.id === activeListId);
 
   function handleAddTask(event) {
     if (addTask(event)) {
@@ -53,18 +47,12 @@ function TaskManagement({
       <TaskTabBar
         view={view}
         setView={setView}
-        lists={lists}
-        activeListId={activeListId}
-        onSelectList={selectList}
-        onAddList={addList}
-        onDeleteList={deleteList}
         onOpenAddTask={() => setIsTaskModalOpen(true)}
       />
       <TaskMetrics progressPercent={progressPercent} stats={stats} />
       <TaskQuickAdd
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
-        listName={activeList?.name}
         form={form}
         setForm={setForm}
         onSubmit={handleAddTask}
