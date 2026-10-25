@@ -18,8 +18,7 @@ function Transactions({
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   function handleFormSubmit(event) {
-    manager.addRequest(event);
-    if (manager.form.student?.trim() && manager.form.document?.trim()) {
+    if (manager.addRequest(event)) {
       setIsFormOpen(false);
     }
   }
@@ -39,18 +38,20 @@ function Transactions({
             <div className="page-heading__actions">
               <button
                 type="button"
-                className={isFormOpen ? "secondary-button" : "primary-button"}
+                className="primary-button"
+                aria-haspopup="dialog"
                 aria-expanded={isFormOpen}
-                onClick={() => setIsFormOpen((open) => !open)}
+                onClick={() => setIsFormOpen(true)}
               >
-                {isFormOpen ? "✕ Close form" : "＋ New request"}
+                ＋ New request
               </button>
             </div>
           )
         }
       />
-      {!readOnly && isFormOpen && (
+      {!readOnly && (
         <TransactionForm
+          isOpen={isFormOpen}
           form={manager.form}
           setForm={manager.setForm}
           formError={manager.formError}

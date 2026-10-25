@@ -105,8 +105,10 @@ export function useAdminInventory({
     if (
       !form.name.trim() ||
       !form.unit.trim() ||
+      form.quantity === "" ||
       !Number.isInteger(quantity) ||
       quantity < 0 ||
+      form.lowStockAt === "" ||
       !Number.isInteger(lowStockAt) ||
       lowStockAt < 0 ||
       !Number.isFinite(unitCost) ||
@@ -115,7 +117,7 @@ export function useAdminInventory({
       setFormError(
         "Enter a product name, unit, and valid non-negative stock and cost values.",
       );
-      return;
+      return false;
     }
     setFormError("");
     setInventory((current) => {
@@ -142,6 +144,7 @@ export function useAdminInventory({
       ];
     });
     setForm(INITIAL_FORM);
+    return true;
   }
 
   function deleteItem(id) {

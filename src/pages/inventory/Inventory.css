@@ -2,6 +2,26 @@
   min-width: 860px;
 }
 
+.inventory-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+}
+
+.inventory-form .inventory-form-name {
+  grid-column: 1 / -1;
+}
+
+.inventory-form-actions {
+  align-items: center;
+  border-top: 1px solid var(--line-subtle);
+  display: flex;
+  gap: 10px;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  margin-top: 4px;
+  padding-top: 14px;
+}
+
 .inventory-metrics .metric-value {
   font-size: 26px;
 }
@@ -160,6 +180,23 @@
   }
   .inventory-metrics .metric-value {
     font-size: 22px;
+  }
+}
+
+@media (max-width: 640px) {
+  .inventory-form {
+    grid-template-columns: 1fr;
+  }
+  .inventory-form .inventory-form-name,
+  .inventory-form-actions {
+    grid-column: auto;
+  }
+  .inventory-form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .inventory-form-actions button {
+    width: 100%;
   }
 }
 

@@ -1,29 +1,28 @@
-function InventoryForm({ form, setForm, formError, onSubmit, onCancel }) {
+import { Modal } from "../../../components/ui";
+
+function InventoryForm({
+  isOpen = true,
+  form,
+  setForm,
+  formError,
+  onSubmit,
+  onCancel,
+}) {
   return (
-    <section
-      className="card panel module-form-panel collapsible-form-panel"
-      aria-labelledby="new-supply-title"
+    <Modal
+      isOpen={isOpen}
+      onClose={onCancel}
+      eyebrow="OFFICE WORKSPACE · SUPPLY & INVENTORY"
+      title="Add a new supply item"
+      subtitle="Product ID is generated automatically when you add the item."
+      titleId="new-supply-title"
+      className="transaction-modal form-modal"
     >
-      <div className="panel-heading">
-        <div>
-          <h2 id="new-supply-title">Add a new supply item</h2>
-          <p>Product ID is generated automatically when you add the item.</p>
-        </div>
-        {onCancel && (
-          <button
-            type="button"
-            className="delete-button"
-            onClick={onCancel}
-            aria-label="Close form"
-          >
-            ×
-          </button>
-        )}
-      </div>
       <form className="module-form inventory-form" onSubmit={onSubmit}>
-        <label>
+        <label className="inventory-form-name">
           Product name
           <input
+            autoFocus
             required
             value={form.name}
             onChange={(event) => setForm({ ...form, name: event.target.value })}
@@ -78,7 +77,7 @@ function InventoryForm({ form, setForm, formError, onSubmit, onCancel }) {
             placeholder="Optional"
           />
         </label>
-        <div className="form-actions">
+        <div className="inventory-form-actions">
           {onCancel && (
             <button
               className="secondary-button"
@@ -98,7 +97,7 @@ function InventoryForm({ form, setForm, formError, onSubmit, onCancel }) {
           {formError}
         </p>
       )}
-    </section>
+    </Modal>
   );
 }
 

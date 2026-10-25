@@ -83,7 +83,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
     event.preventDefault();
     if (!form.student.trim() || !form.document.trim()) {
       setFormError("Enter a requester and form name before adding the request.");
-      return;
+      return false;
     }
     setFormError("");
     const submittedAt = Date.now();
@@ -113,6 +113,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
       return [{ ...request, id }, ...currentRequests];
     });
     setForm(emptyForm());
+    return true;
   }
 
   function updateRequestStatus(request, status) {

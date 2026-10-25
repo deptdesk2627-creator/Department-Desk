@@ -1,4 +1,7 @@
+import { Modal } from "../../../components/ui";
+
 function TransactionForm({
+  isOpen = true,
   form,
   setForm,
   formError,
@@ -9,30 +12,20 @@ function TransactionForm({
   statuses,
 }) {
   return (
-    <section
-      className="card panel module-form-panel collapsible-form-panel"
-      aria-labelledby="new-transaction-title"
+    <Modal
+      isOpen={isOpen}
+      onClose={onCancel}
+      eyebrow="OFFICE WORKSPACE · REQUESTS"
+      title="Log a new request"
+      subtitle="Record a document or service request and assign its destination office."
+      titleId="new-transaction-title"
+      className="transaction-modal form-modal"
     >
-      <div className="panel-heading">
-        <div>
-          <h2 id="new-transaction-title">Log a new request</h2>
-          <p>Record a document or service request and assign its destination office.</p>
-        </div>
-        {onCancel && (
-          <button
-            type="button"
-            className="delete-button"
-            onClick={onCancel}
-            aria-label="Close form"
-          >
-            ×
-          </button>
-        )}
-      </div>
       <form className="module-form transaction-form" onSubmit={onSubmit}>
         <label className="transaction-form-name">
           Form name
           <input
+            autoFocus
             required
             value={form.document}
             onChange={(event) =>
@@ -134,7 +127,7 @@ function TransactionForm({
           {formError}
         </p>
       )}
-    </section>
+    </Modal>
   );
 }
 

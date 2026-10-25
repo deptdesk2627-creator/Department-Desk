@@ -1,30 +1,24 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import TaskTabBar from "./TaskTabBar";
 
-test("opens an in-app form to name a new task list", () => {
-  const onAddList = jest.fn();
+test("switches views and triggers add task modal without list tabs", () => {
+  const setView = jest.fn();
+  const onOpenAddTask = jest.fn();
   render(
     <TaskTabBar
       view="table"
-      setView={jest.fn()}
-      lists={[{ id: "main", name: "Main To-Do List" }]}
-      activeListId="main"
-      onSelectList={jest.fn()}
-      onAddList={onAddList}
-      onDeleteList={jest.fn()}
+      setView={setView}
+      onOpenAddTask={onOpenAddTask}
     />,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "+ New List" }));
   expect(
-    screen.getByRole("dialog", { name: "Create a task list" }),
-  ).toBeInTheDocument();
+    screen.queryByRole("button", { name: "+ New List" }),
+  ).not.toBeInTheDocument();
 
-  fireEvent.change(screen.getByLabelText("List name"), {
-    target: { value: "Project tasks" },
-  });
-  fireEvent.click(screen.getByRole("button", { name: "Create list" }));
+  fireEvent.click(screen.getByRole("button", { name: /by status/i }));
+  expect(setView).toHaveBeenCalledWith("status");
 
-  expect(onAddList).toHaveBeenCalledWith("Project tasks");
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /add task/i }));
+  expect(onOpenAddTask).toHaveBeenCalledTimes(1);
 });

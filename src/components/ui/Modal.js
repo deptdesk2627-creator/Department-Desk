@@ -1,12 +1,26 @@
+import { useEffect } from "react";
+
 function Modal({
   isOpen,
   onClose,
   eyebrow,
   title,
+  subtitle,
   titleId = "modal-title",
   className = "transaction-modal action-modal",
   children,
 }) {
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        onClose?.();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -26,6 +40,7 @@ function Modal({
           <div>
             {eyebrow && <p className="eyebrow">{eyebrow}</p>}
             <h2 id={titleId}>{title}</h2>
+            {subtitle && <p className="modal-subtitle">{subtitle}</p>}
           </div>
           <button
             className="delete-button modal-close"
