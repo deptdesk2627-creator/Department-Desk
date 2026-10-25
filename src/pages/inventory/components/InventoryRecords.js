@@ -1,56 +1,54 @@
 import { formatDateTime } from "../../../utils/formatters";
 import { recordStatusClass } from "../../../utils/inventory";
 
-function InventoryRecords({
-  records,
-  totalRecords,
-  filter,
-  setFilter,
-}) {
+function InventoryRecords({ records, totalRecords }) {
   return (
-    <section className="card panel module-list-panel" aria-labelledby="records-title">
-      <div className="module-toolbar">
-        <div>
-          <h2 id="records-title">
-            Transaction records <span className="count-badge">{records.length}</span>
-          </h2>
-          <p>History of borrowed, used, and returned products.</p>
-        </div>
-        <label className="record-filter">
-          Filter status
-          <select value={filter} onChange={(event) => setFilter(event.target.value)}>
-            <option>All</option>
-            <option>Borrowed</option>
-            <option>Returned</option>
-            <option>Used</option>
-          </select>
-        </label>
-      </div>
+    <section
+      className="card panel module-list-panel inventory-folder-panel inventory-folder-panel--transactions"
+      aria-label="Transaction records"
+    >
+      <p className="inventory-panel-subtitle">
+        History of borrowed, used, and returned products.
+      </p>
       {records.length ? (
-        <div className="table-scroll module-table-scroll">
-          <table className="request-table inventory-record-table">
+        <div className="inventory-table-wrap">
+          <table className="request-table inventory-record-table inventory-transactions-table">
             <thead>
               <tr>
                 <th>ID No.</th>
-                <th>Date &amp; time</th>
+                <th>Date &amp; Time</th>
                 <th>Name</th>
                 <th>Product-ID No.</th>
-                <th>Product name</th>
+                <th>Product Name</th>
                 <th>Quantity</th>
-                <th>Status</th>
+                <th className="inventory-status-col">Status</th>
               </tr>
             </thead>
             <tbody>
               {records.map((record) => (
                 <tr key={record.id}>
-                  <td><strong>{record.id}</strong></td>
-                  <td>{formatDateTime(record.dateTime)}</td>
-                  <td>{record.person || "—"}</td>
-                  <td>{record.productId}</td>
-                  <td>{record.productName}</td>
-                  <td>{record.quantity} {record.unit}</td>
                   <td>
-                    <span className={`status-pill ${recordStatusClass(record.status)}`}>
+                    <strong className="record-id-text">{record.id}</strong>
+                  </td>
+                  <td className="record-date-cell">
+                    {formatDateTime(record.dateTime)}
+                  </td>
+                  <td className="record-person-cell">
+                    {record.person || "—"}
+                  </td>
+                  <td className="record-product-id-cell">{record.productId}</td>
+                  <td className="record-product-name-cell">
+                    {record.productName}
+                  </td>
+                  <td className="record-quantity-cell">
+                    <strong>
+                      {record.quantity} {record.unit}
+                    </strong>
+                  </td>
+                  <td className="inventory-status-col">
+                    <span
+                      className={`status-pill ${recordStatusClass(record.status)}`}
+                    >
                       {record.status}
                     </span>
                   </td>

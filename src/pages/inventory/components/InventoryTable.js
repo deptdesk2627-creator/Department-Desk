@@ -10,29 +10,25 @@ function InventoryTable({
   readOnly = false,
 }) {
   return (
-    <section className="card panel module-list-panel" aria-labelledby="inventory-list-title">
-      <div className="panel-heading">
-        <div>
-          <h2 id="inventory-list-title">
-            Inventory <span className="count-badge">{items.length}</span>
-          </h2>
-          <p>
-            {readOnly
-              ? "Current stock levels and status."
-              : "Borrowing and use reduce available quantity; returns add it back."}
-          </p>
-        </div>
-      </div>
+    <section
+      className="card panel module-list-panel inventory-folder-panel inventory-folder-panel--master"
+      aria-label="Master list"
+    >
+      <p className="inventory-panel-subtitle">
+        {readOnly
+          ? "Current stock levels and status."
+          : "Borrowing and use reduce available quantity; returns add it back."}
+      </p>
       {items.length ? (
-        <div className="table-scroll module-table-scroll">
-          <table className="request-table inventory-table">
+        <div className="inventory-table-wrap">
+          <table className="request-table inventory-table inventory-master-table">
             <thead>
               <tr>
-                <th>Product-ID No.</th>
-                <th>Product name</th>
-                <th>Quantity</th>
-                <th>Stock level</th>
-                <th>Actions</th>
+                <th>PRODUCT-ID NO.</th>
+                <th>PRODUCT NAME</th>
+                <th>QUANTITY</th>
+                <th>STOCK LEVEL</th>
+                <th className="inventory-actions-col">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -47,10 +43,14 @@ function InventoryTable({
                 return (
                   <tr key={item.id}>
                     <td>
-                      <span className="request-id-badge">{getProductId(item)}</span>
+                      <span className="inventory-product-id-pill">
+                        {getProductId(item)}
+                      </span>
                     </td>
                     <td>
-                      <strong className="inventory-item-name">{item.name}</strong>
+                      <strong className="inventory-item-name">
+                        {item.name}
+                      </strong>
                     </td>
                     <td>
                       <div className="stock-quantity-cell">
@@ -70,15 +70,19 @@ function InventoryTable({
                       </div>
                     </td>
                     <td>
-                      <span className={`status-pill ${lowStock ? "status-waiting" : "status-done"}`}>
+                      <span
+                        className={`status-pill ${lowStock ? "status-waiting" : "status-done"}`}
+                      >
                         {lowStock ? "Low stock" : "In stock"}
                       </span>
                     </td>
-                    <td>
+                    <td className="inventory-actions-col">
                       {readOnly ? (
-                        <span className="status-pill status-started">View only</span>
+                        <span className="status-pill status-started">
+                          View only
+                        </span>
                       ) : (
-                        <div className="stock-actions">
+                        <div className="stock-actions stock-actions--right">
                           <button
                             type="button"
                             className="stock-adjust-button borrow-button"
@@ -97,7 +101,7 @@ function InventoryTable({
                           </button>
                           <button
                             type="button"
-                            className="stock-adjust-button"
+                            className="stock-adjust-button return-button"
                             onClick={() => onOpenAction(item, "Return")}
                             disabled={getBorrowedBalance(item) <= 0}
                           >

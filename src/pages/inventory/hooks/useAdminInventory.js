@@ -23,6 +23,10 @@ export function useAdminInventory({
 }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [formError, setFormError] = useState("");
+  const [activeTab, setActiveTab] = useState("master");
+  const [productSearch, setProductSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState("All");
+  const [recordSearch, setRecordSearch] = useState("");
   const [recordFilter, setRecordFilter] = useState("All");
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
@@ -37,18 +41,31 @@ export function useAdminInventory({
 
   const visibleItems = useMemo(
     () =>
-      inventoryItems.filter((item) =>
-        matchesQuery(
-          search,
+      inventoryItems.filter((item) => {
+        const lowStock = isLowStock(item);
+        const stockLabel = lowStock ? "Low stock" : "In stock";
+        const matchesStockFilter =
+          stockFilter === "All" ||
+          (stockFilter === "Low stock" && lowStock) ||
+          (stockFilter === "In stock" && !lowStock);
+
+        const itemFields = [
+          getProductId(item),
           item.productId,
           item.id,
           item.name,
           item.unit,
           item.quantity,
           item.lowStockAt,
-        ),
-      ),
-    [inventoryItems, search],
+          stockLabel,
+        ];
+
+        const matchesGlobalSearch = matchesQuery(search, ...itemFields);
+        const matchesLocalSearch = matchesQuery(productSearch, ...itemFields);
+
+        return matchesStockFilter && matchesGlobalSearch && matchesLocalSearch;
+      }),
+    [inventoryItems, search, productSearch, stockFilter],
   );
 
   const visibleRecords = useMemo(
@@ -56,8 +73,7 @@ export function useAdminInventory({
       recordItems.filter((record) => {
         const matchesFilter =
           recordFilter === "All" || record.status === recordFilter;
-        const matchesSearch = matchesQuery(
-          search,
+        const recordFields = [
           record.id,
           record.person,
           record.productId,
@@ -66,10 +82,12 @@ export function useAdminInventory({
           record.unit,
           record.quantity,
           record.dateTime,
-        );
-        return matchesFilter && matchesSearch;
+        ];
+        const matchesGlobalSearch = matchesQuery(search, ...recordFields);
+        const matchesLocalSearch = matchesQuery(recordSearch, ...recordFields);
+        return matchesFilter && matchesGlobalSearch && matchesLocalSearch;
       }),
-    [recordItems, search, recordFilter],
+    [recordItems, search, recordSearch, recordFilter],
   );
 
   const loggedUsageValue = useMemo(
@@ -163,6 +181,14 @@ export function useAdminInventory({
     form,
     setForm,
     formError,
+    activeTab,
+    setActiveTab,
+    productSearch,
+    setProductSearch,
+    stockFilter,
+    setStockFilter,
+    recordSearch,
+    setRecordSearch,
     recordFilter,
     setRecordFilter,
     isResetConfirmOpen,
