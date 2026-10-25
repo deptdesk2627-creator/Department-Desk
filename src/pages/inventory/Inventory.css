@@ -208,7 +208,12 @@
   min-height: 44px;
   padding: 10px 24px;
   position: relative;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition:
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-height 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .inventory-folder-tab + .inventory-folder-tab {
@@ -242,6 +247,9 @@
   justify-content: center;
   min-width: 24px;
   padding: 0 8px;
+  transition:
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .inventory-folder-tab.is-active .inventory-tab-badge {
@@ -345,6 +353,23 @@
   padding: 24px 28px 28px;
   position: relative;
   z-index: 1;
+}
+
+.inventory-folder-panel .inventory-panel-subtitle,
+.inventory-folder-panel .inventory-table-wrap,
+.inventory-folder-panel .empty-state {
+  animation: inventoryTabFade 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes inventoryTabFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .inventory-panel-subtitle {

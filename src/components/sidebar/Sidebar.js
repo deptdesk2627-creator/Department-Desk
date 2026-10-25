@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./Sidebar.css";
 import SidebarNavigation from "./SidebarNavigation";
 import SidebarProfile from "./SidebarProfile";
@@ -13,6 +13,12 @@ function SideBar({
 }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const homePage = role?.pages?.[0] || "dashboard";
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.removeAttribute("data-theme");
+    }
+  }, []);
 
   function navigateTo(page) {
     setIsProfileMenuOpen(false);
@@ -30,6 +36,33 @@ function SideBar({
       className={`workspace-sidebar${isOpen ? "" : " workspace-sidebar--collapsed"}`}
       aria-label="Main navigation"
     >
+      {onToggle && (
+        <button
+          className="workspace-sidebar__toggle"
+          type="button"
+          onClick={onToggle}
+          aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          aria-expanded={isOpen}
+          aria-controls="workspace-sidebar"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
+          <span className="sr-only">
+            {isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          </span>
+        </button>
+      )}
+
       <div className="workspace-sidebar__main">
         <div className="workspace-sidebar__top">
           <button
@@ -48,30 +81,7 @@ function SideBar({
             </span>
           </button>
         </div>
-        {onToggle && (
-          <button
-            className="workspace-sidebar__toggle"
-            type="button"
-            onClick={onToggle}
-            aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-            title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-            aria-expanded={isOpen}
-            aria-controls="workspace-sidebar"
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d={isOpen ? "m14.5 5-7 7 7 7" : "m9.5 5 7 7-7 7"} />
-            </svg>
-            <span>{isOpen ? "Collapse sidebar" : "Expand sidebar"}</span>
-          </button>
-        )}
+
         <SidebarNavigation
           currentPage={currentPage}
           isOpen={isOpen}

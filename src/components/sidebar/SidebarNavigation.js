@@ -24,16 +24,15 @@ function NavigationIcon({ name }) {
     stroke: "currentColor",
     strokeLinecap: "round",
     strokeLinejoin: "round",
-    strokeWidth: 1.7,
+    strokeWidth: 1.85,
     viewBox: "0 0 24 24",
   };
 
   if (name === "dashboard") {
     return (
       <svg {...sharedProps}>
-        <path d="M4 19V5M4 19h16" />
-        <path d="m7 15 4-4 3 2 5-6" />
-        <path d="M16 7h3v3" />
+        <path d="M4.5 10.2 12 4l7.5 6.2V19a1.8 1.8 0 0 1-1.8 1.8H6.3A1.8 1.8 0 0 1 4.5 19v-8.8Z" />
+        <path d="M9.5 20.8v-5.3a2.5 2.5 0 0 1 5 0v5.3" />
       </svg>
     );
   }
@@ -41,8 +40,8 @@ function NavigationIcon({ name }) {
   if (name === "transactions") {
     return (
       <svg {...sharedProps}>
-        <path d="M7 3.75h7l4 4v12.5H7z" />
-        <path d="M14 3.75v4h4M10 12h5M10 15.5h5" />
+        <path d="M6.5 3.75h7.5l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 5 19V5.25a1.5 1.5 0 0 1 1.5-1.5Z" />
+        <path d="M13.5 3.75v4.25H18M9 12h6M9 15.5h4.5" />
       </svg>
     );
   }
@@ -50,8 +49,9 @@ function NavigationIcon({ name }) {
   if (name === "tasks") {
     return (
       <svg {...sharedProps}>
-        <rect x="4" y="4" width="16" height="16" rx="2.5" />
-        <path d="m8 12 2.5 2.5L16 9M8 7.5h8" />
+        <rect x="4" y="4.5" width="16" height="15.5" rx="3" />
+        <path d="M8 3v3M16 3v3M4 9h16" />
+        <path d="m9.2 14.2 2 2 3.8-3.8" />
       </svg>
     );
   }
@@ -59,8 +59,8 @@ function NavigationIcon({ name }) {
   if (name === "inventory") {
     return (
       <svg {...sharedProps}>
-        <path d="m4 7 8-4 8 4v10l-8 4-8-4z" />
-        <path d="m4 7 8 4 8-4M12 11v10M8 5l8 4" />
+        <path d="M11 4.2a8 8 0 1 0 8.8 8.8H11V4.2Z" />
+        <path d="M14.5 3.5A8 8 0 0 1 20.5 9.5h-6v-6Z" />
       </svg>
     );
   }
@@ -83,7 +83,14 @@ function NavigationIcon({ name }) {
   );
 }
 
-function NavigationSection({ label, items, currentPage, isOpen, onNavigate, system }) {
+function NavigationSection({
+  label,
+  items,
+  currentPage,
+  isOpen,
+  onNavigate,
+  system,
+}) {
   const sectionClassName = system
     ? "workspace-sidebar__navigation workspace-sidebar__system"
     : "workspace-sidebar__navigation";
@@ -101,11 +108,14 @@ function NavigationSection({ label, items, currentPage, isOpen, onNavigate, syst
               aria-current={currentPage === item.id ? "page" : undefined}
               aria-label={item.label}
               title={!isOpen ? item.label : undefined}
+              data-tooltip={item.label}
             >
               <span className="workspace-sidebar__icon">
                 <NavigationIcon name={item.icon} />
               </span>
-              <span className="workspace-sidebar__link-label">{item.label}</span>
+              <span className="workspace-sidebar__link-label">
+                {item.label}
+              </span>
             </button>
           </li>
         ))}

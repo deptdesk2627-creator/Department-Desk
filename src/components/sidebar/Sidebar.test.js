@@ -5,10 +5,17 @@ test("marks the current page and navigates when a workspace item is selected", (
   const onNavigate = jest.fn();
   render(<SideBar currentPage="dashboard" onNavigate={onNavigate} />);
 
-  expect(screen.getByRole("button", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-  expect(screen.getByRole("button", { name: "Transactions & Requests" })).not.toHaveAttribute("aria-current");
+  expect(screen.getByRole("button", { name: "Dashboard" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  expect(
+    screen.getByRole("button", { name: "Transactions & Requests" }),
+  ).not.toHaveAttribute("aria-current");
 
-  fireEvent.click(screen.getByRole("button", { name: "Transactions & Requests" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Transactions & Requests" }),
+  );
   expect(onNavigate).toHaveBeenCalledWith("transactions");
 
   fireEvent.click(screen.getByRole("button", { name: "Task Management" }));
@@ -27,18 +34,32 @@ test("marks the current page and navigates when a workspace item is selected", (
 test("collapses the sidebar to workspace icons and expands it again", () => {
   const onToggle = jest.fn();
   const { rerender } = render(
-    <SideBar currentPage="dashboard" onNavigate={jest.fn()} isOpen onToggle={onToggle} />
+    <SideBar
+      currentPage="dashboard"
+      onNavigate={jest.fn()}
+      isOpen
+      onToggle={onToggle}
+    />,
   );
 
   fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
   expect(onToggle).toHaveBeenCalledTimes(1);
 
   rerender(
-    <SideBar currentPage="dashboard" onNavigate={jest.fn()} isOpen={false} onToggle={onToggle} />
+    <SideBar
+      currentPage="dashboard"
+      onNavigate={jest.fn()}
+      isOpen={false}
+      onToggle={onToggle}
+    />,
   );
-  expect(screen.getByRole("complementary", { name: "Main navigation" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("complementary", { name: "Main navigation" }),
+  ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Transactions & Requests" })).toHaveAttribute("title", "Transactions & Requests");
+  expect(
+    screen.getByRole("button", { name: "Transactions & Requests" }),
+  ).toHaveAttribute("title", "Transactions & Requests");
   expect(screen.getByText("System")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Expand sidebar" }));
   expect(onToggle).toHaveBeenCalledTimes(2);

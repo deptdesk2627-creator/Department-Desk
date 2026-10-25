@@ -3,69 +3,86 @@
 }
 
 .workspace-sidebar__system {
-  border-top: 1px solid rgb(255 255 255 / 10%);
-  margin-top: 26px;
-  padding-top: 22px;
+  border-top: 1px solid rgb(255 237 213 / 12%);
+  margin-top: 22px;
+  padding-top: 18px;
+  transition:
+    margin-top 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding-top 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .workspace-sidebar__label {
-  color: #c8ac91;
+  color: #d6b69b;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 1px;
-  margin: 0 10px 12px;
+  letter-spacing: 0.9px;
+  margin: 0 12px 10px;
   max-height: 20px;
   opacity: 1;
   overflow: hidden;
   text-transform: uppercase;
+  transform: translateX(0);
   transition:
-    max-height 220ms ease,
-    opacity 140ms ease,
-    margin 220ms ease,
-    visibility 220ms;
-  visibility: visible;
+    max-height 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    margin 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  white-space: nowrap;
 }
 
 .workspace-sidebar__list {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+.workspace-sidebar__list li {
+  position: relative;
+}
+
+/* 12px left padding + 20px icon + 12px right padding = 44px when collapsed */
 .workspace-sidebar__link {
   align-items: center;
   background: transparent;
-  border: 0;
-  border-radius: 12px;
-  color: #c8ac91;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  color: #e4cab3;
   cursor: pointer;
   display: flex;
   font: inherit;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 500;
   gap: 12px;
+  height: 44px;
   min-height: 44px;
   padding: 0 12px;
+  position: relative;
   text-align: left;
   transition:
-    background-color 150ms ease,
-    color 150ms ease,
-    transform 150ms ease;
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease,
+    gap 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
   width: 100%;
 }
 
 .workspace-sidebar__link:hover {
-  background: rgb(255 255 255 / 9%);
-  color: #fff;
-  transform: translateX(2px);
+  background: rgb(255 250 245 / 11%);
+  color: #ffffff;
 }
 
 .workspace-sidebar__link[aria-current="page"] {
-  background: var(--orange);
-  color: #fff;
-  font-weight: 600;
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  border-color: rgb(255 237 213 / 22%);
+  box-shadow:
+    0 4px 14px rgba(34, 10, 3, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .workspace-sidebar__link:focus-visible {
@@ -74,11 +91,12 @@
 }
 
 .workspace-sidebar__icon {
-  color: #c8ac91;
+  color: #e4cab3;
   display: inline-flex;
-  flex: 0 0 19px;
-  height: 19px;
-  width: 19px;
+  flex: 0 0 20px;
+  height: 20px;
+  transition: color 180ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  width: 20px;
 }
 
 .workspace-sidebar__icon svg {
@@ -88,62 +106,106 @@
 
 .workspace-sidebar__link:hover .workspace-sidebar__icon,
 .workspace-sidebar__link[aria-current="page"] .workspace-sidebar__icon {
-  color: #fff;
+  color: #ffffff;
 }
 
 .workspace-sidebar__link-label {
-  max-width: 190px;
+  display: inline-block;
+  max-width: 175px;
   opacity: 1;
   overflow: hidden;
-  transition: max-width 220ms ease, opacity 140ms ease, visibility 220ms;
-  visibility: visible;
+  transform: translateX(0);
+  transition:
+    max-width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
   white-space: nowrap;
 }
 
-.workspace-sidebar--collapsed .workspace-sidebar__label,
-.workspace-sidebar--collapsed .workspace-sidebar__link-label {
-  max-width: 0;
+/* Floating dark tooltip pill rendered via ::after so inline label transitions smoothly */
+.workspace-sidebar__link::after {
+  background: #231815;
+  border: 1px solid rgba(255, 237, 213, 0.14);
+  border-radius: 9px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.28);
+  color: #ffffff;
+  content: attr(data-tooltip);
+  font-size: 12.5px;
+  font-weight: 600;
+  left: calc(100% + 14px);
+  letter-spacing: 0.01em;
+  line-height: 1.2;
   opacity: 0;
-  overflow: hidden;
+  padding: 7px 13px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-6px, -50%);
+  transition:
+    opacity 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 180ms;
   visibility: hidden;
+  white-space: nowrap;
+  z-index: 150;
 }
 
+/* Collapsed State: Smoothly collapse inline labels without jumping icon positions */
 .workspace-sidebar--collapsed .workspace-sidebar__label {
   margin-bottom: 0;
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-6px);
 }
 
 .workspace-sidebar--collapsed .workspace-sidebar__link {
-  justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+  gap: 0;
+}
+
+.workspace-sidebar--collapsed .workspace-sidebar__link-label {
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-8px);
+}
+
+.workspace-sidebar--collapsed .workspace-sidebar__link:hover::after,
+.workspace-sidebar--collapsed .workspace-sidebar__link:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
+  visibility: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .workspace-sidebar__link,
   .workspace-sidebar__label,
-  .workspace-sidebar__link-label {
+  .workspace-sidebar__link-label,
+  .workspace-sidebar__link::after {
     transition: none;
   }
 }
 
 @media (max-width: 768px) {
-  .workspace-sidebar__label {
+  .workspace-sidebar--collapsed .workspace-sidebar__label {
     margin: 0 10px 10px;
+    max-height: 20px;
     opacity: 1;
-    visibility: visible;
+    transform: translateX(0);
   }
 
-  .workspace-sidebar__link {
-    justify-content: flex-start;
-    padding: 0 12px;
-    width: 100%;
+  .workspace-sidebar--collapsed .workspace-sidebar__link {
+    gap: 12px;
   }
 
-  .workspace-sidebar__link-label {
+  .workspace-sidebar--collapsed .workspace-sidebar__link-label {
     max-width: 180px;
     opacity: 1;
-    visibility: visible;
+    transform: translateX(0);
+  }
+
+  .workspace-sidebar__link::after {
+    display: none;
   }
 
   .workspace-sidebar__system {
