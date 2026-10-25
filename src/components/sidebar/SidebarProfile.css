@@ -1,6 +1,6 @@
 .workspace-sidebar__footer {
   align-items: center;
-  border-top: 1px solid #2d4567;
+  border-top: 1px solid rgb(255 237 213 / 20%);
   display: flex;
   gap: 8px;
   min-width: 0;
@@ -17,10 +17,10 @@
 
 .workspace-sidebar__avatar {
   align-items: center;
-  background: #294467;
+  background: #9a3412;
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: 50%;
-  color: #d8e7fb;
+  color: #ffedd5;
   display: inline-flex;
   flex: 0 0 36px;
   font-size: 11px;
@@ -33,7 +33,7 @@
 
 .workspace-sidebar__online-indicator {
   background: #35c879;
-  border: 2px solid #172b4d;
+  border: 2px solid #7c2d12;
   border-radius: 50%;
   bottom: 0;
   height: 10px;
@@ -61,7 +61,7 @@
 }
 
 .workspace-sidebar__profile > span {
-  color: #9cb1ce;
+  color: #fed7aa;
   font-size: 11px;
   line-height: 1.4;
   white-space: nowrap;
@@ -77,7 +77,7 @@
   background: transparent;
   border: 0;
   border-radius: 7px;
-  color: #9cb1ce;
+  color: #fed7aa;
   cursor: pointer;
   display: inline-flex;
   height: 30px;
@@ -93,7 +93,7 @@
 }
 
 .workspace-sidebar__profile-menu-button:focus-visible {
-  outline: 3px solid #8bb8ff;
+  outline: 3px solid #fdba74;
   outline-offset: 2px;
 }
 

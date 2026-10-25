@@ -102,13 +102,13 @@
 }
 
 .request-filter:hover {
-  border-color: #c4b5fd;
+  border-color: #fdba74;
   color: var(--purple);
 }
 
 .request-filter.is-active {
   background: var(--purple-soft);
-  border-color: #c4b5fd;
+  border-color: #fdba74;
   color: var(--purple);
 }
 

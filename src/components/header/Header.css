@@ -41,9 +41,9 @@
 }
 
 .app-header__role-badge--dean {
-  background: #fffbeb;
-  border-color: #fde68a;
-  color: #b45309;
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
 }
 
 .app-header__role-badge--staff {
@@ -92,10 +92,10 @@
 
   .app-header__menu-button {
     align-items: center;
-    background: #f1f4f9;
-    border: 1px solid #e1e7f0;
+    background: #fff7ed;
+    border: 1px solid #f1e2d4;
     border-radius: 9px;
-    color: #334155;
+    color: #9a3412;
     cursor: pointer;
     display: inline-flex;
     height: 38px;
@@ -107,8 +107,8 @@
 
   .app-header__menu-button:hover,
   .app-header__menu-button:focus-visible {
-    background: #e2e8f0;
-    border-color: #cbd5e1;
+    background: #ffedd5;
+    border-color: #fdba74;
     outline: none;
   }
 

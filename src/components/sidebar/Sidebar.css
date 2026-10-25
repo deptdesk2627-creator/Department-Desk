@@ -1,7 +1,7 @@
 .workspace-sidebar {
-  background: linear-gradient(180deg, #172b4d 0%, #10213d 100%);
-  border-right: 1px solid #233c60;
-  box-shadow: 8px 0 24px rgb(16 33 61 / 8%);
+  background: linear-gradient(180deg, #9a3412 0%, #7c2d12 100%);
+  border-right: 1px solid #fefefe;
+  box-shadow: 8px 0 24px rgba(248, 248, 248, 0.08);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -60,7 +60,7 @@
 
 .workspace-sidebar__brand-mark {
   align-items: center;
-  background: var(--purple);
+  background: var(--orange);
   border-radius: 12px;
   color: #fff;
   display: inline-flex;
@@ -89,8 +89,8 @@
   font-weight: 700;
 }
 
-.workspace-sidebar__brand-name > span {
-  color: #b7c9e2;
+.workspace-sidebar__brand-name>span {
+  color: #e2cbb7;
   font-weight: 500;
 }
 
@@ -99,7 +99,7 @@
   background: rgb(255 255 255 / 8%);
   border: 1px solid rgb(255 255 255 / 12%);
   border-radius: 12px;
-  color: #e5efff;
+  color: #fff2e5;
   cursor: pointer;
   display: flex;
   gap: 10px;
@@ -164,11 +164,12 @@
 
 .workspace-sidebar__brand:focus-visible,
 .workspace-sidebar__toggle:focus-visible {
-  outline: 3px solid #8bb8ff;
+  outline: 3px solid #ffda8b;
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .workspace-sidebar,
   .workspace-sidebar__brand,
   .workspace-sidebar__brand-name,

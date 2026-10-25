@@ -57,7 +57,7 @@
 
 .request-id-badge {
   background: var(--purple-soft);
-  border: 1px solid #ddd6fe;
+  border: 1px solid #fed7aa;
   border-radius: 7px;
   color: var(--purple);
   display: inline-block;
@@ -139,7 +139,7 @@
 
 .request-status-select.status-under-review,
 .request-status-badge.status-under-review {
-  border-color: #c7d2fe;
+  border-color: #fed7aa;
 }
 
 .request-status-select.status-action-needed,
@@ -186,7 +186,7 @@
 
 .request-icon-button:hover {
   background: var(--purple-soft);
-  border-color: #ddd6fe;
+  border-color: #fed7aa;
   color: var(--purple);
 }
 

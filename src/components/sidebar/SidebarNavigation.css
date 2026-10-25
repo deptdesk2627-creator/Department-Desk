@@ -9,7 +9,7 @@
 }
 
 .workspace-sidebar__label {
-  color: #91a9c8;
+  color: #c8ac91;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -39,7 +39,7 @@
   background: transparent;
   border: 0;
   border-radius: 12px;
-  color: #c0cee2;
+  color: #c8ac91;
   cursor: pointer;
   display: flex;
   font: inherit;
@@ -63,18 +63,18 @@
 }
 
 .workspace-sidebar__link[aria-current="page"] {
-  background: var(--purple);
+  background: var(--orange);
   color: #fff;
   font-weight: 600;
 }
 
 .workspace-sidebar__link:focus-visible {
-  outline: 3px solid #8bb8ff;
+  outline: 3px solid #ffc38b;
   outline-offset: 2px;
 }
 
 .workspace-sidebar__icon {
-  color: #91a9c8;
+  color: #c8ac91;
   display: inline-flex;
   flex: 0 0 19px;
   height: 19px;
@@ -119,6 +119,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .workspace-sidebar__link,
   .workspace-sidebar__label,
   .workspace-sidebar__link-label {

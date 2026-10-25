@@ -1,8 +1,8 @@
 .auth-layout {
   align-items: stretch;
   background:
-    radial-gradient(circle at 15% 20%, rgb(105 87 232 / 12%), transparent 45%),
-    radial-gradient(circle at 85% 80%, rgb(34 160 107 / 8%), transparent 40%),
+    radial-gradient(circle at 15% 20%, rgb(var(--purple-rgb) / 12%), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgb(194 65 12 / 8%), transparent 40%),
     var(--canvas);
   display: grid;
   grid-template-columns: minmax(340px, 1.05fr) minmax(360px, 1fr);
@@ -10,7 +10,7 @@
 }
 
 .auth-layout__brand-panel {
-  background: linear-gradient(165deg, #172b4d 0%, #10213d 60%, #1b1f38 100%);
+  background: linear-gradient(165deg, #9a3412 0%, #7c2d12 60%, #431407 100%);
   color: #f8fafc;
   display: flex;
   flex-direction: column;
@@ -21,7 +21,7 @@
 }
 
 .auth-layout__brand-panel::after {
-  background: radial-gradient(circle, rgb(105 87 232 / 28%) 0%, transparent 70%);
+  background: radial-gradient(circle, rgb(var(--purple-rgb) / 28%) 0%, transparent 70%);
   bottom: -120px;
   content: "";
   height: 360px;
@@ -41,7 +41,7 @@
   align-items: center;
   background: var(--purple);
   border-radius: 12px;
-  box-shadow: 0 8px 20px rgb(105 87 232 / 35%);
+  box-shadow: 0 8px 20px rgb(var(--purple-rgb) / 35%);
   color: #fff;
   display: inline-flex;
   font-size: 21px;
@@ -62,7 +62,7 @@
 }
 
 .auth-layout__brand-name span {
-  color: #b7c9e2;
+  color: #fed7aa;
   font-weight: 500;
 }
 
@@ -97,7 +97,7 @@
 }
 
 .auth-layout__hero p {
-  color: #b7c9e2;
+  color: #fed7aa;
   font-size: 14px;
   line-height: 1.6;
   margin: 0 0 28px;
@@ -138,7 +138,7 @@
 }
 
 .auth-layout__footer {
-  color: #8fa6c6;
+  color: #fdba74;
   font-size: 11px;
   margin: 0;
   position: relative;

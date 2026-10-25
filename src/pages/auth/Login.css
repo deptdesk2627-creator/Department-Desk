@@ -129,7 +129,7 @@
 
 .login-demo-role:hover {
   background: var(--purple-soft);
-  border-color: #c4b5fd;
+  border-color: #fdba74;
   box-shadow: 0 4px 12px rgb(var(--purple-rgb) / 10%);
   transform: translateY(-1px);
 }

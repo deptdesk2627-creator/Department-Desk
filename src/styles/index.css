@@ -1,21 +1,21 @@
 :root {
-  --purple: #6957e8;
-  --purple-rgb: 105 87 232;
-  --purple-hover: #5745d5;
-  --purple-soft: #f0edff;
+  --purple: #ea580c;
+  --purple-rgb: 234 88 12;
+  --purple-hover: #c2410c;
+  --purple-soft: #fff7ed;
   --green: #16a34a;
   --green-soft: #dcfce7;
-  --orange: #d97706;
-  --orange-soft: #fef3c7;
+  --orange: #c2410c;
+  --orange-soft: #ffedd5;
   --red: #dc2626;
   --red-soft: #fee2e2;
   --ink: #0f172a;
   --ink-secondary: #334155;
   --muted: #64748b;
-  --line: #e2e8f0;
-  --line-subtle: #f1f5f9;
-  --canvas: #f8fafc;
-  --sidebar: #172b4d;
+  --line: #f1e2d4;
+  --line-subtle: #f8eee5;
+  --canvas: #fffaf5;
+  --sidebar: #7c2d12;
 
   --font-sans:
     Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,

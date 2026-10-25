@@ -70,7 +70,7 @@
 }
 
 .request-kanban-card:hover {
-  border-color: #c4b5fd;
+  border-color: #fdba74;
   box-shadow: 0 6px 16px rgb(15 23 42 / 8%);
   transform: translateY(-1px);
 }

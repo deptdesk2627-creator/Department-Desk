@@ -122,8 +122,8 @@
 .status-started,
 .status-in-progress,
 .status-under-review {
-  background: #eef2ff;
-  color: #4338ca;
+  background: #fff7ed;
+  color: #c2410c;
 }
 
 .status-waiting,
