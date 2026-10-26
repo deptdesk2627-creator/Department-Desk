@@ -12,6 +12,7 @@ function TransactionDrawer({
   onClose,
 }) {
   if (!request) return null;
+  const isIncoming = request.direction === "incoming";
 
   return (
     <div className="request-drawer-overlay">
@@ -60,35 +61,51 @@ function TransactionDrawer({
           className="request-drawer-section"
           aria-labelledby="request-summary-heading"
         >
-          <h3 id="request-summary-heading">Request summary</h3>
+          <h3 id="request-summary-heading">
+            {isIncoming ? "Incoming document summary" : "Request summary"}
+          </h3>
           <dl className="request-summary-grid">
             <div>
-              <dt>Requested by</dt>
+              <dt>{isIncoming ? "Sender / Contact" : "Requested by"}</dt>
               <dd>{request.student || "—"}</dd>
             </div>
             <div>
-              <dt>Office</dt>
+              <dt>{isIncoming ? "From office" : "Office"}</dt>
               <dd>{requestOffice(request)}</dd>
             </div>
             <div>
-              <dt>Submitted date</dt>
+              <dt>{isIncoming ? "Date received" : "Submitted date"}</dt>
               <dd>{formatDateTime(request.dateTime)}</dd>
             </div>
             <div>
               <dt>Category</dt>
               <dd>{requestCategory(request)}</dd>
             </div>
+            {isIncoming && (
+              <>
+                <div>
+                  <dt>Signed by our office</dt>
+                  <dd>{request.signedByOffice || "Unsigned"}</dd>
+                </div>
+                <div>
+                  <dt>Sent out / Forwarded to</dt>
+                  <dd>{request.forwardedTo || "Not sent out"}</dd>
+                </div>
+              </>
+            )}
           </dl>
         </section>
         <section className="request-notes-box">
-          <h3>Request notes</h3>
+          <h3>{isIncoming ? "Routing & signature notes" : "Request notes"}</h3>
           <p>{request.notes || request.description || "No request notes provided."}</p>
         </section>
         <section
           className="request-drawer-section request-trail-section"
           aria-labelledby="request-trail-heading"
         >
-          <h3 id="request-trail-heading">Approval trail</h3>
+          <h3 id="request-trail-heading">
+            {isIncoming ? "Document & signature trail" : "Approval trail"}
+          </h3>
           <ol className="request-timeline">
             {trail.map((item, index) => (
               <li
@@ -109,7 +126,9 @@ function TransactionDrawer({
               <li className="is-current">
                 <span className="request-timeline-marker" />
                 <div>
-                  <strong>Form Submitted</strong>
+                  <strong>
+                    {isIncoming ? "Document Received" : "Form Submitted"}
+                  </strong>
                 </div>
               </li>
             )}

@@ -1,6 +1,7 @@
 import "./TransactionKanban.css";
 
 function TransactionKanban({
+  activeTab = "outgoing",
   requests,
   statuses,
   statusClass,
@@ -10,6 +11,8 @@ function TransactionKanban({
   formatDate,
   onSelect,
 }) {
+  const isIncoming = activeTab === "incoming";
+
   return (
     <div className="request-kanban">
       {statuses.map((status) => {
@@ -46,7 +49,20 @@ function TransactionKanban({
                     </button>
                   </div>
                   <h4>{requestName(request)}</h4>
-                  <p>{requestOffice(request)}</p>
+                  <p>
+                    {isIncoming
+                      ? `From: ${requestOffice(request)}`
+                      : requestOffice(request)}
+                  </p>
+                  {isIncoming && (
+                    <div className="request-kanban-incoming-meta">
+                      <span>{request.signedByOffice || "Unsigned"}</span>
+                      {request.forwardedTo &&
+                        request.forwardedTo !== "Not sent out" && (
+                          <span>→ {request.forwardedTo}</span>
+                        )}
+                    </div>
+                  )}
                   <div className="request-kanban-card-footer">
                     <span>{request.student || "Requester not specified"}</span>
                     <time>{formatDate(request.dateTime)}</time>
@@ -54,7 +70,7 @@ function TransactionKanban({
                 </article>
               ))}
               {!statusRequests.length && (
-                <p className="request-column-empty">No requests</p>
+                <p className="request-column-empty">No items</p>
               )}
             </div>
           </section>

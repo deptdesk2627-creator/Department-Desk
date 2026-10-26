@@ -3,8 +3,20 @@ import { getRequestStatus } from "../../../constants/requestStatus";
 import { formatDate, formatDateTime } from "../../../utils/formatters";
 import { matchesQuery } from "../../../utils/search";
 
-const statuses = ["Pending", "Under Review", "Action Needed", "Approved", "Archived"];
-const filters = ["All Requests", ...statuses];
+const outgoingStatuses = [
+  "Pending",
+  "Under Review",
+  "Action Needed",
+  "Approved",
+  "Archived",
+];
+const incomingStatuses = [
+  "Received",
+  "For Signature",
+  "Signed by Office",
+  "Sent Out",
+  "Archived",
+];
 const offices = [
   "Registrar",
   "Office of the President",
@@ -16,18 +28,38 @@ const offices = [
   "Other",
 ];
 const categories = ["Document", "Request"];
-const emptyForm = () => ({
+const signatureOptions = [
+  "Unsigned",
+  "Signed by Secretary",
+  "Signed by Dean",
+  "Signed by Both",
+];
+const forwardedDestinations = [
+  "Not sent out",
+  "Returned to Sender",
+  ...offices,
+];
+
+const emptyForm = (direction = "outgoing") => ({
+  direction,
   dateTime: new Date().toISOString().slice(0, 16),
   description: "",
   document: "",
   student: "",
   office: "Registrar",
   type: "Document",
-  status: "Pending",
+  status: direction === "incoming" ? "Received" : "Pending",
+  signedByOffice: "Unsigned",
+  forwardedTo: "Not sent out",
 });
 
 function statusClass(status) {
-  return `status-${getRequestStatus(status).toLowerCase().replaceAll(" ", "-")}`;
+  const normalized = getRequestStatus(status);
+  if (normalized === "Received") return "status-pending";
+  if (normalized === "For Signature") return "status-action-needed";
+  if (normalized === "Signed by Office") return "status-under-review";
+  if (normalized === "Sent Out") return "status-approved";
+  return `status-${normalized.toLowerCase().replaceAll(" ", "-")}`;
 }
 
 function requestName(request) {
@@ -42,11 +74,16 @@ function requestCategory(request) {
   return request.category || request.type || "Request";
 }
 
+function requestDirection(request) {
+  return request?.direction === "incoming" ? "incoming" : "outgoing";
+}
+
 function csvValue(value) {
   return `"${String(value || "").replaceAll('"', '""')}"`;
 }
 
 export function useTransactionManager({ requests, setRequests, search }) {
+  const [activeTab, setActiveTabState] = useState("outgoing");
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [activeFilter, setActiveFilter] = useState("All Requests");
   const [officeFilter, setOfficeFilter] = useState("All Offices");
@@ -54,7 +91,29 @@ export function useTransactionManager({ requests, setRequests, search }) {
   const [requestSearch, setRequestSearch] = useState("");
   const [formError, setFormError] = useState("");
   const [view, setView] = useState("table");
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => emptyForm("outgoing"));
+
+  const statuses =
+    activeTab === "incoming" ? incomingStatuses : outgoingStatuses;
+  const filters = useMemo(() => ["All Requests", ...statuses], [statuses]);
+
+  function setActiveTab(nextTab) {
+    const resolvedTab = nextTab === "incoming" ? "incoming" : "outgoing";
+    setActiveTabState(resolvedTab);
+    setActiveFilter("All Requests");
+    setForm((current) => ({
+      ...current,
+      direction: resolvedTab,
+      status:
+        resolvedTab === "incoming"
+          ? incomingStatuses.includes(current.status)
+            ? current.status
+            : "Received"
+          : outgoingStatuses.includes(current.status)
+            ? current.status
+            : "Pending",
+    }));
+  }
 
   useEffect(() => {
     if (!selectedTransaction) return undefined;
@@ -65,9 +124,32 @@ export function useTransactionManager({ requests, setRequests, search }) {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [selectedTransaction]);
 
+  const allRequestItems = useMemo(
+    () => (Array.isArray(requests) ? requests.filter(Boolean) : []),
+    [requests],
+  );
+
+  const outgoingRequests = useMemo(
+    () =>
+      allRequestItems.filter(
+        (request) => requestDirection(request) === "outgoing",
+      ),
+    [allRequestItems],
+  );
+
+  const incomingRequests = useMemo(
+    () =>
+      allRequestItems.filter(
+        (request) => requestDirection(request) === "incoming",
+      ),
+    [allRequestItems],
+  );
+
+  const tabRequests =
+    activeTab === "incoming" ? incomingRequests : outgoingRequests;
+
   const visibleRequests = useMemo(() => {
-    const requestItems = Array.isArray(requests) ? requests.filter(Boolean) : [];
-    return requestItems.filter((request) => {
+    return tabRequests.filter((request) => {
       const normalizedStatus = getRequestStatus(request.status);
       const office = requestOffice(request);
       const category = requestCategory(request);
@@ -94,6 +176,8 @@ export function useTransactionManager({ requests, setRequests, search }) {
         office,
         category,
         normalizedStatus,
+        request.signedByOffice,
+        request.forwardedTo,
         request.dateTime,
       ];
       return (
@@ -105,7 +189,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
       );
     });
   }, [
-    requests,
+    tabRequests,
     search,
     requestSearch,
     activeFilter,
@@ -135,18 +219,44 @@ export function useTransactionManager({ requests, setRequests, search }) {
     }
     setFormError("");
     const submittedAt = Date.now();
+    const isIncoming = form.direction === "incoming";
+    const prefix = isIncoming ? "INC" : "REQ";
+    const resolvedStatus = getRequestStatus(
+      form.status || (isIncoming ? "Received" : "Pending"),
+    );
+    const resolvedSigned = isIncoming
+      ? form.signedByOffice || "Unsigned"
+      : undefined;
+    const resolvedForwarded = isIncoming
+      ? form.forwardedTo || "Not sent out"
+      : undefined;
+
+    const initialHistory = [
+      {
+        status: resolvedStatus,
+        location: isIncoming
+          ? resolvedForwarded && resolvedForwarded !== "Not sent out"
+            ? `${form.office} → ${resolvedForwarded}`
+            : `From ${form.office}`
+          : form.office,
+        dateTime: new Date().toISOString(),
+      },
+    ];
+
     const request = {
       ...form,
-      id: `REQ-${new Date(submittedAt).getFullYear()}-${submittedAt.toString().slice(-6)}`,
+      direction: isIncoming ? "incoming" : "outgoing",
+      status: resolvedStatus,
+      ...(isIncoming
+        ? {
+            signedByOffice: resolvedSigned,
+            forwardedTo: resolvedForwarded,
+          }
+        : {}),
+      id: `${prefix}-${new Date(submittedAt).getFullYear()}-${submittedAt.toString().slice(-6)}`,
       location: form.office,
       notes: form.description,
-      history: [
-        {
-          status: getRequestStatus(form.status),
-          location: form.office,
-          dateTime: new Date().toISOString(),
-        },
-      ],
+      history: initialHistory,
     };
     setRequests((current) => {
       const currentRequests = Array.isArray(current) ? current : [];
@@ -160,7 +270,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
       }
       return [{ ...request, id }, ...currentRequests];
     });
-    setForm(emptyForm());
+    setForm(emptyForm(isIncoming ? "incoming" : "outgoing"));
     return true;
   }
 
@@ -200,6 +310,73 @@ export function useTransactionManager({ requests, setRequests, search }) {
     );
   }
 
+  function applyIncomingChanges(request, changes) {
+    const nextSigned =
+      changes.signedByOffice !== undefined
+        ? changes.signedByOffice
+        : request.signedByOffice || "Unsigned";
+    const nextForwarded =
+      changes.forwardedTo !== undefined
+        ? changes.forwardedTo
+        : request.forwardedTo || "Not sent out";
+    let nextStatus =
+      changes.status !== undefined
+        ? getRequestStatus(changes.status)
+        : getRequestStatus(request.status);
+
+    const history = Array.isArray(request.history) ? [...request.history] : [];
+
+    if (
+      changes.signedByOffice !== undefined &&
+      changes.signedByOffice !== request.signedByOffice
+    ) {
+      if (
+        changes.signedByOffice !== "Unsigned" &&
+        (nextStatus === "Received" || nextStatus === "For Signature")
+      ) {
+        nextStatus = "Signed by Office";
+      }
+      history.push({
+        status: changes.signedByOffice,
+        location: "Our Office",
+        dateTime: new Date().toISOString(),
+      });
+    }
+
+    if (
+      changes.forwardedTo !== undefined &&
+      changes.forwardedTo !== request.forwardedTo
+    ) {
+      if (changes.forwardedTo !== "Not sent out") {
+        nextStatus = "Sent Out";
+        history.push({
+          status: "Sent Out",
+          location: `Sent to ${changes.forwardedTo}`,
+          dateTime: new Date().toISOString(),
+        });
+      }
+    }
+
+    return {
+      ...request,
+      status: nextStatus,
+      signedByOffice: nextSigned,
+      forwardedTo: nextForwarded,
+      history,
+    };
+  }
+
+  function updateIncomingRequest(id, changes) {
+    setRequests((current) =>
+      (Array.isArray(current) ? current : []).map((request) =>
+        request?.id === id ? applyIncomingChanges(request, changes) : request,
+      ),
+    );
+    setSelectedTransaction((current) =>
+      current?.id === id ? applyIncomingChanges(current, changes) : current,
+    );
+  }
+
   function deleteRequest(id) {
     setRequests((current) =>
       (Array.isArray(current) ? current : []).filter(
@@ -210,26 +387,53 @@ export function useTransactionManager({ requests, setRequests, search }) {
   }
 
   function exportRequest(request) {
-    const headings = [
-      "Request ID",
-      "Form Name",
-      "Requested By",
-      "Office",
-      "Date Submitted",
-      "Category",
-      "Status",
-      "Request Notes",
-    ];
-    const values = [
-      request.id,
-      requestName(request),
-      request.student,
-      requestOffice(request),
-      formatDateTime(request.dateTime),
-      requestCategory(request),
-      getRequestStatus(request.status),
-      request.notes || request.description,
-    ];
+    const isIncoming = requestDirection(request) === "incoming";
+    const headings = isIncoming
+      ? [
+          "Document ID",
+          "Document Name",
+          "Sender / Requested By",
+          "From Office",
+          "Date Received",
+          "Category",
+          "Our Office Signature",
+          "Sent Out To",
+          "Status",
+          "Notes",
+        ]
+      : [
+          "Request ID",
+          "Form Name",
+          "Requested By",
+          "Office",
+          "Date Submitted",
+          "Category",
+          "Status",
+          "Request Notes",
+        ];
+    const values = isIncoming
+      ? [
+          request.id,
+          requestName(request),
+          request.student,
+          requestOffice(request),
+          formatDateTime(request.dateTime),
+          requestCategory(request),
+          request.signedByOffice || "Unsigned",
+          request.forwardedTo || "Not sent out",
+          getRequestStatus(request.status),
+          request.notes || request.description,
+        ]
+      : [
+          request.id,
+          requestName(request),
+          request.student,
+          requestOffice(request),
+          formatDateTime(request.dateTime),
+          requestCategory(request),
+          getRequestStatus(request.status),
+          request.notes || request.description,
+        ];
     const blob = new Blob(
       [[headings, values].map((row) => row.map(csvValue).join(",")).join("\r\n")],
       { type: "text/csv;charset=utf-8" },
@@ -246,7 +450,17 @@ export function useTransactionManager({ requests, setRequests, search }) {
 
   const requestTrail = selectedTransaction
     ? [
-        { title: "Form Submitted", dateTime: selectedTransaction.dateTime },
+        {
+          title:
+            requestDirection(selectedTransaction) === "incoming"
+              ? "Document Received"
+              : "Form Submitted",
+          dateTime: selectedTransaction.dateTime,
+          office:
+            requestDirection(selectedTransaction) === "incoming"
+              ? `From ${requestOffice(selectedTransaction)}`
+              : undefined,
+        },
         ...(Array.isArray(selectedTransaction.history)
           ? selectedTransaction.history.filter(Boolean)
           : []
@@ -260,6 +474,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
 
   return {
     activeFilter,
+    activeTab,
     addRequest,
     categories,
     categoryFilter,
@@ -268,10 +483,16 @@ export function useTransactionManager({ requests, setRequests, search }) {
     filters,
     form,
     formError,
+    forwardedDestinations,
     hasActiveFilters,
+    incomingCount: incomingRequests.length,
+    incomingStatuses,
     officeFilter,
     offices,
+    outgoingCount: outgoingRequests.length,
+    outgoingStatuses,
     requestCategory,
+    requestDirection,
     requestName,
     requestOffice,
     requestSearch,
@@ -279,14 +500,18 @@ export function useTransactionManager({ requests, setRequests, search }) {
     resetFilters,
     selectedTransaction,
     setActiveFilter,
+    setActiveTab,
     setCategoryFilter,
     setForm,
     setOfficeFilter,
     setRequestSearch,
     setSelectedTransaction,
     setView,
+    signatureOptions,
     statusClass,
     statuses,
+    tabTotalRequests: tabRequests.length,
+    updateIncomingRequest,
     updateStatus,
     view,
     visibleRequests,

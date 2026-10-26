@@ -6,6 +6,14 @@ export const REQUEST_STATUSES = Object.freeze({
   ARCHIVED: "Archived",
 });
 
+export const INCOMING_REQUEST_STATUSES = Object.freeze({
+  RECEIVED: "Received",
+  FOR_SIGNATURE: "For Signature",
+  SIGNED_BY_OFFICE: "Signed by Office",
+  SENT_OUT: "Sent Out",
+  ARCHIVED: "Archived",
+});
+
 const legacyStatuses = {
   "Not started": REQUEST_STATUSES.PENDING,
   Started: REQUEST_STATUSES.UNDER_REVIEW,
@@ -24,6 +32,7 @@ export function isRequestOpen(status) {
   const normalizedStatus = getRequestStatus(status);
   return (
     normalizedStatus !== REQUEST_STATUSES.APPROVED &&
+    normalizedStatus !== INCOMING_REQUEST_STATUSES.SENT_OUT &&
     normalizedStatus !== REQUEST_STATUSES.ARCHIVED
   );
 }
@@ -32,6 +41,8 @@ export function isRequestWaiting(status) {
   const normalizedStatus = getRequestStatus(status);
   return (
     normalizedStatus === REQUEST_STATUSES.PENDING ||
-    normalizedStatus === REQUEST_STATUSES.ACTION_NEEDED
+    normalizedStatus === REQUEST_STATUSES.ACTION_NEEDED ||
+    normalizedStatus === INCOMING_REQUEST_STATUSES.RECEIVED ||
+    normalizedStatus === INCOMING_REQUEST_STATUSES.FOR_SIGNATURE
   );
 }

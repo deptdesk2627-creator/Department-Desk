@@ -26,6 +26,7 @@ test("validates and adds a request with a collision-free ID and initial history"
   const addRequest = setRequests.mock.calls[0][0];
   const [request] = addRequest([]);
   expect(request.id).toMatch(/^REQ-\d{4}-\d{6}$/);
+  expect(request.direction).toBe("outgoing");
   expect(request.student).toBe("Jordan Lee");
   expect(request.history).toHaveLength(1);
   expect(request.history[0].status).toBe("Under Review");
@@ -71,4 +72,62 @@ test("filters requests by status, office, category, search, and resets filters",
   act(() => result.current.resetFilters());
   expect(result.current.hasActiveFilters).toBe(false);
   expect(result.current.visibleRequests).toHaveLength(2);
+});
+
+test("logs an incoming document with INC prefix and updates signature and forwarding state", () => {
+  const setRequests = jest.fn();
+  const initialRequests = [
+    {
+      id: "REQ-2026-000001",
+      direction: "outgoing",
+      student: "Jordan Lee",
+      document: "Leave form",
+      office: "HR Office",
+      type: "Request",
+      status: "Pending",
+    },
+    {
+      id: "INC-2026-000002",
+      direction: "incoming",
+      student: "Registrar Clerk",
+      document: "Cross-enrollment endorsement",
+      office: "Registrar",
+      type: "Document",
+      status: "Received",
+      signedByOffice: "Unsigned",
+      forwardedTo: "Not sent out",
+      history: [{ id: "h-1", status: "Received", note: "Logged" }],
+    },
+  ];
+
+  const { result } = renderHook(() =>
+    useTransactionManager({
+      requests: initialRequests,
+      setRequests,
+      search: "",
+    }),
+  );
+
+  expect(result.current.outgoingCount).toBe(1);
+  expect(result.current.incomingCount).toBe(1);
+  expect(result.current.visibleRequests).toEqual([initialRequests[0]]);
+
+  act(() => result.current.setActiveTab("incoming"));
+  expect(result.current.visibleRequests).toEqual([initialRequests[1]]);
+
+  act(() => {
+    result.current.updateIncomingRequest("INC-2026-000002", {
+      signedByOffice: "Signed by Dean",
+      forwardedTo: "Dean's Office",
+    });
+  });
+
+  expect(setRequests).toHaveBeenCalledTimes(1);
+  const updater = setRequests.mock.calls[0][0];
+  const updated = updater(initialRequests);
+  expect(updated[1].signedByOffice).toBe("Signed by Dean");
+  expect(updated[1].forwardedTo).toBe("Dean's Office");
+  expect(updated[1].history).toHaveLength(3);
+  expect(updated[1].history[1].status).toBe("Signed by Dean");
+  expect(updated[1].history[2].status).toBe("Sent Out");
 });

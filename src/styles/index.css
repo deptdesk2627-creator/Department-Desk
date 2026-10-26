@@ -149,18 +149,21 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-:root[data-theme="dark"] .inventory-folder-tab {
+:root[data-theme="dark"] .inventory-folder-tab,
+:root[data-theme="dark"] .transactions-folder-tab {
   background: #152033;
   border-color: var(--line);
   color: var(--muted);
 }
 
-:root[data-theme="dark"] .inventory-folder-tab:hover:not(.is-active) {
+:root[data-theme="dark"] .inventory-folder-tab:hover:not(.is-active),
+:root[data-theme="dark"] .transactions-folder-tab:hover:not(.is-active) {
   background: #1b2840;
   color: var(--ink);
 }
 
-:root[data-theme="dark"] .inventory-folder-tab.is-active {
+:root[data-theme="dark"] .inventory-folder-tab.is-active,
+:root[data-theme="dark"] .transactions-folder-tab.is-active {
   background: var(--surface);
   border-color: var(--line);
   border-bottom: 2px solid var(--surface);

@@ -7,23 +7,74 @@ function TransactionForm({
   formError,
   onSubmit,
   onCancel,
-  offices,
-  categories,
-  statuses,
+  offices = [],
+  categories = [],
+  statuses = [],
+  outgoingStatuses = [],
+  incomingStatuses = [],
+  signatureOptions = [
+    "Unsigned",
+    "Signed by Secretary",
+    "Signed by Dean",
+    "Signed by Both",
+  ],
+  forwardedDestinations = ["Not sent out", "Returned to Sender"],
 }) {
+  const isIncoming = form.direction === "incoming";
+  const activeStatuses = isIncoming
+    ? incomingStatuses.length
+      ? incomingStatuses
+      : statuses
+    : outgoingStatuses.length
+      ? outgoingStatuses
+      : statuses;
+
+  function handleDirectionChange(nextDirection) {
+    setForm({
+      ...form,
+      direction: nextDirection,
+      status: nextDirection === "incoming" ? "Received" : "Pending",
+    });
+  }
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onCancel}
       eyebrow="OFFICE WORKSPACE · REQUESTS"
-      title="Log a new request"
-      subtitle="Record a document or service request and assign its destination office."
+      title={isIncoming ? "Log an incoming document" : "Log a new request"}
+      subtitle={
+        isIncoming
+          ? "Record a document or request received from another office, track if our office signed it, and log where it is sent out."
+          : "Record an outgoing document or service request and assign its destination office."
+      }
       titleId="new-transaction-title"
       className="transaction-modal form-modal"
     >
+      <div
+        className="transaction-direction-switch"
+        role="group"
+        aria-label="Request direction"
+      >
+        <button
+          type="button"
+          className={`transaction-direction-btn ${!isIncoming ? "is-active" : ""}`}
+          onClick={() => handleDirectionChange("outgoing")}
+        >
+          ↗ Outgoing request
+        </button>
+        <button
+          type="button"
+          className={`transaction-direction-btn ${isIncoming ? "is-active" : ""}`}
+          onClick={() => handleDirectionChange("incoming")}
+        >
+          ↙ Incoming from other office
+        </button>
+      </div>
+
       <form className="module-form transaction-form" onSubmit={onSubmit}>
         <label className="transaction-form-name">
-          Form name
+          {isIncoming ? "Document / request name" : "Form name"}
           <input
             autoFocus
             required
@@ -31,22 +82,30 @@ function TransactionForm({
             onChange={(event) =>
               setForm({ ...form, document: event.target.value })
             }
-            placeholder="Name of the form or request"
+            placeholder={
+              isIncoming
+                ? "e.g. Memorandum of Agreement, Budget Endorsement"
+                : "Name of the form or request"
+            }
           />
         </label>
         <label>
-          Requested by
+          {isIncoming ? "Sender / Contact person" : "Requested by"}
           <input
             required
             value={form.student}
             onChange={(event) => {
               setForm({ ...form, student: event.target.value });
             }}
-            placeholder="Student or staff name"
+            placeholder={
+              isIncoming
+                ? "Person who sent or delivered it"
+                : "Student or staff name"
+            }
           />
         </label>
         <label>
-          Date and time
+          {isIncoming ? "Date & time received" : "Date and time"}
           <input
             required
             type="datetime-local"
@@ -57,7 +116,7 @@ function TransactionForm({
           />
         </label>
         <label>
-          Office
+          {isIncoming ? "From office (Origin)" : "Office"}
           <select
             required
             value={form.office}
@@ -91,20 +150,58 @@ function TransactionForm({
               setForm({ ...form, status: event.target.value })
             }
           >
-            {statuses.map((status) => (
+            {activeStatuses.map((status) => (
               <option key={status}>{status}</option>
             ))}
           </select>
         </label>
+        {isIncoming && (
+          <>
+            <label>
+              Signed by our office
+              <select
+                value={form.signedByOffice || "Unsigned"}
+                onChange={(event) =>
+                  setForm({ ...form, signedByOffice: event.target.value })
+                }
+              >
+                {signatureOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Sent out / Forwarded to
+              <select
+                value={form.forwardedTo || "Not sent out"}
+                onChange={(event) =>
+                  setForm({ ...form, forwardedTo: event.target.value })
+                }
+              >
+                {forwardedDestinations.map((destination) => (
+                  <option key={destination} value={destination}>
+                    {destination}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
         <label className="transaction-description">
-          Request notes
+          {isIncoming ? "Routing & signature notes" : "Request notes"}
           <textarea
             rows="2"
             value={form.description}
             onChange={(event) =>
               setForm({ ...form, description: event.target.value })
             }
-            placeholder="Add details or purpose (optional)"
+            placeholder={
+              isIncoming
+                ? "Add remarks on signatures, endorsements, or release instructions (optional)"
+                : "Add details or purpose (optional)"
+            }
           />
         </label>
         <div className="transaction-form-actions">
@@ -118,7 +215,7 @@ function TransactionForm({
             </button>
           )}
           <button className="primary-button" type="submit">
-            ＋ Add request
+            {isIncoming ? "＋ Log incoming" : "＋ Add request"}
           </button>
         </div>
       </form>

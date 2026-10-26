@@ -3,6 +3,7 @@ import TransactionKanban from "./TransactionKanban";
 import TransactionTable from "./TransactionTable";
 
 function TransactionList({
+  activeTab = "outgoing",
   requests,
   totalRequests,
   activeFilter,
@@ -21,6 +22,8 @@ function TransactionList({
   view,
   setView,
   statuses,
+  signatureOptions = [],
+  forwardedDestinations = [],
   statusClass,
   getRequestStatus,
   requestName,
@@ -28,23 +31,35 @@ function TransactionList({
   requestCategory,
   formatDate,
   onUpdateStatus,
+  onUpdateIncoming,
   onSelect,
   onExport,
   onDelete,
   readOnly = false,
 }) {
+  const isIncoming = activeTab === "incoming";
+
   return (
     <section
-      className="card panel module-list-panel request-tracker-panel"
+      className={`card panel module-list-panel request-tracker-panel transactions-folder-panel ${
+        isIncoming
+          ? "transactions-folder-panel--incoming"
+          : "transactions-folder-panel--outgoing"
+      }`}
       aria-labelledby="transactions-list-title"
     >
       <div className="request-toolbar">
         <div className="request-toolbar-heading">
           <div>
             <h2 id="transactions-list-title">
-              Requests <span className="count-badge">{requests.length}</span>
+              {isIncoming ? "Incoming Documents & Requests" : "Outgoing Requests"}{" "}
+              <span className="count-badge">{requests.length}</span>
             </h2>
-            <p>Search, filter, and review submitted requests.</p>
+            <p>
+              {isIncoming
+                ? "Track documents from other offices, record if signed by our office, and log where they are sent out."
+                : "Search, filter, and review submitted outgoing requests."}
+            </p>
           </div>
           <div className="request-view-toggle" role="group" aria-label="Request display">
             <button
@@ -93,7 +108,11 @@ function TransactionList({
               <input
                 type="search"
                 aria-label="Search requests"
-                placeholder="Search requests..."
+                placeholder={
+                  isIncoming
+                    ? "Search incoming documents, sender, office..."
+                    : "Search requests..."
+                }
                 value={requestSearch}
                 onChange={(event) => setRequestSearch(event.target.value)}
               />
@@ -141,8 +160,11 @@ function TransactionList({
       {requests.length ? (
         view === "table" ? (
           <TransactionTable
+            activeTab={activeTab}
             requests={requests}
             statuses={statuses}
+            signatureOptions={signatureOptions}
+            forwardedDestinations={forwardedDestinations}
             statusClass={statusClass}
             getRequestStatus={getRequestStatus}
             requestName={requestName}
@@ -150,6 +172,7 @@ function TransactionList({
             requestCategory={requestCategory}
             formatDate={formatDate}
             onUpdateStatus={onUpdateStatus}
+            onUpdateIncoming={onUpdateIncoming}
             onSelect={onSelect}
             onExport={onExport}
             onDelete={onDelete}
@@ -157,6 +180,7 @@ function TransactionList({
           />
         ) : (
           <TransactionKanban
+            activeTab={activeTab}
             requests={requests}
             statuses={statuses}
             statusClass={statusClass}
@@ -170,8 +194,10 @@ function TransactionList({
       ) : (
         <p className="request-empty-state">
           {totalRequests
-            ? "No requests match the selected filters."
-            : "No requests yet. Add one above to get started."}
+            ? "No items match the selected filters."
+            : isIncoming
+              ? "No incoming documents yet. Click '＋ Log incoming' above to track documents from other offices."
+              : "No outgoing requests yet. Click '＋ New request' above to get started."}
         </p>
       )}
     </section>
