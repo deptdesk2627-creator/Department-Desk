@@ -1,7 +1,6 @@
-
 .deptdesk-task-container {
   padding: 32px;
-  background-color: #f8fafc;
+  background: transparent;
   min-height: 100vh;
   color: #1e293b;
   font-family:
@@ -22,4 +21,3 @@
     min-height: auto;
   }
 }
-  
