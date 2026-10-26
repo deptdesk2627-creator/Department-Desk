@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import "../inventory/Inventory.css";
 import "./InventoryStaff.css";
 import { PageHeader } from "../../components/ui";
@@ -24,6 +24,7 @@ function StaffInventory({
   search = "",
 }) {
   const [staffName, setStaffName] = useStoredState("officeflow.staff-name", "");
+  const [supplySearch, setSupplySearch] = useState("");
   const person = String(staffName || "").trim();
 
   const inventoryItems = useMemo(
@@ -47,9 +48,18 @@ function StaffInventory({
   const visibleItems = useMemo(
     () =>
       inventoryItems.filter((item) =>
-        matchesQuery(search, getProductId(item), item.name, item.unit),
+        matchesQuery(search, getProductId(item), item.name, item.unit) &&
+        matchesQuery(
+          supplySearch,
+          getProductId(item),
+          item.productId,
+          item.id,
+          item.name,
+          item.unit,
+          item.quantity,
+        ),
       ),
-    [inventoryItems, search],
+    [inventoryItems, search, supplySearch],
   );
 
   const {
@@ -147,6 +157,8 @@ function StaffInventory({
       <StaffSupplyList
         items={visibleItems}
         totalItems={inventoryItems.length}
+        supplySearch={supplySearch}
+        onSupplySearchChange={setSupplySearch}
         canRecord={Boolean(person)}
         getMyBorrowedBalance={getMyBorrowedBalance}
         onOpenAction={openAction}

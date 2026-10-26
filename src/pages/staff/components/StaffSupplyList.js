@@ -8,6 +8,8 @@ import {
 function StaffSupplyList({
   items,
   totalItems,
+  supplySearch,
+  onSupplySearchChange,
   canRecord,
   getMyBorrowedBalance,
   onOpenAction,
@@ -28,6 +30,29 @@ function StaffSupplyList({
               : "Enter your name above to borrow, use, or return items."}
           </p>
         </div>
+        <label className="inventory-search-box staff-supply-search">
+          <span className="inventory-search-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </span>
+          <input
+            type="search"
+            value={supplySearch}
+            onChange={(event) => onSupplySearchChange(event.target.value)}
+            placeholder="Search supplies by name or ID..."
+            aria-label="Search supplies"
+          />
+        </label>
       </div>
       {items.length ? (
         <div className="table-scroll module-table-scroll">
