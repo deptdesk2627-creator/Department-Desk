@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { canBorrowItem, canUseItem } from "../utils/inventory";
 
 const STATUS_BY_ACTION = {
   Borrow: "Borrowed",
@@ -71,6 +72,15 @@ export function useInventoryActions({
     const amount = Number(quantity);
     const item =
       inventoryItems.find((stock) => stock.id === action.item.id) || action.item;
+
+    if ((action.type === "Borrow" || action.type === "Return") && !canBorrowItem(item)) {
+      setError("This product is usable only and cannot be borrowed or returned.");
+      return;
+    }
+    if (action.type === "Use" && !canUseItem(item)) {
+      setError("This product is borrowable only and must be borrowed and returned.");
+      return;
+    }
     if (!Number.isInteger(amount) || amount <= 0) {
       setError("Enter a whole-number quantity greater than zero.");
       return;
@@ -94,7 +104,6 @@ export function useInventoryActions({
       quantity: amount,
       unit: item.unit,
       status: STATUS_BY_ACTION[action.type] || "Used",
-      unitCost: Number(item.unitCost) || 0,
       ...(trimmedPerson ? { person: trimmedPerson } : {}),
       ...(remarks.trim() ? { remarks: remarks.trim() } : requirePerson ? { remarks: "" } : {}),
     };

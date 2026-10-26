@@ -9,7 +9,6 @@ test("validates stock actions and records successful borrow/return operations", 
       name: "Paper",
       quantity: 5,
       unit: "ream",
-      unitCost: 2,
     },
   ];
   const initialRecords = [];
@@ -65,4 +64,44 @@ test("validates stock actions and records successful borrow/return operations", 
     quantity: 2,
     person: "Prof. Juan Dela Cruz",
   });
+});
+
+test("enforces usable-only vs borrowable-only product rules", () => {
+  const usableItem = {
+    id: "supply-1",
+    productId: "PRD-0001",
+    name: "Bond Paper",
+    usageType: "Usable",
+    quantity: 10,
+    unit: "reams",
+  };
+  const borrowableItem = {
+    id: "supply-2",
+    productId: "PRD-0002",
+    name: "Keyboard",
+    usageType: "Borrowable",
+    quantity: 4,
+    unit: "pcs",
+  };
+  const setInventory = jest.fn();
+  const setRecords = jest.fn();
+
+  const { result } = renderHook(() =>
+    useInventoryActions({
+      inventory: [usableItem, borrowableItem],
+      records: [],
+      setInventory,
+      setRecords,
+    }),
+  );
+
+  act(() => result.current.openAction(usableItem, "Borrow"));
+  act(() => result.current.submitAction({ preventDefault: jest.fn() }));
+  expect(result.current.error).toMatch(/usable only/i);
+  expect(setInventory).not.toHaveBeenCalled();
+
+  act(() => result.current.openAction(borrowableItem, "Use"));
+  act(() => result.current.submitAction({ preventDefault: jest.fn() }));
+  expect(result.current.error).toMatch(/borrowable only/i);
+  expect(setInventory).not.toHaveBeenCalled();
 });

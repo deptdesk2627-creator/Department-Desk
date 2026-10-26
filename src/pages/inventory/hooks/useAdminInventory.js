@@ -3,15 +3,15 @@ import {
   getProductId,
   useInventoryActions,
 } from "../../../hooks/useInventoryActions";
-import { isLowStock } from "../../../utils/inventory";
+import { getItemUsageType, isLowStock } from "../../../utils/inventory";
 import { matchesQuery } from "../../../utils/search";
 
 const INITIAL_FORM = {
   name: "",
+  usageType: "Usable",
   quantity: "",
   unit: "units",
   lowStockAt: "2",
-  unitCost: "",
 };
 
 export function useAdminInventory({
@@ -43,6 +43,7 @@ export function useAdminInventory({
       inventoryItems.filter((item) => {
         const lowStock = isLowStock(item);
         const stockLabel = lowStock ? "Low stock" : "In stock";
+        const usageType = getItemUsageType(item);
         const matchesStockFilter =
           stockFilter === "All" ||
           (stockFilter === "Low stock" && lowStock) ||
@@ -57,6 +58,7 @@ export function useAdminInventory({
           item.quantity,
           item.lowStockAt,
           stockLabel,
+          usageType,
         ];
 
         const matchesGlobalSearch = matchesQuery(search, ...itemFields);
@@ -89,18 +91,62 @@ export function useAdminInventory({
     [recordItems, search, recordSearch, recordFilter],
   );
 
-  const loggedUsageValue = useMemo(
-    () =>
-      recordItems
-        .filter((record) => record.status === "Used")
-        .reduce((total, record) => {
-          const quantity = Number(record.quantity);
-          const parsedUnitCost = Number(record.unitCost);
-          const unitCost = Number.isFinite(parsedUnitCost) ? parsedUnitCost : 0;
-          return Number.isFinite(quantity) ? total + quantity * unitCost : total;
-        }, 0),
-    [recordItems],
-  );
+  const usageBreakdown = useMemo(() => {
+    const map = new Map();
+
+    for (const record of recordItems) {
+      if (record.status !== "Used" && record.status !== "Borrowed") continue;
+      const qty = Number(record.quantity);
+      if (!Number.isFinite(qty) || qty <= 0) continue;
+
+      const key = record.productId || record.productName || "unknown";
+      const existing = map.get(key) || {
+        key,
+        name: record.productName || key,
+        unit: record.unit || "units",
+        usedQuantity: 0,
+        borrowedQuantity: 0,
+        totalQuantity: 0,
+      };
+      if (record.status === "Used") {
+        existing.usedQuantity += qty;
+      } else {
+        existing.borrowedQuantity += qty;
+      }
+      existing.totalQuantity += qty;
+      map.set(key, existing);
+    }
+
+    for (const item of inventoryItems) {
+      const key = getProductId(item);
+      const usedThisYear = Number(item.usedThisYear) || 0;
+      if (!map.has(key) && usedThisYear > 0) {
+        map.set(key, {
+          key,
+          name: item.name,
+          unit: item.unit || "units",
+          usedQuantity: usedThisYear,
+          borrowedQuantity: 0,
+          totalQuantity: usedThisYear,
+        });
+      }
+    }
+
+    const sorted = Array.from(map.values()).sort(
+      (a, b) => b.totalQuantity - a.totalQuantity,
+    );
+    const grandTotal = sorted.reduce(
+      (sum, entry) => sum + entry.totalQuantity,
+      0,
+    );
+
+    return sorted.map((entry) => ({
+      ...entry,
+      share: grandTotal > 0 ? entry.totalQuantity / grandTotal : 0,
+      sharePercent:
+        grandTotal > 0 ? Math.round((entry.totalQuantity / grandTotal) * 100) : 0,
+    }));
+  }, [recordItems, inventoryItems]);
 
   const lowStockCount = useMemo(
     () => inventoryItems.filter(isLowStock).length,
@@ -118,7 +164,8 @@ export function useAdminInventory({
     event.preventDefault();
     const quantity = Number(form.quantity);
     const lowStockAt = Number(form.lowStockAt);
-    const unitCost = form.unitCost === "" ? 0 : Number(form.unitCost);
+    const usageType =
+      form.usageType === "Borrowable" ? "Borrowable" : "Usable";
     if (
       !form.name.trim() ||
       !form.unit.trim() ||
@@ -127,12 +174,10 @@ export function useAdminInventory({
       quantity < 0 ||
       form.lowStockAt === "" ||
       !Number.isInteger(lowStockAt) ||
-      lowStockAt < 0 ||
-      !Number.isFinite(unitCost) ||
-      unitCost < 0
+      lowStockAt < 0
     ) {
       setFormError(
-        "Enter a product name, unit, and valid non-negative stock and cost values.",
+        "Enter a product name, unit, and valid non-negative stock values.",
       );
       return false;
     }
@@ -150,11 +195,11 @@ export function useAdminInventory({
           ...form,
           name: form.name.trim(),
           unit: form.unit.trim(),
+          usageType,
           id: `supply-${nextProductNumber}`,
           productId: `PRD-${String(nextProductNumber).padStart(4, "0")}`,
           quantity,
           lowStockAt,
-          unitCost,
           usedThisYear: 0,
         },
         ...currentItems,
@@ -188,7 +233,7 @@ export function useAdminInventory({
     recordItems,
     visibleItems,
     visibleRecords,
-    loggedUsageValue,
+    usageBreakdown,
     lowStockCount,
     stockActions,
     addItem,

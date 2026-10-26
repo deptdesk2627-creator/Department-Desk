@@ -1,5 +1,10 @@
 import { getProductId } from "../../../hooks/useInventoryActions";
-import { isLowStock } from "../../../utils/inventory";
+import {
+  canBorrowItem,
+  canUseItem,
+  getItemUsageType,
+  isLowStock,
+} from "../../../utils/inventory";
 
 function InventoryTable({
   items,
@@ -17,7 +22,7 @@ function InventoryTable({
       <p className="inventory-panel-subtitle">
         {readOnly
           ? "Current stock levels and status."
-          : "Borrowing and use reduce available quantity; returns add it back."}
+          : "Usable items are consumed when used; borrowable items can be borrowed and returned."}
       </p>
       {items.length ? (
         <div className="inventory-table-wrap">
@@ -36,6 +41,9 @@ function InventoryTable({
                 const qty = Number(item.quantity) || 0;
                 const threshold = Math.max(1, Number(item.lowStockAt) || 2);
                 const lowStock = isLowStock(item);
+                const usageType = getItemUsageType(item);
+                const allowBorrow = canBorrowItem(item);
+                const allowUse = canUseItem(item);
                 const meterPercent = Math.min(
                   100,
                   Math.round((qty / (threshold * 3)) * 100),
@@ -48,9 +56,24 @@ function InventoryTable({
                       </span>
                     </td>
                     <td>
-                      <strong className="inventory-item-name">
-                        {item.name}
-                      </strong>
+                      <div className="inventory-item-name-cell">
+                        <strong className="inventory-item-name">
+                          {item.name}
+                        </strong>
+                        {usageType !== "Both" && (
+                          <span
+                            className={`inventory-usage-badge ${
+                              usageType === "Borrowable"
+                                ? "inventory-usage-badge--borrowable"
+                                : "inventory-usage-badge--usable"
+                            }`}
+                          >
+                            {usageType === "Borrowable"
+                              ? "Borrowable"
+                              : "Usable only"}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div className="stock-quantity-cell">
@@ -83,30 +106,36 @@ function InventoryTable({
                         </span>
                       ) : (
                         <div className="stock-actions stock-actions--right">
-                          <button
-                            type="button"
-                            className="stock-adjust-button borrow-button"
-                            onClick={() => onOpenAction(item, "Borrow")}
-                            disabled={Number(item.quantity) <= 0}
-                          >
-                            Borrow
-                          </button>
-                          <button
-                            type="button"
-                            className="stock-adjust-button use-button"
-                            onClick={() => onOpenAction(item, "Use")}
-                            disabled={Number(item.quantity) <= 0}
-                          >
-                            Use
-                          </button>
-                          <button
-                            type="button"
-                            className="stock-adjust-button return-button"
-                            onClick={() => onOpenAction(item, "Return")}
-                            disabled={getBorrowedBalance(item) <= 0}
-                          >
-                            Return
-                          </button>
+                          {allowBorrow && (
+                            <button
+                              type="button"
+                              className="stock-adjust-button borrow-button"
+                              onClick={() => onOpenAction(item, "Borrow")}
+                              disabled={Number(item.quantity) <= 0}
+                            >
+                              Borrow
+                            </button>
+                          )}
+                          {allowUse && (
+                            <button
+                              type="button"
+                              className="stock-adjust-button use-button"
+                              onClick={() => onOpenAction(item, "Use")}
+                              disabled={Number(item.quantity) <= 0}
+                            >
+                              Use
+                            </button>
+                          )}
+                          {allowBorrow && (
+                            <button
+                              type="button"
+                              className="stock-adjust-button return-button"
+                              onClick={() => onOpenAction(item, "Return")}
+                              disabled={getBorrowedBalance(item) <= 0}
+                            >
+                              Return
+                            </button>
+                          )}
                           <button
                             className="delete-button"
                             type="button"

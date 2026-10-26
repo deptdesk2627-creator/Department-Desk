@@ -1,4 +1,5 @@
 import { Modal } from "../../../components/ui";
+import { PRODUCT_USAGE_TYPES } from "../../../utils/inventory";
 
 function InventoryForm({
   isOpen = true,
@@ -14,7 +15,7 @@ function InventoryForm({
       onClose={onCancel}
       eyebrow="OFFICE WORKSPACE · SUPPLY & INVENTORY"
       title="Add a new supply item"
-      subtitle="Product ID is generated automatically when you add the item."
+      subtitle="Product ID is generated automatically. Choose whether the item is usable only or borrowable and returnable."
       titleId="new-supply-title"
       className="transaction-modal form-modal"
     >
@@ -26,7 +27,31 @@ function InventoryForm({
             required
             value={form.name}
             onChange={(event) => setForm({ ...form, name: event.target.value })}
-            placeholder="e.g. Printer paper"
+            placeholder="e.g. Bond paper or Keyboard"
+          />
+        </label>
+        <label>
+          Product rule
+          <select
+            value={form.usageType || "Usable"}
+            onChange={(event) =>
+              setForm({ ...form, usageType: event.target.value })
+            }
+          >
+            {PRODUCT_USAGE_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Unit
+          <input
+            required
+            value={form.unit}
+            onChange={(event) => setForm({ ...form, unit: event.target.value })}
+            placeholder="pcs, boxes, reams..."
           />
         </label>
         <label>
@@ -43,15 +68,6 @@ function InventoryForm({
           />
         </label>
         <label>
-          Unit
-          <input
-            required
-            value={form.unit}
-            onChange={(event) => setForm({ ...form, unit: event.target.value })}
-            placeholder="pcs, boxes, reams..."
-          />
-        </label>
-        <label>
           Low-stock level
           <input
             required
@@ -62,19 +78,6 @@ function InventoryForm({
             onChange={(event) =>
               setForm({ ...form, lowStockAt: event.target.value })
             }
-          />
-        </label>
-        <label>
-          Cost per unit (₱)
-          <input
-            min="0"
-            step="0.01"
-            type="number"
-            value={form.unitCost}
-            onChange={(event) =>
-              setForm({ ...form, unitCost: event.target.value })
-            }
-            placeholder="Optional"
           />
         </label>
         <div className="inventory-form-actions">

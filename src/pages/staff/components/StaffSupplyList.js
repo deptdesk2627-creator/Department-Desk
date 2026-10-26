@@ -1,4 +1,9 @@
 import { getProductId } from "../../../hooks/useInventoryActions";
+import {
+  canBorrowItem,
+  canUseItem,
+  getItemUsageType,
+} from "../../../utils/inventory";
 
 function StaffSupplyList({
   items,
@@ -40,13 +45,31 @@ function StaffSupplyList({
               {items.map((item) => {
                 const available = Number(item.quantity) || 0;
                 const borrowed = getMyBorrowedBalance(item);
+                const usageType = getItemUsageType(item);
+                const allowBorrow = canBorrowItem(item);
+                const allowUse = canUseItem(item);
                 return (
                   <tr key={item.id}>
                     <td>
                       <span className="request-id-badge">{getProductId(item)}</span>
                     </td>
                     <td>
-                      <strong className="inventory-item-name">{item.name}</strong>
+                      <div className="inventory-item-name-cell">
+                        <strong className="inventory-item-name">{item.name}</strong>
+                        {usageType !== "Both" && (
+                          <span
+                            className={`inventory-usage-badge ${
+                              usageType === "Borrowable"
+                                ? "inventory-usage-badge--borrowable"
+                                : "inventory-usage-badge--usable"
+                            }`}
+                          >
+                            {usageType === "Borrowable"
+                              ? "Borrowable"
+                              : "Usable only"}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <span
@@ -66,30 +89,36 @@ function StaffSupplyList({
                     </td>
                     <td>
                       <div className="stock-actions">
-                        <button
-                          type="button"
-                          className="stock-adjust-button borrow-button"
-                          onClick={() => onOpenAction(item, "Borrow")}
-                          disabled={!canRecord || available <= 0}
-                        >
-                          Borrow
-                        </button>
-                        <button
-                          type="button"
-                          className="stock-adjust-button use-button"
-                          onClick={() => onOpenAction(item, "Use")}
-                          disabled={!canRecord || available <= 0}
-                        >
-                          Use
-                        </button>
-                        <button
-                          type="button"
-                          className="stock-adjust-button"
-                          onClick={() => onOpenAction(item, "Return")}
-                          disabled={!canRecord || borrowed <= 0}
-                        >
-                          Return
-                        </button>
+                        {allowBorrow && (
+                          <button
+                            type="button"
+                            className="stock-adjust-button borrow-button"
+                            onClick={() => onOpenAction(item, "Borrow")}
+                            disabled={!canRecord || available <= 0}
+                          >
+                            Borrow
+                          </button>
+                        )}
+                        {allowUse && (
+                          <button
+                            type="button"
+                            className="stock-adjust-button use-button"
+                            onClick={() => onOpenAction(item, "Use")}
+                            disabled={!canRecord || available <= 0}
+                          >
+                            Use
+                          </button>
+                        )}
+                        {allowBorrow && (
+                          <button
+                            type="button"
+                            className="stock-adjust-button"
+                            onClick={() => onOpenAction(item, "Return")}
+                            disabled={!canRecord || borrowed <= 0}
+                          >
+                            Return
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -53,7 +53,7 @@ function Inventory({
     recordItems,
     visibleItems,
     visibleRecords,
-    loggedUsageValue,
+    usageBreakdown,
     lowStockCount,
     stockActions,
     addItem,
@@ -81,7 +81,7 @@ function Inventory({
         title="Supply & inventory"
         subtitle={
           readOnly
-            ? "Review stock levels, borrowing history, and budgeting statistics."
+            ? "Review stock levels, borrowing history, and item usage statistics."
             : "Track products, record borrowing and use, and keep a history of returns."
         }
         actions={
@@ -103,7 +103,7 @@ function Inventory({
       <InventoryMetrics
         productCount={inventoryItems.length}
         lowStockCount={lowStockCount}
-        usageValue={loggedUsageValue}
+        usageBreakdown={usageBreakdown}
         recordCount={recordItems.length}
       />
       {!readOnly && (
