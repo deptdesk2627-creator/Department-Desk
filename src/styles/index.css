@@ -81,6 +81,7 @@
 :root[data-theme="dark"] .dashboard .card,
 :root[data-theme="dark"] .recent-module,
 :root[data-theme="dark"] .deptdesk-card,
+:root[data-theme="dark"] .login-card,
 :root[data-theme="dark"] .transaction-modal,
 :root[data-theme="dark"] .request-drawer,
 :root[data-theme="dark"] .search-results-dropdown,
@@ -99,9 +100,20 @@
 :root[data-theme="dark"] .app-header__search,
 :root[data-theme="dark"] .inventory-search-box,
 :root[data-theme="dark"] .inventory-filter-pill select,
+:root[data-theme="dark"] .record-filter select,
 :root[data-theme="dark"] .request-search,
 :root[data-theme="dark"] .request-filter-select,
 :root[data-theme="dark"] .request-filter,
+:root[data-theme="dark"] .task-search-box,
+:root[data-theme="dark"] .task-filter-select,
+:root[data-theme="dark"] .login-form__field input,
+:root[data-theme="dark"] .login-form__field select,
+:root[data-theme="dark"] .login-demo-role,
+:root[data-theme="dark"] .staff-identity input,
+:root[data-theme="dark"] .staff-stat-box,
+:root[data-theme="dark"] .staff-chip:not(.staff-chip--active),
+:root[data-theme="dark"] .request-notes-box,
+:root[data-theme="dark"] .request-drawer-close,
 :root[data-theme="dark"] .module-form input,
 :root[data-theme="dark"] .module-form select,
 :root[data-theme="dark"] .module-form textarea,
@@ -115,14 +127,60 @@
   color: var(--ink);
 }
 
+:root[data-theme="dark"] .app-header__search:focus-within,
+:root[data-theme="dark"] .request-search:focus-within,
+:root[data-theme="dark"] .task-search-box:focus-within,
+:root[data-theme="dark"] .record-filter select:focus,
+:root[data-theme="dark"] .login-form__field input:focus,
+:root[data-theme="dark"] .login-form__field select:focus,
+:root[data-theme="dark"] .staff-identity input:focus,
+:root[data-theme="dark"] .module-form input:focus,
+:root[data-theme="dark"] .module-form select:focus,
+:root[data-theme="dark"] .module-form textarea:focus,
+:root[data-theme="dark"] .inline-text-edit:hover,
+:root[data-theme="dark"] .inline-text-edit:focus,
+:root[data-theme="dark"] .inline-date-edit:hover,
+:root[data-theme="dark"] .inline-date-edit:focus {
+  background-color: #131c31;
+  border-color: var(--purple);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] select option {
+  background-color: #0f172a;
+  color: var(--ink);
+}
+
 :root[data-theme="dark"] .secondary-button:hover,
 :root[data-theme="dark"] .confirm-modal__cancel:hover,
 :root[data-theme="dark"] .quick-action:hover,
 :root[data-theme="dark"] .supply-item:hover,
+:root[data-theme="dark"] .login-demo-role:hover,
+:root[data-theme="dark"] .request-drawer-close:hover,
 :root[data-theme="dark"] .search-result-card:hover,
+:root[data-theme="dark"] .search-result-card:focus-visible,
 :root[data-theme="dark"] .app-header__notification-row:hover,
-:root[data-theme="dark"] .app-header__menu button:hover {
+:root[data-theme="dark"] .app-header__notification-row:focus-within,
+:root[data-theme="dark"] .app-header__notification-delete:hover,
+:root[data-theme="dark"] .app-header__menu button:hover,
+:root[data-theme="dark"] .app-header__menu button:focus-visible {
   background-color: #273549;
+}
+
+:root[data-theme="dark"] .request-notes-box h3 {
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .request-notes-box p {
+  color: var(--ink-secondary);
+}
+
+:root[data-theme="dark"] .request-timeline li:not(:last-child)::before {
+  background: var(--line);
+}
+
+:root[data-theme="dark"] .request-timeline-marker {
+  border-color: var(--surface);
 }
 
 :root[data-theme="dark"] .request-table th,
@@ -142,6 +200,14 @@
 :root[data-theme="dark"] .inventory-transactions-table td {
   border-color: var(--line);
   color: var(--ink-secondary);
+}
+
+:root[data-theme="dark"] .deptdesk-table tr.row-completed {
+  background: rgba(15, 23, 42, 0.55);
+}
+
+:root[data-theme="dark"] .row-overdue {
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 :root[data-theme="dark"] .request-table tbody tr:hover,
@@ -173,10 +239,37 @@
 :root[data-theme="dark"] .inventory-product-id-pill,
 :root[data-theme="dark"] .request-category,
 :root[data-theme="dark"] .app-header__role-badge,
+:root[data-theme="dark"] .app-header__search-kbd,
+:root[data-theme="dark"] .app-header__search-clear,
+:root[data-theme="dark"] .request-kanban-heading > span,
+:root[data-theme="dark"] .count-pill,
+:root[data-theme="dark"] .bulk-actions-group,
+:root[data-theme="dark"] .btn-secondary,
 :root[data-theme="dark"] .view-toggle-buttons,
 :root[data-theme="dark"] .request-view-toggle {
   background: #0f172a;
   border-color: var(--line);
+  color: var(--ink-secondary);
+}
+
+:root[data-theme="dark"] .progress-track,
+:root[data-theme="dark"] .stock-meter {
+  background: #0f172a;
+}
+
+:root[data-theme="dark"] .request-kanban-card-footer,
+:root[data-theme="dark"] .app-header__notification-heading,
+:root[data-theme="dark"] .app-header__menu-divider {
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .request-column-empty {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .toggle-btn,
+:root[data-theme="dark"] .selected-count {
   color: var(--ink-secondary);
 }
 
@@ -197,6 +290,7 @@
 :root[data-theme="dark"] .quick-actions-heading h2,
 :root[data-theme="dark"] .app-header__profile-button,
 :root[data-theme="dark"] .app-header__menu-heading strong,
+:root[data-theme="dark"] .task-search-box input,
 :root[data-theme="dark"] .inline-text-edit,
 :root[data-theme="dark"] .record-person-cell,
 :root[data-theme="dark"] .record-product-name-cell,
