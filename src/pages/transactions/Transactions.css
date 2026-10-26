@@ -63,7 +63,7 @@
 .transactions-folder-tab.is-active {
   background: var(--surface, #ffffff);
   border-color: var(--line);
-  border-bottom: 2px solid var(--surface, #ffffff);
+  border-bottom: 0;
   color: var(--ink);
   margin-bottom: -1px;
   min-height: 46px;
@@ -93,14 +93,12 @@
   color: var(--orange);
 }
 
+.dashboard .card.transactions-folder-panel,
 .transactions-folder-panel {
+  border-color: var(--line);
   border-radius: 0 18px 18px 18px;
   position: relative;
   z-index: 1;
-}
-
-.transactions-folder-panel--incoming {
-  border-top-left-radius: 18px;
 }
 
 /* Modal direction switch */

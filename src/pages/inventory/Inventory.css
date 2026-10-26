@@ -344,7 +344,7 @@
 .inventory-folder-tab.is-active {
   background: var(--surface, #ffffff);
   border-color: var(--line);
-  border-bottom: 2px solid var(--surface, #ffffff);
+  border-bottom: 0;
   color: var(--ink);
   margin-bottom: -1px;
   min-height: 46px;
@@ -465,15 +465,13 @@
 }
 
 /* Folder Panel Card */
+.dashboard .card.inventory-folder-panel,
 .inventory-folder-panel {
+  border-color: var(--line);
   border-radius: 0 18px 18px 18px;
   padding: 24px 28px 28px;
   position: relative;
   z-index: 1;
-}
-
-.inventory-folder-panel--transactions {
-  border-top-left-radius: 18px;
 }
 
 .inventory-folder-panel .inventory-panel-subtitle,
