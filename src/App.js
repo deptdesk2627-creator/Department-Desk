@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { canAccessPage, getHomePage, getRole } from "./constants/roles";
 import { useOfficeData } from "./hooks/useOfficeData";
 import { useStoredState } from "./hooks/useStoredState";
@@ -13,6 +13,10 @@ function App() {
     false,
   );
   const [roleId, setRoleId] = useStoredState("officeflow.role", "secretary");
+  const [theme, setTheme] = useStoredState("officeflow.theme", "light", {
+    raw: true,
+  });
+  const activeTheme = theme === "dark" ? "dark" : "light";
   const role = getRole(roleId);
   const [page, setPage] = useState(() => getHomePage(roleId));
   const [search, setSearch] = useState("");
@@ -21,6 +25,12 @@ function App() {
   );
   const data = useOfficeData();
   const safeSearch = typeof search === "string" ? search : "";
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", activeTheme);
+    }
+  }, [activeTheme]);
 
   // Never show a page the current role is not allowed to open.
   const activePage = canAccessPage(role.id, page) ? page : getHomePage(role.id);
@@ -71,6 +81,8 @@ function App() {
       isOpen={isSidebarOpen}
       onToggle={() => setIsSidebarOpen((open) => !open)}
       onCloseSidebar={() => setIsSidebarOpen(false)}
+      theme={activeTheme}
+      onThemeChange={setTheme}
     >
       {pages[activePage]}
     </MainLayout>

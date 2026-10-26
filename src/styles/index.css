@@ -15,6 +15,8 @@
   --line: #f1e2d4;
   --line-subtle: #f8eee5;
   --canvas: #fffaf5;
+  --surface: #ffffff;
+  --surface-subtle: #f8fafc;
   --sidebar: #7c2d12;
 
   --font-sans:
@@ -37,6 +39,170 @@
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
   --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --purple: #f97316;
+  --purple-rgb: 249 115 22;
+  --purple-hover: #ea580c;
+  --purple-soft: rgba(249, 115, 22, 0.16);
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.16);
+  --orange: #fb923c;
+  --orange-soft: rgba(251, 146, 60, 0.16);
+  --red: #f87171;
+  --red-soft: rgba(248, 113, 113, 0.16);
+  --ink: #f8fafc;
+  --ink-secondary: #cbd5e1;
+  --muted: #94a3b8;
+  --line: #334155;
+  --line-subtle: #1e293b;
+  --canvas: #0f172a;
+  --surface: #1e293b;
+  --surface-subtle: #0f172a;
+  --sidebar: #141115;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme="dark"] .transactions-page {
+  --request-ink: #f8fafc;
+  --request-muted: #94a3b8;
+  --request-line: #334155;
+  --request-surface: #1e293b;
+}
+
+:root[data-theme="dark"] .app-header,
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .metric-card,
+:root[data-theme="dark"] .dashboard .card,
+:root[data-theme="dark"] .recent-module,
+:root[data-theme="dark"] .deptdesk-card,
+:root[data-theme="dark"] .transaction-modal,
+:root[data-theme="dark"] .request-drawer,
+:root[data-theme="dark"] .search-results-dropdown,
+:root[data-theme="dark"] .app-header__notification-panel,
+:root[data-theme="dark"] .app-header__menu {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .deptdesk-task-container {
+  background-color: var(--canvas);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .app-header__theme-filter,
+:root[data-theme="dark"] .app-header__search,
+:root[data-theme="dark"] .inventory-search-box,
+:root[data-theme="dark"] .inventory-filter-pill select,
+:root[data-theme="dark"] .request-search,
+:root[data-theme="dark"] .request-filter-select,
+:root[data-theme="dark"] .request-filter,
+:root[data-theme="dark"] .module-form input,
+:root[data-theme="dark"] .module-form select,
+:root[data-theme="dark"] .module-form textarea,
+:root[data-theme="dark"] .secondary-button,
+:root[data-theme="dark"] .confirm-modal__cancel,
+:root[data-theme="dark"] .dashboard-date-badge,
+:root[data-theme="dark"] .quick-action,
+:root[data-theme="dark"] .supply-item {
+  background-color: #0f172a;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .secondary-button:hover,
+:root[data-theme="dark"] .confirm-modal__cancel:hover,
+:root[data-theme="dark"] .quick-action:hover,
+:root[data-theme="dark"] .supply-item:hover,
+:root[data-theme="dark"] .search-result-card:hover,
+:root[data-theme="dark"] .app-header__notification-row:hover,
+:root[data-theme="dark"] .app-header__menu button:hover {
+  background-color: #273549;
+}
+
+:root[data-theme="dark"] .request-table th,
+:root[data-theme="dark"] .request-tracker-table th,
+:root[data-theme="dark"] .deptdesk-table th,
+:root[data-theme="dark"] .inventory-master-table th,
+:root[data-theme="dark"] .inventory-transactions-table th {
+  background: #0f172a;
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .request-table td,
+:root[data-theme="dark"] .request-tracker-table td,
+:root[data-theme="dark"] .deptdesk-table td,
+:root[data-theme="dark"] .inventory-master-table td,
+:root[data-theme="dark"] .inventory-transactions-table td {
+  border-color: var(--line);
+  color: var(--ink-secondary);
+}
+
+:root[data-theme="dark"] .request-table tbody tr:hover,
+:root[data-theme="dark"] .request-tracker-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+:root[data-theme="dark"] .inventory-folder-tab {
+  background: #0f172a;
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .inventory-folder-tab.is-active {
+  background: var(--surface);
+  border-color: var(--line);
+  border-bottom-color: var(--surface);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .inventory-product-id-pill,
+:root[data-theme="dark"] .request-category,
+:root[data-theme="dark"] .app-header__role-badge,
+:root[data-theme="dark"] .view-toggle-buttons,
+:root[data-theme="dark"] .request-view-toggle {
+  background: #0f172a;
+  border-color: var(--line);
+  color: var(--ink-secondary);
+}
+
+:root[data-theme="dark"] .toggle-btn.active,
+:root[data-theme="dark"] .request-view-toggle button.is-active {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .request-kanban,
+:root[data-theme="dark"] .empty-state {
+  background: #0f172a;
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .dashboard-welcome-copy h1,
+:root[data-theme="dark"] .deptdesk-header h2,
+:root[data-theme="dark"] .quick-actions-heading h2,
+:root[data-theme="dark"] .app-header__profile-button,
+:root[data-theme="dark"] .app-header__menu-heading strong,
+:root[data-theme="dark"] .inline-text-edit,
+:root[data-theme="dark"] .record-person-cell,
+:root[data-theme="dark"] .record-product-name-cell,
+:root[data-theme="dark"] .inventory-metrics .metric-top,
+:root[data-theme="dark"] .inventory-records-metric__label,
+:root[data-theme="dark"] .inventory-usage-info__label {
+  color: var(--ink) !important;
+}
+
+:root[data-theme="dark"] .app-header__menu button,
+:root[data-theme="dark"] .inventory-pie-legend__item,
+:root[data-theme="dark"] .progress-header,
+:root[data-theme="dark"] .inline-date-edit {
+  color: var(--ink-secondary);
 }
 
 * {

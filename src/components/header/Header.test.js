@@ -168,3 +168,23 @@ test("focuses global search with the Ctrl+K shortcut", () => {
 
   expect(search).toHaveFocus();
 });
+
+test("switches between light and dark mode using the header theme switch", () => {
+  window.localStorage.clear();
+  render(<Header />);
+
+  const themeToggle = screen.getByRole("checkbox", {
+    name: /toggle light and dark theme/i,
+  });
+
+  expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+  expect(themeToggle).toBeChecked();
+
+  fireEvent.click(themeToggle);
+  expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  expect(themeToggle).not.toBeChecked();
+
+  fireEvent.click(themeToggle);
+  expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+  expect(themeToggle).toBeChecked();
+});

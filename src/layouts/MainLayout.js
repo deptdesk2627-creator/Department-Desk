@@ -15,6 +15,8 @@ function MainLayout({
   isOpen = true,
   onToggle,
   onCloseSidebar,
+  theme,
+  onThemeChange,
 }) {
   return (
     <div
@@ -47,6 +49,8 @@ function MainLayout({
           onSearchChange={onSearchChange}
           onToggleSidebar={onToggle}
           isSidebarOpen={isOpen}
+          theme={theme}
+          onThemeChange={onThemeChange}
         />
         <main
           id={`page-${currentPage}`}
