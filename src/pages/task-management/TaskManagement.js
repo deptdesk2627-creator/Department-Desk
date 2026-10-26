@@ -19,17 +19,28 @@ function TaskManagement({
     bulkComplete,
     bulkDelete,
     deleteTask,
+    dueFilter,
     form,
+    hasActiveFilters,
     listTasks,
+    priorityFilter,
     progressPercent,
+    resetFilters,
     selectedTaskIds,
     selectAll,
     selectOne,
+    setDueFilter,
     setForm,
+    setPriorityFilter,
+    setStatusFilter,
+    setTaskSearch,
     setView,
     stats,
+    statusFilter,
+    taskSearch,
     todayStr,
     toggleDone,
+    totalTasks,
     updateTask,
     view,
   } = useTaskManager({ tasks, setTasks, search });
@@ -56,6 +67,16 @@ function TaskManagement({
         form={form}
         setForm={setForm}
         onSubmit={handleAddTask}
+        taskSearch={taskSearch}
+        setTaskSearch={setTaskSearch}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        priorityFilter={priorityFilter}
+        setPriorityFilter={setPriorityFilter}
+        dueFilter={dueFilter}
+        setDueFilter={setDueFilter}
+        hasActiveFilters={hasActiveFilters}
+        onResetFilters={resetFilters}
         selectedCount={selectedTaskIds.length}
         onBulkComplete={bulkComplete}
         onBulkDelete={bulkDelete}
@@ -63,6 +84,7 @@ function TaskManagement({
       {view === "table" ? (
         <TaskTableView
           tasks={listTasks}
+          totalTasks={totalTasks}
           selectedTaskIds={selectedTaskIds}
           todayStr={todayStr}
           onSelectAll={selectAll}
@@ -74,6 +96,7 @@ function TaskManagement({
       ) : (
         <TaskStatusView
           tasks={listTasks}
+          statusFilter={statusFilter}
           todayStr={todayStr}
           onToggleDone={toggleDone}
           onUpdateTask={updateTask}

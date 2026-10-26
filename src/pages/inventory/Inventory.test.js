@@ -50,6 +50,9 @@ test("renders bento metrics and switches between Master list and Transaction fol
   expect(
     screen.getByRole("heading", { name: /supply & inventory/i }),
   ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /reset inventory/i }),
+  ).not.toBeInTheDocument();
   expect(screen.getByText(/tracked products/i)).toBeInTheDocument();
   expect(screen.getByText(/transaction records/i)).toBeInTheDocument();
   expect(screen.getByText(/recorded usage value/i)).toBeInTheDocument();

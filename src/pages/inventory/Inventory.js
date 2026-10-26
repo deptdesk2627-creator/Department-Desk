@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./Inventory.css";
-import { ConfirmModal, PageHeader } from "../../components/ui";
+import { PageHeader } from "../../components/ui";
 import InventoryForm from "./components/InventoryForm";
 import InventoryMetrics from "./components/InventoryMetrics";
 import InventoryRecords from "./components/InventoryRecords";
@@ -49,8 +49,6 @@ function Inventory({
     setRecordSearch,
     recordFilter,
     setRecordFilter,
-    isResetConfirmOpen,
-    setIsResetConfirmOpen,
     inventoryItems,
     recordItems,
     visibleItems,
@@ -60,7 +58,6 @@ function Inventory({
     stockActions,
     addItem,
     deleteItem,
-    handleConfirmReset,
   } = useAdminInventory({
     inventory,
     setInventory,
@@ -98,13 +95,6 @@ function Inventory({
                 onClick={() => setIsFormOpen(true)}
               >
                 ＋ Add product
-              </button>
-              <button
-                type="button"
-                className="text-button danger-outline-button inventory-reset-btn"
-                onClick={() => setIsResetConfirmOpen(true)}
-              >
-                ↺ Reset inventory
               </button>
             </div>
           )
@@ -241,16 +231,6 @@ function Inventory({
         getBorrowedBalance={stockActions.getBorrowedBalance}
         onSubmit={stockActions.submitAction}
         onClose={stockActions.closeAction}
-      />
-      <ConfirmModal
-        isOpen={isResetConfirmOpen}
-        onClose={() => setIsResetConfirmOpen(false)}
-        onConfirm={handleConfirmReset}
-        title="Reset Supply & Inventory Data"
-        titleId="reset-modal-title"
-        message="Are you sure you want to clear all supplies and remove all transaction records? The inventory will be completely empty."
-        confirmLabel="Yes, clear all data"
-        danger
       />
     </div>
   );

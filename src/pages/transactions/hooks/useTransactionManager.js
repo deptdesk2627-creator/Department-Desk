@@ -5,7 +5,16 @@ import { matchesQuery } from "../../../utils/search";
 
 const statuses = ["Pending", "Under Review", "Action Needed", "Approved", "Archived"];
 const filters = ["All Requests", ...statuses];
-const offices = ["Registrar", "Office of the President", "Dean's Office", "Secretary's Office", "Finance Office", "Facilities Office", "HR Office", "Other"];
+const offices = [
+  "Registrar",
+  "Office of the President",
+  "Dean's Office",
+  "Secretary's Office",
+  "Finance Office",
+  "Facilities Office",
+  "HR Office",
+  "Other",
+];
 const categories = ["Document", "Request"];
 const emptyForm = () => ({
   dateTime: new Date().toISOString().slice(0, 16),
@@ -40,6 +49,8 @@ function csvValue(value) {
 export function useTransactionManager({ requests, setRequests, search }) {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [activeFilter, setActiveFilter] = useState("All Requests");
+  const [officeFilter, setOfficeFilter] = useState("All Offices");
+  const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [requestSearch, setRequestSearch] = useState("");
   const [formError, setFormError] = useState("");
   const [view, setView] = useState("table");
@@ -58,26 +69,63 @@ export function useTransactionManager({ requests, setRequests, search }) {
     const requestItems = Array.isArray(requests) ? requests.filter(Boolean) : [];
     return requestItems.filter((request) => {
       const normalizedStatus = getRequestStatus(request.status);
-      const matchesFilter =
-        activeFilter === "All Requests" || normalizedStatus === activeFilter;
+      const office = requestOffice(request);
+      const category = requestCategory(request);
+
+      const matchesStatus =
+        activeFilter === "All Requests" ||
+        activeFilter === "All" ||
+        normalizedStatus === activeFilter;
+      const matchesOffice =
+        officeFilter === "All Offices" ||
+        officeFilter === "All" ||
+        office === officeFilter;
+      const matchesCategory =
+        categoryFilter === "All Categories" ||
+        categoryFilter === "All" ||
+        category === categoryFilter;
+
       const searchableValues = [
         request.id,
         request.student,
         requestName(request),
         request.description,
         request.notes,
-        requestOffice(request),
-        requestCategory(request),
+        office,
+        category,
         normalizedStatus,
         request.dateTime,
       ];
       return (
-        matchesFilter &&
+        matchesStatus &&
+        matchesOffice &&
+        matchesCategory &&
         matchesQuery(search, ...searchableValues) &&
         matchesQuery(requestSearch, ...searchableValues)
       );
     });
-  }, [requests, search, requestSearch, activeFilter]);
+  }, [
+    requests,
+    search,
+    requestSearch,
+    activeFilter,
+    officeFilter,
+    categoryFilter,
+  ]);
+
+  const hasActiveFilters = Boolean(
+    requestSearch.trim() ||
+      (activeFilter !== "All Requests" && activeFilter !== "All") ||
+      (officeFilter !== "All Offices" && officeFilter !== "All") ||
+      (categoryFilter !== "All Categories" && categoryFilter !== "All"),
+  );
+
+  function resetFilters() {
+    setActiveFilter("All Requests");
+    setOfficeFilter("All Offices");
+    setCategoryFilter("All Categories");
+    setRequestSearch("");
+  }
 
   function addRequest(event) {
     event.preventDefault();
@@ -214,20 +262,26 @@ export function useTransactionManager({ requests, setRequests, search }) {
     activeFilter,
     addRequest,
     categories,
+    categoryFilter,
     deleteRequest,
     exportRequest,
     filters,
     form,
     formError,
+    hasActiveFilters,
+    officeFilter,
     offices,
     requestCategory,
     requestName,
     requestOffice,
     requestSearch,
     requestTrail,
+    resetFilters,
     selectedTransaction,
     setActiveFilter,
+    setCategoryFilter,
     setForm,
+    setOfficeFilter,
     setRequestSearch,
     setSelectedTransaction,
     setView,

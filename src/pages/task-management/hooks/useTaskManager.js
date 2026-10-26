@@ -18,6 +18,10 @@ export function useTaskManager({ tasks = [], setTasks, search = "" }) {
   const [view, setView] = useState("table");
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
   const [form, setForm] = useState(createInitialForm);
+  const [taskSearch, setTaskSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [dueFilter, setDueFilter] = useState("All");
   const todayStr = getTodayStr();
 
   const taskItems = useMemo(
@@ -27,11 +31,63 @@ export function useTaskManager({ tasks = [], setTasks, search = "" }) {
 
   const listTasks = useMemo(
     () =>
-      taskItems.filter((task) =>
-        matchesQuery(search, task.title, task.status, task.priority),
-      ),
-    [taskItems, search],
+      taskItems.filter((task) => {
+        const isDone = task.status === "Done" || Boolean(task.done);
+        const taskStatus = isDone ? "Done" : task.status || "Not started";
+        const taskPriority = task.priority || "Medium";
+        const due = task.due || "";
+        const isOverdue = Boolean(due && due < todayStr && !isDone);
+
+        const matchesStatus =
+          statusFilter === "All" || taskStatus === statusFilter;
+        const matchesPriority =
+          priorityFilter === "All" || taskPriority === priorityFilter;
+        const matchesDue =
+          dueFilter === "All" ||
+          (dueFilter === "Overdue" && isOverdue) ||
+          (dueFilter === "Due today" && Boolean(due && due === todayStr)) ||
+          (dueFilter === "Upcoming" && Boolean(due && due > todayStr));
+
+        const searchableFields = [
+          task.title,
+          taskStatus,
+          taskPriority,
+          due,
+          isOverdue ? "Overdue" : "",
+        ];
+
+        return (
+          matchesStatus &&
+          matchesPriority &&
+          matchesDue &&
+          matchesQuery(search, ...searchableFields) &&
+          matchesQuery(taskSearch, ...searchableFields)
+        );
+      }),
+    [
+      taskItems,
+      search,
+      taskSearch,
+      statusFilter,
+      priorityFilter,
+      dueFilter,
+      todayStr,
+    ],
   );
+
+  const hasActiveFilters = Boolean(
+    taskSearch.trim() ||
+      statusFilter !== "All" ||
+      priorityFilter !== "All" ||
+      dueFilter !== "All",
+  );
+
+  function resetFilters() {
+    setTaskSearch("");
+    setStatusFilter("All");
+    setPriorityFilter("All");
+    setDueFilter("All");
+  }
 
   const progressPercent = useMemo(() => {
     if (!listTasks.length) return 0;
@@ -137,17 +193,28 @@ export function useTaskManager({ tasks = [], setTasks, search = "" }) {
     bulkComplete,
     bulkDelete,
     deleteTask,
+    dueFilter,
     form,
+    hasActiveFilters,
     listTasks,
+    priorityFilter,
     progressPercent,
+    resetFilters,
     selectedTaskIds,
     selectAll,
     selectOne,
+    setDueFilter,
     setForm,
+    setPriorityFilter,
+    setStatusFilter,
+    setTaskSearch,
     setView,
     stats,
+    statusFilter,
+    taskSearch,
     todayStr,
     toggleDone,
+    totalTasks: taskItems.length,
     updateTask,
     view,
   };

@@ -3,6 +3,7 @@ import TaskRow from "./TaskRow";
 
 function TaskTableView({
   tasks,
+  totalTasks = 0,
   selectedTaskIds,
   todayStr,
   onSelectAll,
@@ -51,7 +52,9 @@ function TaskTableView({
           {!tasks.length && (
             <tr>
               <td colSpan="7" className="empty-state">
-                No tasks in this list. Click above to add a new task!
+                {totalTasks
+                  ? "No tasks match the selected filters."
+                  : "No tasks in this list. Click above to add a new task!"}
               </td>
             </tr>
           )}

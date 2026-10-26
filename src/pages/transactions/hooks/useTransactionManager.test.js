@@ -32,18 +32,43 @@ test("validates and adds a request with a collision-free ID and initial history"
   expect(addRequest([request])[0].id).toBe(`${request.id}-1`);
 });
 
-test("filters requests by the normalized status and shared search", () => {
+test("filters requests by status, office, category, search, and resets filters", () => {
   const requests = [
-    { id: "1", student: "Alex", status: "Waiting", document: "Leave form" },
-    { id: "2", student: "Sam", status: "Approved", document: "Travel form" },
+    {
+      id: "1",
+      student: "Alex",
+      status: "Waiting",
+      document: "Leave form",
+      office: "HR Office",
+      type: "Request",
+    },
+    {
+      id: "2",
+      student: "Sam",
+      status: "Approved",
+      document: "Travel form",
+      office: "Finance Office",
+      type: "Document",
+    },
   ];
   const { result } = renderHook(() =>
-    useTransactionManager({ requests, setRequests: jest.fn(), search: "leave" }),
+    useTransactionManager({ requests, setRequests: jest.fn(), search: "" }),
   );
 
-  expect(result.current.visibleRequests).toEqual([requests[0]]);
+  expect(result.current.visibleRequests).toHaveLength(2);
+
   act(() => result.current.setActiveFilter("Action Needed"));
   expect(result.current.visibleRequests).toEqual([requests[0]]);
-  act(() => result.current.setActiveFilter("Approved"));
+
+  act(() => result.current.setActiveFilter("All Requests"));
+  act(() => result.current.setOfficeFilter("Finance Office"));
+  expect(result.current.visibleRequests).toEqual([requests[1]]);
+
+  act(() => result.current.setCategoryFilter("Request"));
   expect(result.current.visibleRequests).toEqual([]);
+  expect(result.current.hasActiveFilters).toBe(true);
+
+  act(() => result.current.resetFilters());
+  expect(result.current.hasActiveFilters).toBe(false);
+  expect(result.current.visibleRequests).toHaveLength(2);
 });

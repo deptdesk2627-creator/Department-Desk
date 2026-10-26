@@ -28,7 +28,6 @@ export function useAdminInventory({
   const [stockFilter, setStockFilter] = useState("All");
   const [recordSearch, setRecordSearch] = useState("");
   const [recordFilter, setRecordFilter] = useState("All");
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   const inventoryItems = useMemo(
     () => (Array.isArray(inventory) ? inventory.filter(Boolean) : []),
@@ -171,12 +170,6 @@ export function useAdminInventory({
     );
   }
 
-  function handleConfirmReset() {
-    setInventory([]);
-    setRecords([]);
-    setIsResetConfirmOpen(false);
-  }
-
   return {
     form,
     setForm,
@@ -191,8 +184,6 @@ export function useAdminInventory({
     setRecordSearch,
     recordFilter,
     setRecordFilter,
-    isResetConfirmOpen,
-    setIsResetConfirmOpen,
     inventoryItems,
     recordItems,
     visibleItems,
@@ -202,6 +193,5 @@ export function useAdminInventory({
     stockActions,
     addItem,
     deleteItem,
-    handleConfirmReset,
   };
 }

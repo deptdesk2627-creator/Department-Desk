@@ -8,6 +8,14 @@ function TransactionList({
   activeFilter,
   setActiveFilter,
   filters,
+  officeFilter = "All Offices",
+  setOfficeFilter = () => {},
+  offices = [],
+  categoryFilter = "All Categories",
+  setCategoryFilter = () => {},
+  categories = [],
+  hasActiveFilters = false,
+  onResetFilters = () => {},
   requestSearch,
   setRequestSearch,
   view,
@@ -64,6 +72,41 @@ function TransactionList({
                 onChange={(event) => setRequestSearch(event.target.value)}
               />
             </label>
+            <select
+              className="request-filter-select"
+              value={officeFilter}
+              onChange={(event) => setOfficeFilter(event.target.value)}
+              aria-label="Filter by office"
+            >
+              <option value="All Offices">All offices</option>
+              {offices.map((office) => (
+                <option key={office} value={office}>
+                  {office}
+                </option>
+              ))}
+            </select>
+            <select
+              className="request-filter-select"
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+              aria-label="Filter by category"
+            >
+              <option value="All Categories">All categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                className="request-filter-reset-btn"
+                onClick={onResetFilters}
+              >
+                Clear filters
+              </button>
+            )}
             <div className="request-view-toggle" role="group" aria-label="Request display">
               <button
                 type="button"

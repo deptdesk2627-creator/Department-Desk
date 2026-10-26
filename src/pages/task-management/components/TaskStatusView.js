@@ -1,17 +1,35 @@
 import "./TaskViews.css";
 import TaskRow, { TASK_STATUSES } from "./TaskRow";
 
-function TaskStatusView({ tasks, todayStr, onToggleDone, onUpdateTask, onDeleteTask }) {
+function TaskStatusView({
+  tasks,
+  statusFilter = "All",
+  todayStr,
+  onToggleDone,
+  onUpdateTask,
+  onDeleteTask,
+}) {
+  const visibleStatuses =
+    statusFilter && statusFilter !== "All"
+      ? TASK_STATUSES.filter((statusName) => statusName === statusFilter)
+      : TASK_STATUSES;
+
   return (
     <div className="status-groups-container">
-      {TASK_STATUSES.map((statusName) => {
-        const groupTasks = tasks.filter(
-          (task) => (task.status || "Not started") === statusName,
-        );
+      {visibleStatuses.map((statusName) => {
+        const groupTasks = tasks.filter((task) => {
+          const effectiveStatus =
+            task.status === "Done" || task.done
+              ? "Done"
+              : task.status || "Not started";
+          return effectiveStatus === statusName;
+        });
         return (
           <div key={statusName} className="deptdesk-card status-group-card">
             <div className="status-group-header">
-              <span className={`deptdesk-badge status-${statusName.toLowerCase().replace(/\s+/g, "-")}`}>
+              <span
+                className={`deptdesk-badge status-${statusName.toLowerCase().replace(/\s+/g, "-")}`}
+              >
                 {statusName}
               </span>
               <span className="count-pill">{groupTasks.length} tasks</span>

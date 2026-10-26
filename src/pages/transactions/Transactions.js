@@ -69,6 +69,14 @@ function Transactions({
         activeFilter={manager.activeFilter}
         setActiveFilter={manager.setActiveFilter}
         filters={manager.filters}
+        officeFilter={manager.officeFilter}
+        setOfficeFilter={manager.setOfficeFilter}
+        offices={manager.offices}
+        categoryFilter={manager.categoryFilter}
+        setCategoryFilter={manager.setCategoryFilter}
+        categories={manager.categories}
+        hasActiveFilters={manager.hasActiveFilters}
+        onResetFilters={manager.resetFilters}
         requestSearch={manager.requestSearch}
         setRequestSearch={manager.setRequestSearch}
         view={manager.view}

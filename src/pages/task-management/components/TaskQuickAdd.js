@@ -8,14 +8,90 @@ function TaskQuickAdd({
   form,
   setForm,
   onSubmit,
-  selectedCount,
+  taskSearch = "",
+  setTaskSearch = () => {},
+  statusFilter = "All",
+  setStatusFilter = () => {},
+  priorityFilter = "All",
+  setPriorityFilter = () => {},
+  dueFilter = "All",
+  setDueFilter = () => {},
+  hasActiveFilters = false,
+  onResetFilters = () => {},
+  selectedCount = 0,
   onBulkComplete,
   onBulkDelete,
 }) {
   return (
     <>
-      {selectedCount > 0 && (
-        <div className="deptdesk-card add-and-filter-card">
+      <div
+        className="deptdesk-card add-and-filter-card"
+        role="region"
+        aria-label="Task filters"
+      >
+        <div className="task-filter-controls">
+          <label className="task-search-box">
+            <span className="task-search-icon" aria-hidden="true">
+              ⌕
+            </span>
+            <input
+              type="search"
+              value={taskSearch}
+              onChange={(event) => setTaskSearch(event.target.value)}
+              placeholder="Search tasks by title, priority, or status..."
+              aria-label="Search tasks"
+            />
+          </label>
+          <div className="task-filter-selects">
+            <select
+              className="task-filter-select"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              aria-label="Filter by status"
+            >
+              <option value="All">All statuses</option>
+              {TASK_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+            <select
+              className="task-filter-select"
+              value={priorityFilter}
+              onChange={(event) => setPriorityFilter(event.target.value)}
+              aria-label="Filter by priority"
+            >
+              <option value="All">All priorities</option>
+              {TASK_PRIORITIES.map((priority) => (
+                <option key={priority} value={priority}>
+                  {priority}
+                </option>
+              ))}
+            </select>
+            <select
+              className="task-filter-select"
+              value={dueFilter}
+              onChange={(event) => setDueFilter(event.target.value)}
+              aria-label="Filter by due date"
+            >
+              <option value="All">All due dates</option>
+              <option value="Overdue">Overdue</option>
+              <option value="Due today">Due today</option>
+              <option value="Upcoming">Upcoming</option>
+            </select>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                className="task-filter-reset-btn"
+                onClick={onResetFilters}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+        {selectedCount > 0 && (
           <div className="bulk-actions-group">
             <span className="selected-count">{selectedCount} selected</span>
             <button
@@ -33,8 +109,8 @@ function TaskQuickAdd({
               Delete
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
       <Modal
         isOpen={isOpen}
         onClose={onClose}

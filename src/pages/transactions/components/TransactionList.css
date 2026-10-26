@@ -70,14 +70,65 @@
 
 .request-controls {
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
 .request-display-controls {
   align-items: center;
   display: flex;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   gap: 9px;
+}
+
+.request-filter-select {
+  appearance: none;
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #64748b 50%),
+    linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px, 5px 5px;
+  border: 1px solid var(--request-line);
+  border-radius: 9px;
+  color: var(--request-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 38px;
+  outline: none;
+  padding: 6px 32px 6px 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.request-filter-select:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 12%);
+}
+
+.request-filter-reset-btn {
+  background: var(--purple-soft);
+  border: 1px solid #fdba74;
+  border-radius: 9px;
+  color: var(--purple);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  min-height: 38px;
+  padding: 6px 12px;
+  transition: background-color 160ms ease, border-color 160ms ease;
+  white-space: nowrap;
+}
+
+.request-filter-reset-btn:hover {
+  background: #ffedd5;
+  border-color: var(--purple);
 }
 
 .request-filter-list {
@@ -230,6 +281,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .request-filter,
+  .request-filter-select,
+  .request-filter-reset-btn,
   .request-view-toggle button,
   .request-search {
     transition: none;
