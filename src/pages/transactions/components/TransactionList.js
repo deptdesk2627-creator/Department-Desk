@@ -46,6 +46,32 @@ function TransactionList({
             </h2>
             <p>Search, filter, and review submitted requests.</p>
           </div>
+          <div className="request-view-toggle" role="group" aria-label="Request display">
+            <button
+              type="button"
+              className={view === "table" ? "is-active" : ""}
+              aria-pressed={view === "table"}
+              onClick={() => setView("table")}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" />
+                <path d="M3.5 9.5h17M9 9.5v10M15 9.5v10" />
+              </svg>
+              Table View
+            </button>
+            <button
+              type="button"
+              className={view === "board" ? "is-active" : ""}
+              aria-pressed={view === "board"}
+              onClick={() => setView("board")}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" />
+                <path d="M9 5v14M15 5v14" />
+              </svg>
+              Kanban View
+            </button>
+          </div>
         </div>
         <div className="request-controls">
           <div className="request-filter-list" role="group" aria-label="Filter requests">
@@ -72,66 +98,42 @@ function TransactionList({
                 onChange={(event) => setRequestSearch(event.target.value)}
               />
             </label>
-            <select
-              className="request-filter-select"
-              value={officeFilter}
-              onChange={(event) => setOfficeFilter(event.target.value)}
-              aria-label="Filter by office"
-            >
-              <option value="All Offices">All offices</option>
-              {offices.map((office) => (
-                <option key={office} value={office}>
-                  {office}
-                </option>
-              ))}
-            </select>
-            <select
-              className="request-filter-select"
-              value={categoryFilter}
-              onChange={(event) => setCategoryFilter(event.target.value)}
-              aria-label="Filter by category"
-            >
-              <option value="All Categories">All categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-            {hasActiveFilters && (
-              <button
-                type="button"
-                className="request-filter-reset-btn"
-                onClick={onResetFilters}
+            <div className="request-filter-dropdowns">
+              <select
+                className="request-filter-select"
+                value={officeFilter}
+                onChange={(event) => setOfficeFilter(event.target.value)}
+                aria-label="Filter by office"
               >
-                Clear filters
-              </button>
-            )}
-            <div className="request-view-toggle" role="group" aria-label="Request display">
-              <button
-                type="button"
-                className={view === "table" ? "is-active" : ""}
-                aria-pressed={view === "table"}
-                onClick={() => setView("table")}
+                <option value="All Offices">All offices</option>
+                {offices.map((office) => (
+                  <option key={office} value={office}>
+                    {office}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="request-filter-select"
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+                aria-label="Filter by category"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" />
-                  <path d="M3.5 9.5h17M9 9.5v10M15 9.5v10" />
-                </svg>
-                Table View
-              </button>
-              <button
-                type="button"
-                className={view === "board" ? "is-active" : ""}
-                aria-pressed={view === "board"}
-                onClick={() => setView("board")}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" />
-                  <path d="M9 5v14M15 5v14" />
-                </svg>
-                Kanban View
-              </button>
+                <option value="All Categories">All categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  className="request-filter-reset-btn"
+                  onClick={onResetFilters}
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           </div>
         </div>

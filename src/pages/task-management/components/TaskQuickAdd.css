@@ -5,14 +5,17 @@
   flex-wrap: wrap;
   gap: 12px;
   padding: 14px 20px;
+  margin-bottom: 16px;
 }
 
 .task-filter-controls {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   flex: 1 1 auto;
+  width: 100%;
 }
 
 .task-search-box {
@@ -24,9 +27,8 @@
   border-radius: 10px;
   padding: 0 12px;
   min-height: 38px;
-  min-width: 260px;
+  min-width: 240px;
   flex: 1 1 260px;
-  max-width: 380px;
   color: #64748b;
   transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
@@ -62,6 +64,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  flex: 0 0 auto;
 }
 
 .task-filter-select {
