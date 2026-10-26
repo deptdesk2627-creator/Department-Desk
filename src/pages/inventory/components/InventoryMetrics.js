@@ -1,6 +1,6 @@
 import { MetricCard } from "../../../components/ui";
 
-const SLICE_COLORS = ["#7c2d12", "#d26937", "#ea580c", "#d7ab82", "#ecd5be"];
+const SLICE_COLORS = ["#f97316", "#fb923c", "#c2410c", "#fdba74", "#fed7aa"];
 
 const RECORD_ICON = (
   <svg
@@ -37,44 +37,64 @@ const CHART_BADGE_ICON = (
 const DEFAULT_PIE_CHART = (
   <svg
     className="inventory-usage-pie"
-    viewBox="0 0 184 150"
+    viewBox="0 0 210 156"
     aria-hidden="true"
   >
+    <circle
+      cx="105"
+      cy="78"
+      r="54"
+      fill="none"
+      stroke="currentColor"
+      strokeOpacity="0.1"
+      strokeWidth="1"
+      strokeDasharray="3 3"
+    />
     <g
       fill="none"
       stroke="#94a3b8"
+      strokeOpacity="0.65"
       strokeWidth="1.25"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <polyline points="73,30 65,17 47,17" />
-      <polyline points="118,36 126,19 144,19" />
-      <line x1="42" y1="75" x2="23" y2="75" />
-      <polyline points="65,116 57,129 39,129" />
-      <polyline points="110,118 118,131 136,131" />
+      <polyline points="86,33 76,19 56,19" />
+      <polyline points="135,38 145,22 165,22" />
+      <polyline points="77,118 67,132 47,132" />
+      <polyline points="128,120 138,134 158,134" />
     </g>
-    <g stroke="#ffffff" strokeWidth="2" strokeLinejoin="round">
+    <g className="inventory-usage-pie__slices">
       <path
-        d="M 90 75 L 90 27 A 48 48 0 0 1 135.65 60.17 Z"
-        fill="#7c2d12"
+        d="M 105 78 L 105 30 A 48 48 0 0 1 150.65 63.17 Z"
+        fill="#f97316"
       />
       <path
-        d="M 90 75 L 135.65 60.17 A 48 48 0 0 1 80.02 121.95 Z"
-        fill="#d26937"
+        d="M 105 78 L 150.65 63.17 A 48 48 0 0 1 95.02 124.95 Z"
+        fill="#fb923c"
       />
       <path
-        d="M 90 75 L 80.02 121.95 A 48 48 0 0 1 52.18 104.55 Z"
-        fill="#ea580c"
+        d="M 105 78 L 95.02 124.95 A 48 48 0 0 1 62.18 99.55 Z"
+        fill="#c2410c"
       />
       <path
-        d="M 90 75 L 52.18 104.55 A 48 48 0 0 1 57.88 39.33 Z"
-        fill="#d7ab82"
-      />
-      <path
-        d="M 90 75 L 57.88 39.33 A 48 48 0 0 1 90 27 Z"
-        fill="#ecd5be"
+        d="M 105 78 L 62.18 99.55 A 48 48 0 0 1 105 30 Z"
+        fill="#fdba74"
       />
     </g>
+    <circle
+      cx="105"
+      cy="78"
+      r="24"
+      className="inventory-usage-pie__hole"
+    />
+    <text
+      x="105"
+      y="81"
+      textAnchor="middle"
+      className="inventory-usage-pie__center-sub"
+    >
+      0%
+    </text>
   </svg>
 );
 
@@ -118,7 +138,7 @@ function buildPieSlices(breakdown) {
 
   let currentAngle = 0;
   return items.map((item, index) => {
-    const sweep = Math.max(8, item.share * 360);
+    const sweep = Math.max(10, item.share * 360);
     const startAngle = currentAngle;
     const endAngle =
       index === items.length - 1 ? 360 : Math.min(360, currentAngle + sweep);
@@ -137,60 +157,119 @@ function buildPieSlices(breakdown) {
 function renderDynamicPie(slices) {
   if (!slices.length) return DEFAULT_PIE_CHART;
 
-  const cx = 90;
-  const cy = 75;
-  const radius = 48;
+  const cx = 105;
+  const cy = 78;
+  const radius = 47;
+  const topSlice = slices[0];
 
   return (
     <svg
       className="inventory-usage-pie"
-      viewBox="0 0 184 150"
+      viewBox="0 0 210 156"
       role="img"
       aria-label="Most used and borrowed products pie chart"
     >
+      {/* Subtle outer halo ring */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={radius + 6}
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity="0.1"
+        strokeWidth="1"
+        strokeDasharray="3 3"
+      />
+
+      {/* Callout leader lines with colored anchor dots and % labels */}
       <g
         fill="none"
-        stroke="#94a3b8"
-        strokeWidth="1.25"
+        strokeWidth="1.3"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
         {slices.map((slice) => {
-          const edge = polarToCartesian(cx, cy, radius + 2, slice.midAngle);
-          const elbow = polarToCartesian(cx, cy, radius + 14, slice.midAngle);
+          const edge = polarToCartesian(cx, cy, radius, slice.midAngle);
+          const elbow = polarToCartesian(cx, cy, radius + 12, slice.midAngle);
           const isRight = elbow.x >= cx;
-          const tipX = isRight ? elbow.x + 14 : elbow.x - 14;
+          const tipX = isRight ? elbow.x + 12 : elbow.x - 12;
+          const labelX = isRight ? tipX + 4 : tipX - 4;
           return (
-            <polyline
-              key={`leader-${slice.key}`}
-              points={`${edge.x.toFixed(1)},${edge.y.toFixed(1)} ${elbow.x.toFixed(1)},${elbow.y.toFixed(1)} ${tipX.toFixed(1)},${elbow.y.toFixed(1)}`}
-            />
+            <g key={`leader-${slice.key}`}>
+              <polyline
+                points={`${edge.x.toFixed(1)},${edge.y.toFixed(1)} ${elbow.x.toFixed(1)},${elbow.y.toFixed(1)} ${tipX.toFixed(1)},${elbow.y.toFixed(1)}`}
+                stroke={slice.color}
+                strokeOpacity="0.85"
+              />
+              <circle
+                cx={edge.x.toFixed(1)}
+                cy={edge.y.toFixed(1)}
+                r="2.4"
+                fill={slice.color}
+              />
+              <text
+                x={labelX.toFixed(1)}
+                y={(elbow.y + 3.5).toFixed(1)}
+                textAnchor={isRight ? "start" : "end"}
+                className="inventory-usage-pie__callout-label"
+              >
+                {slice.sharePercent}%
+              </text>
+            </g>
           );
         })}
       </g>
-      <g stroke="#ffffff" strokeWidth="2" strokeLinejoin="round">
+
+      {/* Pie slices separated cleanly by surface color */}
+      <g className="inventory-usage-pie__slices">
         {slices.length === 1 ? (
           <circle cx={cx} cy={cy} r={radius} fill={slices[0].color}>
             <title>{`${slices[0].name}: ${slices[0].totalQuantity} ${slices[0].unit} (100%)`}</title>
           </circle>
         ) : (
-          slices.map((slice) => (
-            <path
-              key={slice.key}
-              d={createSlicePath(
-                cx,
-                cy,
-                radius,
-                slice.startAngle,
-                slice.endAngle,
-              )}
-              fill={slice.color}
-            >
-              <title>{`${slice.name}: ${slice.totalQuantity} ${slice.unit} (${slice.sharePercent}%)`}</title>
-            </path>
-          ))
+          slices.map((slice, index) => {
+            const offset =
+              index === 0
+                ? polarToCartesian(0, 0, 2.2, slice.midAngle)
+                : { x: 0, y: 0 };
+            return (
+              <path
+                key={slice.key}
+                d={createSlicePath(
+                  cx,
+                  cy,
+                  index === 0 ? radius + 1.5 : radius,
+                  slice.startAngle,
+                  slice.endAngle,
+                )}
+                fill={slice.color}
+                transform={`translate(${offset.x.toFixed(2)}, ${offset.y.toFixed(2)})`}
+              >
+                <title>{`${slice.name}: ${slice.totalQuantity} ${slice.unit} (${slice.sharePercent}%)`}</title>
+              </path>
+            );
+          })
         )}
       </g>
+
+      {/* Donut inner cutout with top percentage */}
+      <circle cx={cx} cy={cy} r="23" className="inventory-usage-pie__hole" />
+      <text
+        x={cx}
+        y={cy + 1}
+        textAnchor="middle"
+        className="inventory-usage-pie__center-value"
+      >
+        {topSlice.sharePercent}%
+      </text>
+      <text
+        x={cx}
+        y={cy + 11}
+        textAnchor="middle"
+        className="inventory-usage-pie__center-caption"
+      >
+        TOP
+      </text>
     </svg>
   );
 }
@@ -201,9 +280,9 @@ function describeActivity(item) {
     return `${item.usedQuantity} used · ${item.borrowedQuantity} borrowed`;
   }
   if (item.borrowedQuantity > 0) {
-    return `${item.borrowedQuantity} ${item.unit} borrowed (${item.sharePercent}%)`;
+    return `${item.borrowedQuantity} ${item.unit} borrowed`;
   }
-  return `${item.usedQuantity} ${item.unit} used (${item.sharePercent}%)`;
+  return `${item.usedQuantity} ${item.unit} used`;
 }
 
 function InventoryMetrics({
@@ -259,20 +338,24 @@ function InventoryMetrics({
             </span>
             {topItem ? (
               <>
-                <p
-                  className="metric-value inventory-top-item"
-                  title={topItem.name}
-                >
-                  {topItem.name}
-                </p>
-                <p className="metric-foot">{describeActivity(topItem)}</p>
-                {slices.length > 1 && (
-                  <ul
-                    className="inventory-pie-legend"
-                    aria-label="Top used and borrowed products"
+                <div className="inventory-top-item-row">
+                  <p
+                    className="metric-value inventory-top-item"
+                    title={topItem.name}
                   >
-                    {slices.slice(0, 3).map((slice) => (
-                      <li key={slice.key} className="inventory-pie-legend__item">
+                    {topItem.name}
+                  </p>
+                  <span className="inventory-top-item-pill">
+                    {describeActivity(topItem)}
+                  </span>
+                </div>
+                <ul
+                  className="inventory-pie-legend"
+                  aria-label="Top used and borrowed products"
+                >
+                  {slices.slice(0, 3).map((slice) => (
+                    <li key={slice.key} className="inventory-pie-legend__item">
+                      <div className="inventory-pie-legend__row">
                         <span
                           className="inventory-pie-legend__dot"
                           style={{ backgroundColor: slice.color }}
@@ -284,10 +367,22 @@ function InventoryMetrics({
                         <span className="inventory-pie-legend__share">
                           {slice.sharePercent}%
                         </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                      </div>
+                      <span
+                        className="inventory-pie-legend__bar"
+                        aria-hidden="true"
+                      >
+                        <span
+                          className="inventory-pie-legend__bar-fill"
+                          style={{
+                            width: `${Math.max(6, slice.sharePercent)}%`,
+                            backgroundColor: slice.color,
+                          }}
+                        />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </>
             ) : (
               <>
