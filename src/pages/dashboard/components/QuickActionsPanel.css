@@ -1,4 +1,8 @@
 .quick-actions-panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  height: 100%;
   min-width: 0;
 }
 
@@ -8,101 +12,159 @@
 }
 
 .quick-actions-list {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 14px;
   margin-top: 18px;
 }
 
 .quick-action {
   align-items: center;
   background: #ffffff;
-  border: 1px solid #edf0f4;
-  border-radius: 11px;
-  color: #344052;
+  border: 1px solid var(--line, #edf0f4);
+  border-radius: 14px;
+  color: var(--ink, #1e293b);
   cursor: pointer;
   display: flex;
-  gap: 12px;
-  min-height: 60px;
-  padding: 10px 13px;
+  flex: 1 1 0;
+  gap: 16px;
+  min-height: 76px;
+  padding: 18px 18px;
   text-align: left;
-  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
   width: 100%;
 }
 
 .quick-action:hover {
-  background: #f8fafc;
-  border-color: #d9e1eb;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
-  transform: translateY(-1px);
+  background: #fffaf5;
+  border-color: #fdba74;
+  box-shadow: 0 6px 16px rgb(var(--purple-rgb) / 10%);
+  transform: translateY(-2px);
 }
 
 .quick-action:focus-visible {
-  border-color: #a99df4;
-  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 16%);
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 18%);
   outline: none;
   outline-offset: 2px;
 }
 
 .quick-action-icon {
   align-items: center;
-  border-radius: 10px;
+  border-radius: 14px;
   display: inline-flex;
-  flex: 0 0 38px;
-  height: 38px;
+  flex: 0 0 54px;
+  height: 54px;
   justify-content: center;
-  width: 38px;
+  transition: transform 160ms ease;
+  width: 54px;
+}
+
+.quick-action:hover .quick-action-icon {
+  transform: scale(1.05);
 }
 
 .quick-action-icon svg {
-  height: 19px;
-  width: 19px;
+  height: 26px;
+  width: 26px;
 }
 
 .quick-action-document {
   background: #fff7ed;
+  border: 1px solid #fed7aa;
   color: #c2410c;
 }
 
 .quick-action-inventory {
   background: #ecfdf5;
-  color: #10b981;
+  border: 1px solid #a7f3d0;
+  color: #059669;
 }
 
 .quick-action-request {
   background: #fff7ed;
-  color: #f97316;
+  border: 1px solid #fdba74;
+  color: #ea580c;
 }
 
 .quick-action-task {
   background: #ffedd5;
+  border: 1px solid #fdba74;
   color: #9a3412;
 }
 
-.quick-action-label {
+.quick-action-copy {
+  display: flex;
   flex: 1;
-  font-size: 13px;
-  font-weight: 600;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.quick-action-label {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.25px;
+  line-height: 1.25;
+}
+
+.quick-action-desc {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .quick-action-arrow {
+  align-items: center;
+  background: var(--surface-subtle, #f8fafc);
+  border: 1px solid var(--line);
+  border-radius: 10px;
   color: #64748b;
   display: inline-flex;
-  transition: transform 150ms ease, color 150ms ease;
+  flex: 0 0 34px;
+  height: 34px;
+  justify-content: center;
+  transition:
+    transform 150ms ease,
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
+  width: 34px;
 }
 
 .quick-action:hover .quick-action-arrow {
+  background: var(--purple-soft);
+  border-color: #fdba74;
   color: var(--purple);
-  transform: translateX(3px);
+  transform: translate(2px, -2px);
 }
 
 .quick-action-arrow svg {
-  height: 17px;
-  width: 17px;
+  height: 18px;
+  width: 18px;
 }
 
-@media (max-width: 520px) {
-  .quick-actions-list {
-    grid-template-columns: 1fr;
+:root[data-theme="dark"] .quick-action-arrow {
+  background: #1e293b;
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .quick-action:hover .quick-action-arrow {
+  background: var(--purple-soft);
+  border-color: var(--purple);
+  color: var(--purple);
+}
+
+@media (max-width: 1000px) {
+  .quick-action {
+    flex: 0 0 auto;
   }
 }

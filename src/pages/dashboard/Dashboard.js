@@ -89,15 +89,16 @@ function Dashboard({
             onNavigate={onNavigate}
             readOnly={!canManageInventory}
           />
-        </div>
 
-        <div className="dashboard-side-column">
-          <QuickActionsPanel onNavigate={onNavigate} role={role} />
           <DashboardTasksPanel
             tasks={recentTasks}
             hasQuery={hasQuery}
             onNavigate={onNavigate}
           />
+        </div>
+
+        <div className="dashboard-side-column">
+          <QuickActionsPanel onNavigate={onNavigate} role={role} />
         </div>
       </div>
     </div>

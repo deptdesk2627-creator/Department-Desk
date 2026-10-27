@@ -1,13 +1,19 @@
 .dashboard-columns {
   display: grid;
   gap: 1.25rem;
-  align-items: start;
+  align-items: stretch;
   grid-template-columns: minmax(0, 1fr) 340px;
 }
 
-.dashboard-main-column,
-.dashboard-side-column {
+.dashboard-main-column {
   display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.dashboard-side-column {
+  display: flex;
+  flex-direction: column;
   gap: 1.25rem;
   min-width: 0;
 }

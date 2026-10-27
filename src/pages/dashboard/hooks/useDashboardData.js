@@ -7,13 +7,20 @@ import {
 import { isLowStock } from "../../../utils/inventory";
 import { matchesQuery, normalizeQuery } from "../../../utils/search";
 
-export function useDashboardData({ requests = [], tasks = [], inventory = [], search = "" }) {
+export function useDashboardData({
+  requests = [],
+  tasks = [],
+  inventory = [],
+  search = "",
+}) {
   const query = normalizeQuery(search);
 
   return useMemo(() => {
     const requestItems = Array.isArray(requests) ? requests.filter(Boolean) : [];
     const taskItems = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
-    const inventoryItems = Array.isArray(inventory) ? inventory.filter(Boolean) : [];
+    const inventoryItems = Array.isArray(inventory)
+      ? inventory.filter(Boolean)
+      : [];
 
     const now = new Date();
     const greeting =
@@ -90,11 +97,11 @@ export function useDashboardData({ requests = [], tasks = [], inventory = [], se
       formattedDate,
       dateTime,
       metrics,
-      recentRequests: filteredRequests.slice(0, 4),
+      recentRequests: filteredRequests.slice(0, 5),
       recentDocuments: filteredRequests
-        .filter((request) => request.type === "Document")
-        .slice(0, 4),
-      recentInventory: filteredInventory.slice(0, 4),
+        .filter((request) => (request.type || request.category) === "Document")
+        .slice(0, 5),
+      recentInventory: filteredInventory.slice(0, 5),
       recentTasks: filteredTasks.slice(0, 5),
     };
   }, [requests, tasks, inventory, query]);

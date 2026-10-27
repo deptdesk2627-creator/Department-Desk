@@ -30,6 +30,7 @@ const ACTION_ICONS = {
 const QUICK_ACTIONS = [
   {
     label: "Create Document",
+    description: "Log outgoing or incoming office documents",
     targetPage: "transactions",
     permission: "createRequests",
     iconClass: "quick-action-document",
@@ -37,6 +38,7 @@ const QUICK_ACTIONS = [
   },
   {
     label: "Update Inventory",
+    description: "Add supplies, record borrowing, or check stock",
     targetPage: "inventory",
     permission: "manageInventory",
     iconClass: "quick-action-inventory",
@@ -44,6 +46,7 @@ const QUICK_ACTIONS = [
   },
   {
     label: "Process Request",
+    description: "Review statuses, signatures, and approvals",
     targetPage: "transactions",
     permission: "editDocuments",
     iconClass: "quick-action-request",
@@ -51,6 +54,7 @@ const QUICK_ACTIONS = [
   },
   {
     label: "Add To-Do List",
+    description: "Assign office tasks, priorities, and deadlines",
     targetPage: "tasks",
     permission: "createTasks",
     iconClass: "quick-action-task",
@@ -61,18 +65,21 @@ const QUICK_ACTIONS = [
 const DEAN_QUICK_ACTIONS = [
   {
     label: "Review Requests & Documents",
+    description: "Inspect outgoing requests and incoming office files",
     targetPage: "transactions",
     iconClass: "quick-action-document",
     svg: ACTION_ICONS.document,
   },
   {
     label: "Inspect Supply & Inventory",
+    description: "View stock levels, usage breakdown, and receipts",
     targetPage: "inventory",
     iconClass: "quick-action-inventory",
     svg: ACTION_ICONS.inventory,
   },
   {
     label: "Add To-Do List",
+    description: "Manage executive tasks and office deadlines",
     targetPage: "tasks",
     iconClass: "quick-action-task",
     svg: ACTION_ICONS.task,
@@ -117,20 +124,25 @@ function QuickActionsPanel({ onNavigate, role }) {
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.8"
+                strokeWidth="1.9"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
                 {action.svg}
               </svg>
             </span>
-            <span className="quick-action-label">{action.label}</span>
+            <span className="quick-action-copy">
+              <span className="quick-action-label">{action.label}</span>
+              {action.description && (
+                <span className="quick-action-desc">{action.description}</span>
+              )}
+            </span>
             <span className="quick-action-arrow" aria-hidden="true">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.8"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
