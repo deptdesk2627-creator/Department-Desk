@@ -6,13 +6,17 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 10px;
-  color: #29364a;
+  border-radius: 12px;
+  color: var(--ink, #0f172a);
   cursor: pointer;
   display: inline-flex;
-  gap: 11px;
-  padding: 4px 2px 4px 5px;
+  gap: 10px;
+  padding: 4px 6px 4px 4px;
   transition: background-color 150ms ease;
+}
+
+.app-header__profile-button:hover {
+  background: rgb(var(--purple-rgb) / 8%);
 }
 
 .app-header__profile-button:focus-visible {
@@ -32,13 +36,67 @@
   font-weight: 700;
   height: 38px;
   justify-content: center;
+  position: relative;
   width: 38px;
 }
 
+.app-header__online-indicator {
+  background: #35c879;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  bottom: 0;
+  height: 10px;
+  position: absolute;
+  right: -1px;
+  width: 10px;
+}
+
+.app-header__online-indicator[data-status="meeting"] {
+  background: #f59e0b;
+}
+
+.app-header__online-indicator[data-status="away"],
+.app-header__online-indicator[data-status="leave"] {
+  background: #94a3b8;
+}
+
+:root[data-theme="dark"] .app-header__online-indicator {
+  border-color: #1e293b;
+}
+
+.app-header__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
 .app-header__name {
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--ink, #0f172a);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
   white-space: nowrap;
+}
+
+.app-header__subtitle {
+  color: #c2410c;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] .app-header__name {
+  color: #f8fafc;
+}
+
+:root[data-theme="dark"] .app-header__subtitle {
+  color: #fed7aa;
 }
 
 .app-header__chevron {
@@ -117,15 +175,19 @@
 
 @media (max-width: 768px) {
   .app-header__profile-button {
+    gap: 8px;
     height: 36px;
-    padding: 3px 8px 3px 3px;
-    gap: 6px;
+    padding: 3px 6px 3px 3px;
   }
 
   .app-header__avatar {
-    height: 30px;
-    width: 30px;
     font-size: 11px;
+    height: 32px;
+    width: 32px;
+  }
+
+  .app-header__subtitle {
+    display: none;
   }
 }
 
@@ -135,9 +197,9 @@
   }
 
   .app-header__profile-button {
-    padding: 0;
-    border: 0;
     background: transparent;
+    border: 0;
+    padding: 0;
   }
 
   .app-header__chevron {
