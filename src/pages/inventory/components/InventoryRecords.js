@@ -1,14 +1,14 @@
 import { formatDateTime } from "../../../utils/formatters";
 import { recordStatusClass } from "../../../utils/inventory";
 
-function InventoryRecords({ records, totalRecords }) {
+function InventoryRecords({ records, totalRecords, onViewReceipt }) {
   return (
     <section
       className="card panel module-list-panel inventory-folder-panel inventory-folder-panel--transactions"
       aria-label="Transaction records"
     >
       <p className="inventory-panel-subtitle">
-        History of borrowed, used, and returned products.
+        History of borrowed, used, and returned products with digital receipts.
       </p>
       {records.length ? (
         <div className="inventory-table-wrap">
@@ -21,7 +21,9 @@ function InventoryRecords({ records, totalRecords }) {
                 <th>Product-ID No.</th>
                 <th>Product Name</th>
                 <th>Quantity</th>
-                <th className="inventory-status-col">Status</th>
+                <th>Remark / Purpose</th>
+                <th>Status</th>
+                <th className="inventory-status-col">Receipt</th>
               </tr>
             </thead>
             <tbody>
@@ -45,12 +47,25 @@ function InventoryRecords({ records, totalRecords }) {
                       {record.quantity} {record.unit}
                     </strong>
                   </td>
-                  <td className="inventory-status-col">
+                  <td className="record-remarks-cell">
+                    {record.remarks || "—"}
+                  </td>
+                  <td>
                     <span
                       className={`status-pill ${recordStatusClass(record.status)}`}
                     >
                       {record.status}
                     </span>
+                  </td>
+                  <td className="inventory-status-col">
+                    <button
+                      type="button"
+                      className="receipt-table-btn"
+                      onClick={() => onViewReceipt?.(record)}
+                      aria-label={`View receipt for ${record.productName}`}
+                    >
+                       Receipt
+                    </button>
                   </td>
                 </tr>
               ))}

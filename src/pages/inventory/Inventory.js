@@ -3,6 +3,7 @@ import "./Inventory.css";
 import { PageHeader } from "../../components/ui";
 import InventoryForm from "./components/InventoryForm";
 import InventoryMetrics from "./components/InventoryMetrics";
+import InventoryReceiptModal from "./components/InventoryReceiptModal";
 import InventoryRecords from "./components/InventoryRecords";
 import InventoryTable from "./components/InventoryTable";
 import StockActionModal from "./components/StockActionModal";
@@ -217,6 +218,7 @@ function Inventory({
             totalRecords={recordItems.length}
             filter={recordFilter}
             setFilter={setRecordFilter}
+            onViewReceipt={stockActions.openReceipt}
           />
         )}
       </div>
@@ -227,10 +229,18 @@ function Inventory({
         setPersonName={stockActions.setPersonName}
         quantity={stockActions.quantity}
         setQuantity={stockActions.setQuantity}
+        remarks={stockActions.remarks}
+        setRemarks={stockActions.setRemarks}
         error={stockActions.error}
         getBorrowedBalance={stockActions.getBorrowedBalance}
         onSubmit={stockActions.submitAction}
         onClose={stockActions.closeAction}
+      />
+
+      <InventoryReceiptModal
+        record={stockActions.receiptRecord}
+        inventory={inventoryItems}
+        onClose={stockActions.closeReceipt}
       />
     </div>
   );

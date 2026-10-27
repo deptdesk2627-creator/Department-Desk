@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { canBorrowItem, canUseItem } from "../utils/inventory";
+import {
+  canBorrowItem,
+  canUseItem,
+  getItemUsageType,
+} from "../utils/inventory";
 
 const STATUS_BY_ACTION = {
   Borrow: "Borrowed",
@@ -21,6 +25,7 @@ export function useInventoryActions({
   setRecords,
   person = "",
   requirePerson = false,
+  requireRemarks = false,
   returnLimitMessage = "The return quantity cannot exceed the borrowed balance.",
 }) {
   const [action, setAction] = useState(null);
@@ -28,6 +33,7 @@ export function useInventoryActions({
   const [personName, setPersonName] = useState("");
   const [remarks, setRemarks] = useState("");
   const [error, setError] = useState("");
+  const [receiptRecord, setReceiptRecord] = useState(null);
 
   const inventoryItems = Array.isArray(inventory) ? inventory.filter(Boolean) : [];
   const recordItems = Array.isArray(records) ? records.filter(Boolean) : [];
@@ -59,6 +65,16 @@ export function useInventoryActions({
     setAction(null);
   }
 
+  function openReceipt(record) {
+    if (record) {
+      setReceiptRecord(record);
+    }
+  }
+
+  function closeReceipt() {
+    setReceiptRecord(null);
+  }
+
   function submitAction(event) {
     event.preventDefault();
     if (!action) return;
@@ -66,6 +82,12 @@ export function useInventoryActions({
     const trimmedPerson = String(person || personName || "").trim();
     if (requirePerson && !trimmedPerson) {
       setError("Enter your name at the top of the page first.");
+      return;
+    }
+
+    const trimmedRemarks = String(remarks || "").trim();
+    if (requireRemarks && action.type !== "Return" && !trimmedRemarks) {
+      setError("Enter a remark or purpose for borrowing or using this item.");
       return;
     }
 
@@ -101,11 +123,16 @@ export function useInventoryActions({
       dateTime: new Date().toISOString(),
       productId: id,
       productName: item.name,
+      usageType: getItemUsageType(item),
       quantity: amount,
       unit: item.unit,
       status: STATUS_BY_ACTION[action.type] || "Used",
       ...(trimmedPerson ? { person: trimmedPerson } : {}),
-      ...(remarks.trim() ? { remarks: remarks.trim() } : requirePerson ? { remarks: "" } : {}),
+      ...(trimmedRemarks
+        ? { remarks: trimmedRemarks }
+        : requirePerson
+          ? { remarks: "" }
+          : {}),
     };
 
     setInventory((current) =>
@@ -125,17 +152,21 @@ export function useInventoryActions({
       ),
     );
     setRecords((current) => [record, ...(Array.isArray(current) ? current : [])]);
+    setReceiptRecord(record);
     closeAction();
   }
 
   return {
     action,
     closeAction,
+    closeReceipt,
     error,
     getBorrowedBalance,
     openAction,
+    openReceipt,
     personName,
     quantity,
+    receiptRecord,
     remarks,
     setPersonName,
     setQuantity,

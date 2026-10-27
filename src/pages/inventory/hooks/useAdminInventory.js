@@ -82,6 +82,7 @@ export function useAdminInventory({
           record.status,
           record.unit,
           record.quantity,
+          record.remarks,
           record.dateTime,
         ];
         const matchesGlobalSearch = matchesQuery(search, ...recordFields);
@@ -158,6 +159,7 @@ export function useAdminInventory({
     records: recordItems,
     setInventory,
     setRecords,
+    requireRemarks: true,
   });
 
   function addItem(event) {

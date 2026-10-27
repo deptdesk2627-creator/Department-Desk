@@ -1,7 +1,7 @@
 import { formatDateTime } from "../../../utils/formatters";
 import { recordStatusClass as statusClass } from "../../../utils/inventory";
 
-function StaffHistoryTable({ records, hasName }) {
+function StaffHistoryTable({ records, hasName, onViewReceipt }) {
   return (
     <section
       className="card panel module-list-panel"
@@ -26,6 +26,7 @@ function StaffHistoryTable({ records, hasName }) {
                 <th>Quantity</th>
                 <th>Status</th>
                 <th>Remarks</th>
+                <th>Receipt</th>
               </tr>
             </thead>
             <tbody>
@@ -34,13 +35,25 @@ function StaffHistoryTable({ records, hasName }) {
                   <td>{formatDateTime(record.dateTime)}</td>
                   <td>{record.person || "—"}</td>
                   <td>{record.productName}</td>
-                  <td>{record.quantity} {record.unit}</td>
+                  <td>
+                    {record.quantity} {record.unit}
+                  </td>
                   <td>
                     <span className={`status-pill ${statusClass(record.status)}`}>
                       {record.status}
                     </span>
                   </td>
                   <td>{record.remarks || "—"}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="receipt-table-btn"
+                      onClick={() => onViewReceipt?.(record)}
+                      aria-label={`View receipt for ${record.productName}`}
+                    >
+                      🧾 Receipt
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

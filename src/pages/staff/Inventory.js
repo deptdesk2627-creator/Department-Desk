@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import "../inventory/Inventory.css";
 import "./InventoryStaff.css";
 import { PageHeader } from "../../components/ui";
@@ -8,6 +8,7 @@ import {
 } from "../../hooks/useInventoryActions";
 import { useStoredState } from "../../hooks/useStoredState";
 import { matchesQuery } from "../../utils/search";
+import InventoryReceiptModal from "../inventory/components/InventoryReceiptModal";
 import StaffBorrowModal from "./components/StaffBorrowModal";
 import StaffHistoryTable from "./components/StaffHistoryTable";
 import StaffSupplyList from "./components/StaffSupplyList";
@@ -24,7 +25,6 @@ function StaffInventory({
   search = "",
 }) {
   const [staffName, setStaffName] = useStoredState("officeflow.staff-name", "");
-  const [supplySearch, setSupplySearch] = useState("");
   const person = String(staffName || "").trim();
 
   const inventoryItems = useMemo(
@@ -48,27 +48,21 @@ function StaffInventory({
   const visibleItems = useMemo(
     () =>
       inventoryItems.filter((item) =>
-        matchesQuery(search, getProductId(item), item.name, item.unit) &&
-        matchesQuery(
-          supplySearch,
-          getProductId(item),
-          item.productId,
-          item.id,
-          item.name,
-          item.unit,
-          item.quantity,
-        ),
+        matchesQuery(search, getProductId(item), item.name, item.unit),
       ),
-    [inventoryItems, search, supplySearch],
+    [inventoryItems, search],
   );
 
   const {
     action,
     closeAction,
+    closeReceipt,
     error,
     getBorrowedBalance: getMyBorrowedBalance,
     openAction,
+    openReceipt,
     quantity,
+    receiptRecord,
     remarks,
     setQuantity,
     setRemarks,
@@ -81,6 +75,7 @@ function StaffInventory({
     setRecords,
     person,
     requirePerson: true,
+    requireRemarks: true,
     returnLimitMessage: "You cannot return more than you borrowed.",
   });
 
@@ -116,7 +111,9 @@ function StaffInventory({
               <span
                 className={`status-pill ${person ? "status-done" : "status-waiting"}`}
               >
-                {person ? "● Active borrower session" : "Identify yourself to unlock actions"}
+                {person
+                  ? "● Active borrower session"
+                  : "Identify yourself to unlock actions"}
               </span>
             </span>
             <input
@@ -125,7 +122,10 @@ function StaffInventory({
               placeholder="Enter your full name (e.g. Prof. Juan Dela Cruz)"
             />
           </label>
-          <div className="staff-identity__quick-picks" aria-label="Quick select staff member">
+          <div
+            className="staff-identity__quick-picks"
+            aria-label="Quick select staff member"
+          >
             <span className="staff-identity__quick-label">Quick select:</span>
             {suggestedStaffNames.map((name) => {
               const isSelected = person.toLowerCase() === name.toLowerCase();
@@ -157,14 +157,16 @@ function StaffInventory({
       <StaffSupplyList
         items={visibleItems}
         totalItems={inventoryItems.length}
-        supplySearch={supplySearch}
-        onSupplySearchChange={setSupplySearch}
         canRecord={Boolean(person)}
         getMyBorrowedBalance={getMyBorrowedBalance}
         onOpenAction={openAction}
       />
 
-      <StaffHistoryTable records={myRecords} hasName={Boolean(person)} />
+      <StaffHistoryTable
+        records={myRecords}
+        hasName={Boolean(person)}
+        onViewReceipt={openReceipt}
+      />
 
       <StaffBorrowModal
         action={action}
@@ -182,6 +184,12 @@ function StaffInventory({
         }
         onSubmit={submitAction}
         onClose={closeAction}
+      />
+
+      <InventoryReceiptModal
+        record={receiptRecord}
+        inventory={inventoryItems}
+        onClose={closeReceipt}
       />
     </div>
   );

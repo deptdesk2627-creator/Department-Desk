@@ -1,9 +1,9 @@
 import { Modal } from "../../../components/ui";
 
 const REMARKS_LABEL = {
-  Borrow: "Purpose (optional)",
-  Use: "Purpose (optional)",
-  Return: "Condition on return (optional)",
+  Borrow: "Remark / Reason for borrowing",
+  Use: "Remark / Purpose of use",
+  Return: "Condition / Remark on return (optional)",
 };
 
 function StaffBorrowModal({
@@ -19,6 +19,8 @@ function StaffBorrowModal({
 }) {
   if (!action) return null;
 
+  const isReturn = action.type === "Return";
+
   return (
     <Modal
       isOpen={Boolean(action)}
@@ -31,7 +33,7 @@ function StaffBorrowModal({
         {action.item.name}{" "}
         <span>
           ·{" "}
-          {action.type === "Return"
+          {isReturn
             ? `${maxQuantity} borrowed by you`
             : `${action.item.quantity} ${action.item.unit} available`}
         </span>
@@ -50,21 +52,29 @@ function StaffBorrowModal({
             onChange={(event) => setQuantity(event.target.value)}
           />
         </label>
-        <label>
+        <label className="action-form__remarks">
           {REMARKS_LABEL[action.type]}
           <input
+            required={!isReturn}
             value={remarks}
             onChange={(event) => setRemarks(event.target.value)}
             placeholder={
-              action.type === "Return"
+              isReturn
                 ? "e.g. Good condition"
-                : "e.g. Midterm exam printing"
+                : "e.g. Midterm exam printing / classroom presentation"
             }
           />
         </label>
-        <div className="form-actions">
+        <div className="form-actions action-form__actions">
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
           <button className="primary-button" type="submit">
-            Record {action.type.toLowerCase()}
+            Record {action.type.toLowerCase()} &amp; view receipt
           </button>
         </div>
       </form>

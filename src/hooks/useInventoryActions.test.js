@@ -1,4 +1,5 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, render, renderHook, screen } from "@testing-library/react";
+import InventoryReceiptModal from "../pages/inventory/components/InventoryReceiptModal";
 import { useInventoryActions } from "./useInventoryActions";
 
 test("validates stock actions and records successful borrow/return operations", () => {
@@ -39,13 +40,19 @@ test("validates stock actions and records successful borrow/return operations", 
 
   act(() => result.current.setPersonName("Prof. Juan Dela Cruz"));
   act(() => result.current.setQuantity("2"));
+  act(() => result.current.setRemarks("Department faculty meeting"));
   act(() => result.current.submitAction({ preventDefault: jest.fn() }));
   expect(inventory[0].quantity).toBe(3);
   expect(records[0]).toMatchObject({
     status: "Borrowed",
     quantity: 2,
     person: "Prof. Juan Dela Cruz",
+    remarks: "Department faculty meeting",
   });
+  expect(result.current.receiptRecord).toEqual(records[0]);
+
+  act(() => result.current.closeReceipt());
+  expect(result.current.receiptRecord).toBeNull();
 
   rerender();
   act(() => result.current.openAction(inventory[0], "Return"));
@@ -66,7 +73,7 @@ test("validates stock actions and records successful borrow/return operations", 
   });
 });
 
-test("enforces usable-only vs borrowable-only product rules", () => {
+test("enforces usable-only vs borrowable-only product rules and required remarks", () => {
   const usableItem = {
     id: "supply-1",
     productId: "PRD-0001",
@@ -92,16 +99,56 @@ test("enforces usable-only vs borrowable-only product rules", () => {
       records: [],
       setInventory,
       setRecords,
+      requireRemarks: true,
     }),
   );
 
+  act(() => result.current.openAction(borrowableItem, "Borrow"));
+  act(() => result.current.setPersonName("Prof. Clara"));
+  act(() => result.current.submitAction({ preventDefault: jest.fn() }));
+  expect(result.current.error).toMatch(/remark or purpose/i);
+
   act(() => result.current.openAction(usableItem, "Borrow"));
+  act(() => result.current.setRemarks("Needed for class"));
   act(() => result.current.submitAction({ preventDefault: jest.fn() }));
   expect(result.current.error).toMatch(/usable only/i);
   expect(setInventory).not.toHaveBeenCalled();
 
   act(() => result.current.openAction(borrowableItem, "Use"));
+  act(() => result.current.setRemarks("Needed for class"));
   act(() => result.current.submitAction({ preventDefault: jest.fn() }));
   expect(result.current.error).toMatch(/borrowable only/i);
   expect(setInventory).not.toHaveBeenCalled();
+});
+
+test("renders digital receipt with product, remark, dates, and blank return date line for borrowable items", () => {
+  const record = {
+    id: "REC-2026-1",
+    dateTime: "2026-10-27T01:10:00.000Z",
+    productId: "PRD-0002",
+    productName: "Mechanical Keyboard",
+    usageType: "Borrowable",
+    quantity: 1,
+    unit: "pcs",
+    status: "Borrowed",
+    person: "Prof. Juan Dela Cruz",
+    remarks: "Borrowed for Computer Lab 2 lecture",
+  };
+
+  render(
+    <InventoryReceiptModal
+      record={record}
+      inventory={[]}
+      onClose={jest.fn()}
+    />,
+  );
+
+  expect(screen.getByText("Mechanical Keyboard")).toBeInTheDocument();
+  expect(
+    screen.getByText("Borrowed for Computer Lab 2 lecture"),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByLabelText("Borrowable item return section"),
+  ).toBeInTheDocument();
+  expect(screen.getByTestId("receipt-return-date-line")).toBeInTheDocument();
 });
