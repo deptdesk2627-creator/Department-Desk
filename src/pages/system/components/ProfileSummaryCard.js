@@ -68,4 +68,3 @@ function ProfileSummaryCard({ role, draft }) {
 }
 
 export default ProfileSummaryCard;
-
