@@ -68,14 +68,10 @@ test("collapses the sidebar to workspace icons and expands it again", () => {
   expect(onToggle).toHaveBeenCalledTimes(2);
 });
 
-test("closes the profile menu after navigating from it", () => {
-  const onNavigate = jest.fn();
-  render(<SideBar currentPage="dashboard" onNavigate={onNavigate} />);
+test("calls onLogout when clicking the log out button", () => {
+  const onLogout = jest.fn();
+  render(<SideBar currentPage="dashboard" onLogout={onLogout} />);
 
-  fireEvent.click(screen.getByRole("button", { name: "Office Staff menu" }));
-  expect(screen.getByRole("menu")).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
-  expect(onNavigate).toHaveBeenCalledWith("settings");
-  expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Log out" }));
+  expect(onLogout).toHaveBeenCalledTimes(1);
 });

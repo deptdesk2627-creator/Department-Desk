@@ -5,7 +5,7 @@ beforeEach(() => {
   window.localStorage.clear();
 });
 
-test("renders DeptDesk login screen, signs into workspace, and logs out from header and sidebar menus", () => {
+test("renders DeptDesk login screen, signs into workspace, and logs out from header and sidebar", () => {
   render(<App />);
   expect(
     screen.getByRole("heading", { name: /sign in to deptdesk/i }),
@@ -21,7 +21,7 @@ test("renders DeptDesk login screen, signs into workspace, and logs out from hea
 
   // Log out from top-right header profile menu
   fireEvent.click(
-    document.getElementById("profile-menu-trigger"),
+    screen.getByRole("button", { name: /ma'am aubrey|cha gamay/i }),
   );
   fireEvent.click(screen.getByRole("menuitem", { name: /log out/i }));
 
@@ -29,14 +29,13 @@ test("renders DeptDesk login screen, signs into workspace, and logs out from hea
     screen.getByRole("heading", { name: /sign in to deptdesk/i }),
   ).toBeInTheDocument();
 
-  // Sign back in and log out from bottom-left sidebar profile menu
+  // Sign back in and log out from sidebar logout button
   fireEvent.click(
     screen.getByRole("button", { name: /sign in to workspace/i }),
   );
   fireEvent.click(
-    screen.getByRole("button", { name: /ma'am aubrey menu/i }),
+    screen.getByRole("button", { name: /^log out$/i }),
   );
-  fireEvent.click(screen.getByRole("menuitem", { name: /log out/i }));
 
   expect(
     screen.getByRole("heading", { name: /sign in to deptdesk/i }),
