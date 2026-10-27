@@ -47,9 +47,18 @@ export function useDashboardData({
         request.id,
         request.office || request.location,
         request.category || request.type,
+        request.signedByOffice,
+        request.forwardedTo,
         getRequestStatus(request.status),
         request.dateTime,
       ),
+    );
+
+    const outgoingRequests = filteredRequests.filter(
+      (request) => request.direction !== "incoming",
+    );
+    const incomingRequests = filteredRequests.filter(
+      (request) => request.direction === "incoming",
     );
 
     const filteredTasks = taskItems.filter((task) =>
@@ -97,10 +106,10 @@ export function useDashboardData({
       formattedDate,
       dateTime,
       metrics,
-      recentRequests: filteredRequests.slice(0, 5),
-      recentDocuments: filteredRequests
-        .filter((request) => (request.type || request.category) === "Document")
-        .slice(0, 5),
+      recentOutgoing: outgoingRequests.slice(0, 5),
+      recentIncoming: incomingRequests.slice(0, 5),
+      recentRequests: outgoingRequests.slice(0, 5),
+      recentDocuments: incomingRequests.slice(0, 5),
       recentInventory: filteredInventory.slice(0, 5),
       recentTasks: filteredTasks.slice(0, 5),
     };

@@ -24,8 +24,8 @@ function Dashboard({
     formattedDate,
     dateTime,
     metrics,
-    recentRequests,
-    recentDocuments,
+    recentOutgoing,
+    recentIncoming,
     recentInventory,
     recentTasks,
   } = useDashboardData({ requests, tasks, inventory, search });
@@ -51,35 +51,35 @@ function Dashboard({
       <div className="dashboard-columns">
         <div className="dashboard-main-column">
           <DashboardRecentTable
-            title="Recent Requests"
-            titleId="requests-title"
-            actionLabel="All requests →"
+            title="Outgoing Requests"
+            titleId="outgoing-requests-title"
+            actionLabel="All outgoing →"
             tableClassName="requests-table"
-            items={recentRequests}
+            items={recentOutgoing}
             onNavigate={onNavigate}
             hasQuery={hasQuery}
-            emptyQueryMessage="No requests match your search."
+            emptyQueryMessage="No outgoing requests match your search."
             emptyDefaultMessage={
               canCreateRequests
-                ? "No requests yet. Create the first one to get started."
-                : "No requests are currently logged in the tracker."
+                ? "No outgoing requests yet. Create the first one to get started."
+                : "No outgoing requests are currently logged in the tracker."
             }
           />
 
           <DashboardRecentTable
-            title="Recent Documents"
-            titleId="documents-title"
-            actionLabel="All documents →"
+            title="Incoming Documents & Requests"
+            titleId="incoming-requests-title"
+            actionLabel="All incoming →"
             tableClassName="documents-table"
-            items={recentDocuments}
-            isDocumentMode
+            items={recentIncoming}
+            isIncomingMode
             onNavigate={onNavigate}
             hasQuery={hasQuery}
-            emptyQueryMessage="No documents match your search."
+            emptyQueryMessage="No incoming documents match your search."
             emptyDefaultMessage={
               canCreateRequests
-                ? "No documents yet. Add a document transaction to get started."
-                : "No document transactions are currently being tracked."
+                ? "No incoming documents yet. Log an incoming document from another office to get started."
+                : "No incoming office documents are currently being tracked."
             }
           />
 

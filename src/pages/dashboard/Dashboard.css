@@ -106,6 +106,36 @@
   border-bottom: 1px solid var(--line);
 }
 
+.recent-module .request-table td strong,
+.recent-module .request-table td > span {
+  display: block;
+}
+
+.recent-module .request-table td strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.recent-module .request-table td > span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.dashboard-incoming-status {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dashboard-forwarded-note {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 @media (max-width: 1000px) {
   .dashboard-columns {
     grid-template-columns: 1fr;

@@ -83,7 +83,22 @@ function csvValue(value) {
 }
 
 export function useTransactionManager({ requests, setRequests, search }) {
-  const [activeTab, setActiveTabState] = useState("outgoing");
+  const [activeTab, setActiveTabState] = useState(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const requestedTab = window.sessionStorage.getItem(
+          "officeflow.transactions-tab",
+        );
+        if (requestedTab) {
+          window.sessionStorage.removeItem("officeflow.transactions-tab");
+          return requestedTab === "incoming" ? "incoming" : "outgoing";
+        }
+      }
+    } catch {
+      // Ignore storage errors
+    }
+    return "outgoing";
+  });
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [activeFilter, setActiveFilter] = useState("All Requests");
   const [officeFilter, setOfficeFilter] = useState("All Offices");
