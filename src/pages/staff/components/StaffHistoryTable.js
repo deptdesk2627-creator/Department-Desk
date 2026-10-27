@@ -1,6 +1,35 @@
 import { formatDateTime } from "../../../utils/formatters";
 import { recordStatusClass as statusClass } from "../../../utils/inventory";
 
+function getStaffRecordStatus(record) {
+  if (record.status === "Borrowed") {
+    const borrowed = Number(record.quantity) || 0;
+    const returned = Number(record.returnedQuantity) || 0;
+    if (returned > 0 && returned < borrowed) {
+      return {
+        label: `Partially Returned (${returned}/${borrowed})`,
+        className: "status-waiting",
+      };
+    }
+    if (borrowed > 0 && returned >= borrowed) {
+      return {
+        label: "Borrowed · Returned",
+        className: statusClass("Returned"),
+      };
+    }
+  }
+  if (record.status === "Returned" && record.isPartialReturn) {
+    return {
+      label: `Partial Return (${record.cumulativeReturnedQuantity}/${record.borrowedQuantity})`,
+      className: "status-waiting",
+    };
+  }
+  return {
+    label: record.status,
+    className: statusClass(record.status),
+  };
+}
+
 function StaffHistoryTable({ records, hasName, onViewReceipt }) {
   return (
     <section
@@ -30,32 +59,43 @@ function StaffHistoryTable({ records, hasName, onViewReceipt }) {
               </tr>
             </thead>
             <tbody>
-              {records.map((record) => (
-                <tr key={record.id}>
-                  <td>{formatDateTime(record.dateTime)}</td>
-                  <td>{record.person || "—"}</td>
-                  <td>{record.productName}</td>
-                  <td>
-                    {record.quantity} {record.unit}
-                  </td>
-                  <td>
-                    <span className={`status-pill ${statusClass(record.status)}`}>
-                      {record.status}
-                    </span>
-                  </td>
-                  <td>{record.remarks || "—"}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="receipt-table-btn"
-                      onClick={() => onViewReceipt?.(record)}
-                      aria-label={`View receipt for ${record.productName}`}
-                    >
-                      🧾 Receipt
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {records.map((record) => {
+                const statusDisplay = getStaffRecordStatus(record);
+                const hasRep =
+                  record.returnedBy &&
+                  record.person &&
+                  record.returnedBy.toLowerCase() !==
+                    record.person.toLowerCase();
+                return (
+                  <tr key={record.id}>
+                    <td>{formatDateTime(record.dateTime)}</td>
+                    <td>
+                      {record.person || "—"}
+                      {hasRep ? ` (via ${record.returnedBy})` : ""}
+                    </td>
+                    <td>{record.productName}</td>
+                    <td>
+                      {record.quantity} {record.unit}
+                    </td>
+                    <td>
+                      <span className={`status-pill ${statusDisplay.className}`}>
+                        {statusDisplay.label}
+                      </span>
+                    </td>
+                    <td>{record.remarks || "—"}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="receipt-table-btn"
+                        onClick={() => onViewReceipt?.(record)}
+                        aria-label={`View receipt for ${record.productName}`}
+                      >
+                        Receipt
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

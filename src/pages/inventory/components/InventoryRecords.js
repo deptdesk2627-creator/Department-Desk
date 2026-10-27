@@ -1,6 +1,35 @@
 import { formatDateTime } from "../../../utils/formatters";
 import { recordStatusClass } from "../../../utils/inventory";
 
+function getRecordStatusDisplay(record) {
+  if (record.status === "Borrowed") {
+    const borrowed = Number(record.quantity) || 0;
+    const returned = Number(record.returnedQuantity) || 0;
+    if (returned > 0 && returned < borrowed) {
+      return {
+        label: `Partially Returned (${returned}/${borrowed})`,
+        className: "status-waiting",
+      };
+    }
+    if (borrowed > 0 && returned >= borrowed) {
+      return {
+        label: `Borrowed · Returned`,
+        className: recordStatusClass("Returned"),
+      };
+    }
+  }
+  if (record.status === "Returned" && record.isPartialReturn) {
+    return {
+      label: `Partial Return (${record.cumulativeReturnedQuantity}/${record.borrowedQuantity})`,
+      className: "status-waiting",
+    };
+  }
+  return {
+    label: record.status,
+    className: recordStatusClass(record.status),
+  };
+}
+
 function InventoryRecords({ records, totalRecords, onViewReceipt }) {
   return (
     <section
@@ -27,48 +56,57 @@ function InventoryRecords({ records, totalRecords, onViewReceipt }) {
               </tr>
             </thead>
             <tbody>
-              {records.map((record) => (
-                <tr key={record.id}>
-                  <td>
-                    <strong className="record-id-text">{record.id}</strong>
-                  </td>
-                  <td className="record-date-cell">
-                    {formatDateTime(record.dateTime)}
-                  </td>
-                  <td className="record-person-cell">
-                    {record.person || "—"}
-                  </td>
-                  <td className="record-product-id-cell">{record.productId}</td>
-                  <td className="record-product-name-cell">
-                    {record.productName}
-                  </td>
-                  <td className="record-quantity-cell">
-                    <strong>
-                      {record.quantity} {record.unit}
-                    </strong>
-                  </td>
-                  <td className="record-remarks-cell">
-                    {record.remarks || "—"}
-                  </td>
-                  <td>
-                    <span
-                      className={`status-pill ${recordStatusClass(record.status)}`}
-                    >
-                      {record.status}
-                    </span>
-                  </td>
-                  <td className="inventory-status-col">
-                    <button
-                      type="button"
-                      className="receipt-table-btn"
-                      onClick={() => onViewReceipt?.(record)}
-                      aria-label={`View receipt for ${record.productName}`}
-                    >
-                       Receipt
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {records.map((record) => {
+                const statusDisplay = getRecordStatusDisplay(record);
+                const hasRep =
+                  record.returnedBy &&
+                  record.person &&
+                  record.returnedBy.toLowerCase() !==
+                    record.person.toLowerCase();
+                return (
+                  <tr key={record.id}>
+                    <td>
+                      <strong className="record-id-text">{record.id}</strong>
+                    </td>
+                    <td className="record-date-cell">
+                      {formatDateTime(record.dateTime)}
+                    </td>
+                    <td className="record-person-cell">
+                      {record.person || "—"}
+                      {hasRep ? ` (via ${record.returnedBy})` : ""}
+                    </td>
+                    <td className="record-product-id-cell">
+                      {record.productId}
+                    </td>
+                    <td className="record-product-name-cell">
+                      {record.productName}
+                    </td>
+                    <td className="record-quantity-cell">
+                      <strong>
+                        {record.quantity} {record.unit}
+                      </strong>
+                    </td>
+                    <td className="record-remarks-cell">
+                      {record.remarks || "—"}
+                    </td>
+                    <td>
+                      <span className={`status-pill ${statusDisplay.className}`}>
+                        {statusDisplay.label}
+                      </span>
+                    </td>
+                    <td className="inventory-status-col">
+                      <button
+                        type="button"
+                        className="receipt-table-btn"
+                        onClick={() => onViewReceipt?.(record)}
+                        aria-label={`View receipt for ${record.productName}`}
+                      >
+                        Receipt
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -84,3 +122,4 @@ function InventoryRecords({ records, totalRecords, onViewReceipt }) {
 }
 
 export default InventoryRecords;
+

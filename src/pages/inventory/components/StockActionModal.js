@@ -2,7 +2,7 @@ import { Modal } from "../../../components/ui";
 
 const PERSON_LABEL = {
   Borrow: "Borrowed by",
-  Return: "Returned by",
+  Return: "Borrowed by (Borrower account)",
   Use: "Used by",
 };
 
@@ -15,13 +15,16 @@ const REMARKS_LABEL = {
 const REMARKS_PLACEHOLDER = {
   Borrow: "e.g. Needed for Room 302 lecture / faculty meeting",
   Use: "e.g. Printing department memo and exam sheets",
-  Return: "e.g. Returned in good working condition",
+  Return: "e.g. 15 of 30 returned in good condition",
 };
 
 function StockActionModal({
   action,
   personName = "",
   setPersonName,
+  returnedBy = "",
+  setReturnedBy,
+  activeBorrowers = [],
   quantity,
   setQuantity,
   remarks = "",
@@ -34,6 +37,17 @@ function StockActionModal({
   if (!action) return null;
 
   const isReturn = action.type === "Return";
+  const matchedBorrower = isReturn
+    ? activeBorrowers.find(
+        (b) =>
+          b.name.toLowerCase() === String(personName || "").trim().toLowerCase(),
+      )
+    : null;
+  const maxReturnQty = isReturn
+    ? matchedBorrower
+      ? matchedBorrower.balance
+      : getBorrowedBalance(action.item)
+    : action.item.quantity;
 
   return (
     <Modal
@@ -48,10 +62,39 @@ function StockActionModal({
         <span>
           ·{" "}
           {isReturn
-            ? `${getBorrowedBalance(action.item)} ${action.item.unit} currently borrowed`
+            ? `${maxReturnQty} ${action.item.unit} currently borrowed`
             : `${action.item.quantity} ${action.item.unit} available`}
         </span>
       </p>
+
+      {isReturn && activeBorrowers.length > 0 && (
+        <div
+          className="action-borrower-picks"
+          aria-label="Active borrowers for this item"
+        >
+          <span className="action-borrower-picks__label">
+            Active borrower accounts:
+          </span>
+          <div className="action-borrower-picks__list">
+            {activeBorrowers.map((entry) => {
+              const isSelected =
+                String(personName || "").trim().toLowerCase() ===
+                entry.name.toLowerCase();
+              return (
+                <button
+                  key={entry.name}
+                  type="button"
+                  className={`staff-chip ${isSelected ? "staff-chip--active" : ""}`}
+                  onClick={() => setPersonName?.(entry.name)}
+                >
+                  {entry.name} ({entry.balance} {action.item.unit} out)
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <form className="module-form action-form" onSubmit={onSubmit}>
         <label>
           {PERSON_LABEL[action.type] || "Name"}
@@ -71,15 +114,22 @@ function StockActionModal({
             type="number"
             min="1"
             step="1"
-            max={
-              isReturn
-                ? getBorrowedBalance(action.item)
-                : action.item.quantity
-            }
+            max={maxReturnQty}
             value={quantity}
             onChange={(event) => setQuantity(event.target.value)}
           />
         </label>
+        {isReturn && (
+          <label className="action-form__remarks">
+            Returned by (Representative / SA — optional)
+            <input
+              type="text"
+              placeholder="e.g. SA Jeremy (leave blank if returned personally)"
+              value={returnedBy}
+              onChange={(event) => setReturnedBy?.(event.target.value)}
+            />
+          </label>
+        )}
         <label className="action-form__remarks">
           {REMARKS_LABEL[action.type] || "Remarks"}
           <input

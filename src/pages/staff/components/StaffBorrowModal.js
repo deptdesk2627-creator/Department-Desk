@@ -10,6 +10,8 @@ function StaffBorrowModal({
   action,
   quantity,
   setQuantity,
+  returnedBy = "",
+  setReturnedBy,
   remarks,
   setRemarks,
   error,
@@ -39,7 +41,7 @@ function StaffBorrowModal({
         </span>
       </p>
       <form className="module-form action-form" onSubmit={onSubmit}>
-        <label>
+        <label className={isReturn ? "" : "action-form__remarks"}>
           Quantity ({action.item.unit})
           <input
             autoFocus
@@ -52,6 +54,17 @@ function StaffBorrowModal({
             onChange={(event) => setQuantity(event.target.value)}
           />
         </label>
+        {isReturn && (
+          <label>
+            Returned by (Representative / SA — optional)
+            <input
+              type="text"
+              value={returnedBy}
+              onChange={(event) => setReturnedBy?.(event.target.value)}
+              placeholder="e.g. SA Jeremy (if returned for you)"
+            />
+          </label>
+        )}
         <label className="action-form__remarks">
           {REMARKS_LABEL[action.type]}
           <input

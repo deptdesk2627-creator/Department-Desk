@@ -227,6 +227,9 @@ function Inventory({
         action={stockActions.action}
         personName={stockActions.personName}
         setPersonName={stockActions.setPersonName}
+        returnedBy={stockActions.returnedBy}
+        setReturnedBy={stockActions.setReturnedBy}
+        activeBorrowers={stockActions.activeBorrowers}
         quantity={stockActions.quantity}
         setQuantity={stockActions.setQuantity}
         remarks={stockActions.remarks}
@@ -240,6 +243,7 @@ function Inventory({
       <InventoryReceiptModal
         record={stockActions.receiptRecord}
         inventory={inventoryItems}
+        records={recordItems}
         onClose={stockActions.closeReceipt}
       />
     </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   canBorrowItem,
   canUseItem,
@@ -31,6 +31,7 @@ export function useInventoryActions({
   const [action, setAction] = useState(null);
   const [quantity, setQuantity] = useState("1");
   const [personName, setPersonName] = useState("");
+  const [returnedBy, setReturnedBy] = useState("");
   const [remarks, setRemarks] = useState("");
   const [error, setError] = useState("");
   const [receiptRecord, setReceiptRecord] = useState(null);
@@ -41,10 +42,17 @@ export function useInventoryActions({
     ? balanceRecords.filter(Boolean)
     : recordItems;
 
-  function getBorrowedBalance(item) {
+  function getBorrowedBalance(item, borrowerName = "") {
     const id = getProductId(item);
+    const normalizedBorrower = String(borrowerName || "").trim().toLowerCase();
     return scopedRecords.reduce((balance, record) => {
       if (record.productId !== id) return balance;
+      if (
+        normalizedBorrower &&
+        String(record.person || "").trim().toLowerCase() !== normalizedBorrower
+      ) {
+        return balance;
+      }
       const amount = Number(record.quantity);
       if (!Number.isFinite(amount)) return balance;
       if (record.status === "Borrowed") return balance + amount;
@@ -53,10 +61,55 @@ export function useInventoryActions({
     }, 0);
   }
 
+  const activeBorrowers = useMemo(() => {
+    if (!action?.item) return [];
+    const id = getProductId(action.item);
+    const balancesByPerson = new Map();
+
+    // Process oldest to newest so balances accumulate accurately
+    for (const record of [...scopedRecords].reverse()) {
+      if (record.productId !== id) continue;
+      const amount = Number(record.quantity);
+      if (!Number.isFinite(amount) || amount <= 0) continue;
+      const rawName = String(record.person || "").trim();
+      const key = rawName.toLowerCase() || "__anonymous__";
+      const existing = balancesByPerson.get(key) || {
+        name: rawName || "Unspecified borrower",
+        balance: 0,
+      };
+      if (record.status === "Borrowed") {
+        existing.balance += amount;
+      } else if (record.status === "Returned") {
+        existing.balance = Math.max(0, existing.balance - amount);
+      }
+      balancesByPerson.set(key, existing);
+    }
+
+    return Array.from(balancesByPerson.values()).filter(
+      (entry) => entry.balance > 0 && entry.name !== "Unspecified borrower",
+    );
+  }, [action, scopedRecords]);
+
   function openAction(item, type) {
     setAction({ item, type });
     setQuantity("1");
-    setPersonName(String(person || "").trim());
+    const defaultPerson = String(person || "").trim();
+    if (defaultPerson) {
+      setPersonName(defaultPerson);
+    } else if (type === "Return") {
+      const id = getProductId(item);
+      const latestBorrow = scopedRecords.find(
+        (rec) =>
+          rec.productId === id &&
+          rec.status === "Borrowed" &&
+          Number(rec.returnedQuantity || 0) < Number(rec.quantity || 0) &&
+          rec.person,
+      );
+      setPersonName(latestBorrow?.person || "");
+    } else {
+      setPersonName("");
+    }
+    setReturnedBy("");
     setRemarks("");
     setError("");
   }
@@ -80,6 +133,7 @@ export function useInventoryActions({
     if (!action) return;
 
     const trimmedPerson = String(person || personName || "").trim();
+    const trimmedRepresentative = String(returnedBy || "").trim();
     if (requirePerson && !trimmedPerson) {
       setError("Enter your name at the top of the page first.");
       return;
@@ -111,28 +165,140 @@ export function useInventoryActions({
       setError("The quantity cannot exceed the available stock.");
       return;
     }
-    if (action.type === "Return" && amount > getBorrowedBalance(item)) {
+
+    const totalItemBorrowedBalance = getBorrowedBalance(item);
+    const personBorrowedBalance = trimmedPerson
+      ? getBorrowedBalance(item, trimmedPerson)
+      : totalItemBorrowedBalance;
+    const effectiveMaxReturn =
+      personBorrowedBalance > 0 ? personBorrowedBalance : totalItemBorrowedBalance;
+
+    if (action.type === "Return" && amount > effectiveMaxReturn) {
       setError(returnLimitMessage);
       return;
     }
 
     setError("");
     const id = getProductId(item);
+    const nowIso = new Date().toISOString();
+    const newRecordId = `REC-${Date.now()}-${recordItems.length + 1}`;
+
+    // Find open Borrowed record for this return
+    const matchedBorrowRecord =
+      action.type === "Return"
+        ? recordItems.find(
+            (existing) =>
+              existing.productId === id &&
+              existing.status === "Borrowed" &&
+              Number(existing.returnedQuantity || 0) <
+                Number(existing.quantity || 0) &&
+              (!trimmedPerson ||
+                !existing.person ||
+                String(existing.person).toLowerCase() ===
+                  trimmedPerson.toLowerCase()),
+          ) ||
+          recordItems.find(
+            (existing) =>
+              existing.productId === id &&
+              existing.status === "Borrowed" &&
+              Number(existing.returnedQuantity || 0) <
+                Number(existing.quantity || 0),
+          ) ||
+          recordItems.find(
+            (existing) =>
+              existing.productId === id && existing.status === "Borrowed",
+          )
+        : null;
+
+    const borrowedTotalQty = matchedBorrowRecord
+      ? Number(matchedBorrowRecord.quantity) || amount
+      : amount;
+    const previouslyReturnedQty = matchedBorrowRecord
+      ? Number(matchedBorrowRecord.returnedQuantity) || 0
+      : 0;
+    const cumulativeReturnedQty =
+      action.type === "Return"
+        ? Math.min(borrowedTotalQty, previouslyReturnedQty + amount)
+        : 0;
+    const remainingBorrowedQty =
+      action.type === "Return"
+        ? Math.max(0, borrowedTotalQty - cumulativeReturnedQty)
+        : 0;
+    const isFullReturn =
+      action.type === "Return" && remainingBorrowedQty === 0;
+    const isPartialReturn =
+      action.type === "Return" && remainingBorrowedQty > 0;
+
+    const returnEventEntry =
+      action.type === "Return"
+        ? {
+            id: newRecordId,
+            dateTime: nowIso,
+            quantity: amount,
+            person: trimmedPerson || matchedBorrowRecord?.person || "",
+            returnedBy:
+              trimmedRepresentative ||
+              trimmedPerson ||
+              matchedBorrowRecord?.person ||
+              "",
+            remarks: trimmedRemarks,
+            remainingAfter: remainingBorrowedQty,
+          }
+        : null;
+
+    const updatedReturnEvents =
+      action.type === "Return"
+        ? [
+            ...(Array.isArray(matchedBorrowRecord?.returnEvents)
+              ? matchedBorrowRecord.returnEvents
+              : []),
+            returnEventEntry,
+          ]
+        : [];
+
+    const effectiveRemarks =
+      action.type === "Return"
+        ? trimmedRemarks || matchedBorrowRecord?.remarks || ""
+        : trimmedRemarks;
+
     const record = {
-      id: `REC-${Date.now()}-${recordItems.length + 1}`,
-      dateTime: new Date().toISOString(),
+      id: newRecordId,
+      dateTime: nowIso,
       productId: id,
       productName: item.name,
       usageType: getItemUsageType(item),
       quantity: amount,
       unit: item.unit,
       status: STATUS_BY_ACTION[action.type] || "Used",
+      ...(action.type === "Borrow"
+        ? {
+            returnedQuantity: 0,
+            returnEvents: [],
+          }
+        : {}),
       ...(trimmedPerson ? { person: trimmedPerson } : {}),
-      ...(trimmedRemarks
-        ? { remarks: trimmedRemarks }
+      ...(trimmedRepresentative ? { returnedBy: trimmedRepresentative } : {}),
+      ...(effectiveRemarks
+        ? { remarks: effectiveRemarks }
         : requirePerson
           ? { remarks: "" }
           : {}),
+      ...(action.type === "Return"
+        ? {
+            // Only set returnedAt as the final completion date when 100% of the borrowed quantity is returned
+            returnedAt: isFullReturn ? nowIso : null,
+            partialReturnedAt: isPartialReturn ? nowIso : null,
+            isPartialReturn,
+            borrowedQuantity: borrowedTotalQty,
+            cumulativeReturnedQuantity: cumulativeReturnedQty,
+            remainingQuantity: remainingBorrowedQty,
+            borrowedAt: matchedBorrowRecord?.dateTime || null,
+            borrowRecordId: matchedBorrowRecord?.id || null,
+            borrowRemarks: matchedBorrowRecord?.remarks || "",
+            returnRemarks: trimmedRemarks,
+            returnEvents: updatedReturnEvents,
+          }
+        : {}),
     };
 
     setInventory((current) =>
@@ -151,13 +317,34 @@ export function useInventoryActions({
           : stock,
       ),
     );
-    setRecords((current) => [record, ...(Array.isArray(current) ? current : [])]);
+    setRecords((current) => {
+      const existingList = Array.isArray(current) ? current : [];
+      const updatedList =
+        action.type === "Return" && matchedBorrowRecord
+          ? existingList.map((entry) =>
+              entry?.id === matchedBorrowRecord.id
+                ? {
+                    ...entry,
+                    returnedQuantity: cumulativeReturnedQty,
+                    remainingQuantity: remainingBorrowedQty,
+                    // Only stamp final returnedAt when all borrowed units are returned
+                    returnedAt: isFullReturn ? nowIso : null,
+                    returnRecordId: record.id,
+                    returnEvents: updatedReturnEvents,
+                    ...(trimmedRemarks ? { returnRemarks: trimmedRemarks } : {}),
+                  }
+                : entry,
+            )
+          : existingList;
+      return [record, ...updatedList];
+    });
     setReceiptRecord(record);
     closeAction();
   }
 
   return {
     action,
+    activeBorrowers,
     closeAction,
     closeReceipt,
     error,
@@ -168,9 +355,11 @@ export function useInventoryActions({
     quantity,
     receiptRecord,
     remarks,
+    returnedBy,
     setPersonName,
     setQuantity,
     setRemarks,
+    setReturnedBy,
     submitAction,
   };
 }

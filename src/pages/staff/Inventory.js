@@ -64,8 +64,10 @@ function StaffInventory({
     quantity,
     receiptRecord,
     remarks,
+    returnedBy,
     setQuantity,
     setRemarks,
+    setReturnedBy,
     submitAction,
   } = useInventoryActions({
     inventory: inventoryItems,
@@ -172,6 +174,8 @@ function StaffInventory({
         action={action}
         quantity={quantity}
         setQuantity={setQuantity}
+        returnedBy={returnedBy}
+        setReturnedBy={setReturnedBy}
         remarks={remarks}
         setRemarks={setRemarks}
         error={error}
@@ -189,6 +193,7 @@ function StaffInventory({
       <InventoryReceiptModal
         record={receiptRecord}
         inventory={inventoryItems}
+        records={recordItems}
         onClose={closeReceipt}
       />
     </div>
