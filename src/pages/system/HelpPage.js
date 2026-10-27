@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "../../components/ui";
 import { DEFAULT_SETTINGS } from "../../constants/system";
 import { getFaqForRole } from "./helpContent";
-import "./SystemPages.css";
+import "./HelpPage.css";
 
 function HelpPage({ role, settings, search = "" }) {
   const [query, setQuery] = useState("");

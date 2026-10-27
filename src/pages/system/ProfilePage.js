@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "../../components/ui";
 import { AVAILABILITY_OPTIONS, getDefaultProfile } from "../../constants/system";
 import ProfileSummaryCard from "./components/ProfileSummaryCard";
-import "./SystemPages.css";
+import "./ProfilePage.css";
 
 const PROFILE_INPUTS = [
   { key: "name", label: "Display name", placeholder: "e.g. Ma'am Aubrey", required: true },

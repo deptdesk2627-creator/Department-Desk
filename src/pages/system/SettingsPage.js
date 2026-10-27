@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS } from "../../constants/system";
 import SettingsAppearanceTab from "./components/SettingsAppearanceTab";
 import SettingsDataTab from "./components/SettingsDataTab";
 import SettingsOfficeTab from "./components/SettingsOfficeTab";
-import "./SystemPages.css";
+import "./SettingsPage.css";
 
 function SettingsPage({
   role,
