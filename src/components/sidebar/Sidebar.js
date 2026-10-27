@@ -92,6 +92,7 @@ function SideBar({
 
       <SidebarProfile
         role={role}
+        currentPage={currentPage}
         isMenuOpen={isProfileMenuOpen}
         onToggleMenu={() => setIsProfileMenuOpen((open) => !open)}
         onNavigate={navigateTo}

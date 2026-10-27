@@ -22,9 +22,10 @@
 
 .app-header__avatar {
   align-items: center;
-  background: #fde8e1;
+  background: #9a3412;
+  border: 1px solid rgb(255 255 255 / 14%);
   border-radius: 50%;
-  color: #bd6e5c;
+  color: #ffedd5;
   display: inline-flex;
   flex: 0 0 38px;
   font-size: 12px;

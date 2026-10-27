@@ -3,6 +3,7 @@ import "./HeaderProfile.css";
 function HeaderProfile({
   role,
   onLogout,
+  onNavigate,
   isOpen,
   onClose,
   onToggle,
@@ -11,6 +12,11 @@ function HeaderProfile({
 }) {
   const name = role?.name || "Cha Gamay";
   const initials = role?.initials || "CG";
+
+  function navigateTo(page) {
+    onClose?.();
+    onNavigate?.(page);
+  }
 
   function handleLogout() {
     onClose?.();
@@ -56,11 +62,26 @@ function HeaderProfile({
             {role && <span>{role.label}</span>}
           </div>
           <div className="app-header__menu-divider" />
-          <button type="button" role="menuitem" onClick={onClose}>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => navigateTo("profile")}
+          >
             Profile
           </button>
-          <button type="button" role="menuitem" onClick={onClose}>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => navigateTo("settings")}
+          >
             Settings
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => navigateTo("help")}
+          >
+            Help &amp; FAQ
           </button>
           <button
             className="app-header__logout"

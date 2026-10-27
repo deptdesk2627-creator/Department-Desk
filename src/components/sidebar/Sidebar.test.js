@@ -21,10 +21,13 @@ test("marks the current page and navigates when a workspace item is selected", (
   fireEvent.click(screen.getByRole("button", { name: "Task Management" }));
   expect(onNavigate).toHaveBeenLastCalledWith("tasks");
 
+  fireEvent.click(screen.getByRole("button", { name: "Profile" }));
+  expect(onNavigate).toHaveBeenLastCalledWith("profile");
+
   fireEvent.click(screen.getByRole("button", { name: "Settings" }));
   expect(onNavigate).toHaveBeenLastCalledWith("settings");
 
-  fireEvent.click(screen.getByRole("button", { name: "Help & Support" }));
+  fireEvent.click(screen.getByRole("button", { name: "Help & FAQ" }));
   expect(onNavigate).toHaveBeenLastCalledWith("help");
 
   fireEvent.click(screen.getByRole("button", { name: "DeptDesk home" }));

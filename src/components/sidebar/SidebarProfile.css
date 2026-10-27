@@ -10,11 +10,31 @@
 
 .workspace-sidebar__profile-summary {
   align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: inherit;
+  cursor: pointer;
   display: flex;
   flex: 1 1 auto;
+  font: inherit;
   gap: 10px;
+  margin: -4px;
   min-width: 0;
-  transition: gap 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 4px;
+  text-align: left;
+  transition:
+    gap 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease;
+}
+
+.workspace-sidebar__profile-summary:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+.workspace-sidebar__profile-summary:focus-visible {
+  outline: 3px solid #fdba74;
+  outline-offset: 2px;
 }
 
 .workspace-sidebar__avatar {
@@ -42,6 +62,15 @@
   position: absolute;
   right: -1px;
   width: 10px;
+}
+
+.workspace-sidebar__online-indicator[data-status="meeting"] {
+  background: #f59e0b;
+}
+
+.workspace-sidebar__online-indicator[data-status="away"],
+.workspace-sidebar__online-indicator[data-status="leave"] {
+  background: #94a3b8;
 }
 
 .workspace-sidebar__profile {

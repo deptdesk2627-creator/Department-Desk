@@ -1,5 +1,12 @@
 import "./SidebarProfile.css";
 
+const STATUS_LABELS = {
+  available: "Available",
+  meeting: "In a meeting",
+  away: "Out of office",
+  leave: "On leave",
+};
+
 function SidebarProfile({
   role,
   isMenuOpen,
@@ -11,19 +18,30 @@ function SidebarProfile({
   const subtitle = role
     ? `${role.label} · ${role.description}`
     : "Dean · Secretary · Assistants";
+  const status = role?.status || "available";
+  const statusLabel = STATUS_LABELS[status] || STATUS_LABELS.available;
 
   return (
     <footer className="workspace-sidebar__footer">
-      <div className="workspace-sidebar__profile-summary">
+      <button
+        className="workspace-sidebar__profile-summary"
+        type="button"
+        onClick={() => onNavigate("profile")}
+        aria-label={`Open profile for ${name} (${statusLabel})`}
+        title={`${name} · ${statusLabel}`}
+      >
         <span className="workspace-sidebar__avatar" aria-hidden="true">
           {role?.initials || "OS"}
-          <span className="workspace-sidebar__online-indicator" />
+          <span
+            className="workspace-sidebar__online-indicator"
+            data-status={status}
+          />
         </span>
         <span className="workspace-sidebar__profile">
           <strong>{name}</strong>
           <span>{subtitle}</span>
         </span>
-      </div>
+      </button>
       <div className="workspace-sidebar__profile-actions">
         <button
           className="workspace-sidebar__profile-menu-button"
@@ -44,6 +62,13 @@ function SidebarProfile({
             <button
               type="button"
               role="menuitem"
+              onClick={() => onNavigate("profile")}
+            >
+              My profile
+            </button>
+            <button
+              type="button"
+              role="menuitem"
               onClick={() => onNavigate("settings")}
             >
               Settings
@@ -53,7 +78,7 @@ function SidebarProfile({
               role="menuitem"
               onClick={() => onNavigate("help")}
             >
-              Help &amp; Support
+              Help &amp; FAQ
             </button>
             <div className="workspace-sidebar__profile-divider" />
             <button
