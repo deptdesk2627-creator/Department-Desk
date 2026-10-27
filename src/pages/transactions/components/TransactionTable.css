@@ -1,10 +1,13 @@
 .request-table-wrap {
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  width: 100%;
 }
 
 .request-tracker-table {
   border-collapse: collapse;
-  min-width: 970px;
+  min-width: 820px;
   text-align: left;
   width: 100%;
 }
@@ -17,19 +20,19 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  padding: 13px 16px;
+  padding: 13px 12px;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .request-tracker-table th:first-child,
 .request-tracker-table td:first-child {
-  padding-left: 24px;
+  padding-left: 20px;
 }
 
 .request-tracker-table th:last-child,
 .request-tracker-table td:last-child {
-  padding-right: 24px;
+  padding-right: 20px;
 }
 
 .request-tracker-table td {
@@ -37,7 +40,7 @@
   color: #475569;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
-  padding: 14px 16px;
+  padding: 14px 12px;
   vertical-align: middle;
   white-space: nowrap;
 }
@@ -70,8 +73,8 @@
 }
 
 .request-name-cell {
-  max-width: 260px;
-  min-width: 190px;
+  max-width: 220px;
+  min-width: 150px;
   white-space: normal !important;
 }
 
