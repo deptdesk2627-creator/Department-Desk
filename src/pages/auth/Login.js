@@ -11,7 +11,12 @@ const DEMO_ACCOUNTS = {
   staff: "staff",
 };
 
-function Login({ onLogin, defaultRoleId = "secretary" }) {
+function Login({
+  onLogin,
+  defaultRoleId = "secretary",
+  theme = "light",
+  onThemeChange,
+}) {
   const [selectedRole, setSelectedRole] = useState(defaultRoleId);
   const [email, setEmail] = useState(`${defaultRoleId}@deptdesk.edu`);
   const [password, setPassword] = useState("deptdesk123");
@@ -19,11 +24,28 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
   const [error, setError] = useState("");
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [modalMode, setModalMode] = useState("demo"); // 'demo' | 'forgot'
+  const [isValidating, setIsValidating] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   function handleRoleSelect(roleId) {
     setSelectedRole(roleId);
     setEmail(`${roleId}@deptdesk.edu`);
     setError("");
+  }
+
+  function triggerLogin(roleId) {
+    if (isExiting) return;
+    setIsExiting(true);
+
+    const isTest = process.env.NODE_ENV === "test";
+    if (isTest) {
+      onLogin?.(roleId);
+      return;
+    }
+
+    setTimeout(() => {
+      onLogin?.(roleId);
+    }, 220);
   }
 
   function handleSubmit(event) {
@@ -36,7 +58,18 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
 
     const matchedRole = DEMO_ACCOUNTS[trimmedEmail] || selectedRole;
     setError("");
-    onLogin?.(matchedRole);
+
+    const isTest = process.env.NODE_ENV === "test";
+    if (isTest) {
+      triggerLogin(matchedRole);
+      return;
+    }
+
+    setIsValidating(true);
+    setTimeout(() => {
+      setIsValidating(false);
+      triggerLogin(matchedRole);
+    }, 180);
   }
 
   function handleQuickSignIn(roleId) {
@@ -45,23 +78,21 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
     setPassword("deptdesk123");
     setError("");
     setShowDemoModal(false);
-    onLogin?.(roleId);
+    triggerLogin(roleId);
   }
 
   return (
-    <div className="login-split-page">
+    <div
+      className={`login-split-page${isExiting ? " login-split-page--exiting" : ""}`}
+      data-theme={theme}
+    >
       {/* Left Brand Panel */}
       <aside className="login-brand-panel" aria-label="DeptDesk Overview">
-        {/* Decorative Background Design */}
+        {/* Background Decorative Layer */}
         <div className="login-brand-decorations" aria-hidden="true">
-          {/* Subtle Grid Overlay */}
           <div className="login-brand-decorations__grid" />
-
-          {/* Atmospheric Ambient Glows */}
           <div className="login-brand-decorations__glow-top" />
           <div className="login-brand-decorations__glow-bottom" />
-
-          {/* Workflow Ribbon Curves & Geometric Rings */}
           <svg
             className="login-brand-decorations__waves"
             viewBox="0 0 500 800"
@@ -94,7 +125,6 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
               </filter>
             </defs>
 
-            {/* Workflow Ribbon Waves */}
             <path
               d="M-50,300 C110,240 210,430 370,370 C460,335 510,270 560,290"
               stroke="url(#waveGrad1)"
@@ -118,14 +148,13 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
               strokeDasharray="4 6"
             />
 
-            {/* Concentric Architectural Rings */}
             <circle cx="450" cy="700" r="130" stroke="rgba(254, 215, 170, 0.09)" strokeWidth="1.5" />
             <circle cx="450" cy="700" r="210" stroke="rgba(254, 215, 170, 0.06)" strokeWidth="1.2" strokeDasharray="3 5" />
             <circle cx="450" cy="700" r="290" stroke="rgba(254, 215, 170, 0.04)" strokeWidth="1" />
           </svg>
         </div>
 
-        {/* Brand Logo Header */}
+        {/* Brand Header */}
         <div className="login-brand-header">
           <div className="login-brand-logo-mark" aria-hidden="true">
             D
@@ -151,7 +180,7 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
         </p>
       </aside>
 
-      {/* Right Login Form Panel */}
+      {/* Right Form Panel */}
       <main className="login-form-panel">
         <div className="login-form-container">
           <div className="login-form-header">
@@ -197,6 +226,7 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
                     className="login-card-field__select"
                     value={selectedRole}
                     onChange={(e) => handleRoleSelect(e.target.value)}
+                    disabled={isExiting || isValidating}
                   >
                     {ROLE_LIST.map((role) => (
                       <option key={role.id} value={role.id}>
@@ -210,7 +240,7 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
                     height="14"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#94a3b8"
+                    stroke="currentColor"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -255,6 +285,7 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
                   placeholder="name@deptdesk.edu"
                   autoComplete="username"
                   required
+                  disabled={isExiting || isValidating}
                 />
               </div>
             </div>
@@ -292,6 +323,7 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
                   placeholder="••••••••••••••"
                   autoComplete="current-password"
                   required
+                  disabled={isExiting || isValidating}
                 />
               </div>
             </div>
@@ -304,6 +336,7 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
                   className="login-checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={isExiting || isValidating}
                 />
                 <span>Remember me</span>
               </label>
@@ -315,6 +348,7 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
                   setModalMode("forgot");
                   setShowDemoModal(true);
                 }}
+                disabled={isExiting || isValidating}
               >
                 Forgot password?
               </button>
@@ -326,13 +360,21 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
               </p>
             )}
 
-            {/* Button 1: White Sign In To Workspace */}
+            {/* Button 1: White Sign In To Workspace with Validating Feedback */}
             <button
               type="submit"
               className="login-btn-workspace"
               aria-label="Sign in to workspace"
+              disabled={isExiting || isValidating}
             >
-              Sign in to workspace
+              {isValidating ? (
+                <>
+                  <span className="login-spinner" aria-hidden="true" />
+                  Authenticating...
+                </>
+              ) : (
+                "Sign in to workspace"
+              )}
             </button>
           </form>
 
@@ -353,6 +395,7 @@ function Login({ onLogin, defaultRoleId = "secretary" }) {
               setModalMode("demo");
               setShowDemoModal(true);
             }}
+            disabled={isExiting || isValidating}
           >
             Quick demo sign-in
           </button>

@@ -1,12 +1,46 @@
-/* Split Page Shell */
+/* ==========================================================================
+   Split Page Shell & Clean Elevation Transitions
+   ========================================================================== */
 .login-split-page {
   display: flex;
   width: 100%;
   min-height: 100vh;
-  background: #ffffff;
+  background-color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  animation: loginPageEnter 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
 }
 
-/* Left Brand Panel */
+@keyframes loginPageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Snappy, feather-light GPU lift & dissolve when logging in */
+.login-split-page--exiting {
+  opacity: 0 !important;
+  transform: translateY(-8px) scale(0.99) !important;
+  transition:
+    opacity 220ms cubic-bezier(0.4, 0, 1, 1),
+    transform 220ms cubic-bezier(0.4, 0, 1, 1) !important;
+  pointer-events: none !important;
+}
+
+.login-split-page[data-theme="dark"],
+[data-theme="dark"] .login-split-page {
+  background-color: #0f172a;
+}
+
+/* ==========================================================================
+   Left Brand Panel
+   ========================================================================== */
 .login-brand-panel {
   flex: 0 0 45%;
   min-width: 360px;
@@ -149,15 +183,28 @@
   margin: 0;
 }
 
-/* Right Login Form Panel */
+/* ==========================================================================
+   Right Login Form Panel (Light / Dark Theme Aware)
+   ========================================================================== */
 .login-form-panel {
   flex: 1 1 55%;
-  background: #ffffff;
+  background-color: #ffffff;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 48px;
+  padding: 32px 48px;
   box-sizing: border-box;
+  position: relative;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
+}
+
+[data-theme="dark"] .login-form-panel,
+.login-split-page[data-theme="dark"] .login-form-panel {
+  background-color: #0f172a;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .login-form-container {
@@ -175,6 +222,12 @@
   color: #1e293b;
   letter-spacing: -0.6px;
   margin: 0 0 8px;
+  transition: color 220ms ease;
+}
+
+[data-theme="dark"] .login-form-title,
+.login-split-page[data-theme="dark"] .login-form-title {
+  color: #f8fafc;
 }
 
 .login-form-subtitle {
@@ -182,6 +235,12 @@
   color: #64748b;
   line-height: 1.5;
   margin: 0;
+  transition: color 220ms ease;
+}
+
+[data-theme="dark"] .login-form-subtitle,
+.login-split-page[data-theme="dark"] .login-form-subtitle {
+  color: #94a3b8;
 }
 
 .login-form {
@@ -189,9 +248,9 @@
   flex-direction: column;
 }
 
-/* 3 Stacked Field Cards */
+/* 3 Stacked Field Cards (Dark Mode Aware) */
 .login-card-field {
-  background: #ffffff;
+  background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   box-shadow:
@@ -202,7 +261,17 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 14px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background-color 220ms ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+[data-theme="dark"] .login-card-field,
+.login-split-page[data-theme="dark"] .login-card-field {
+  background-color: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .login-card-field:focus-within {
@@ -212,15 +281,34 @@
     0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
+[data-theme="dark"] .login-card-field:focus-within,
+.login-split-page[data-theme="dark"] .login-card-field:focus-within {
+  border-color: #f97316;
+  box-shadow:
+    0 0 0 3px rgba(249, 115, 22, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 .login-card-field__icon {
   width: 36px;
   height: 36px;
   border-radius: 9px;
-  background: #f1f5f9;
+  background-color: #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: background-color 220ms ease;
+}
+
+[data-theme="dark"] .login-card-field__icon,
+.login-split-page[data-theme="dark"] .login-card-field__icon {
+  background-color: #0f172a;
+}
+
+[data-theme="dark"] .login-card-field__icon svg,
+.login-split-page[data-theme="dark"] .login-card-field__icon svg {
+  stroke: #cbd5e1;
 }
 
 .login-card-field__content {
@@ -258,12 +346,25 @@
   -webkit-appearance: none;
   cursor: pointer;
   font-family: inherit;
+  transition: color 220ms ease;
+}
+
+[data-theme="dark"] .login-card-field__select,
+.login-split-page[data-theme="dark"] .login-card-field__select {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .login-card-field__select option,
+.login-split-page[data-theme="dark"] .login-card-field__select option {
+  background-color: #1e293b;
+  color: #f8fafc;
 }
 
 .login-select-chevron {
   position: absolute;
   right: 0;
   pointer-events: none;
+  stroke: #94a3b8;
 }
 
 .login-card-field__input {
@@ -276,6 +377,12 @@
   color: #1e293b;
   padding: 0;
   font-family: inherit;
+  transition: color 220ms ease;
+}
+
+[data-theme="dark"] .login-card-field__input,
+.login-split-page[data-theme="dark"] .login-card-field__input {
+  color: #f8fafc;
 }
 
 .login-card-field__input::placeholder {
@@ -299,6 +406,12 @@
   color: #64748b;
   cursor: pointer;
   user-select: none;
+  transition: color 220ms ease;
+}
+
+[data-theme="dark"] .login-checkbox-label,
+.login-split-page[data-theme="dark"] .login-checkbox-label {
+  color: #cbd5e1;
 }
 
 .login-checkbox {
@@ -325,6 +438,16 @@
   text-decoration: underline;
 }
 
+[data-theme="dark"] .login-forgot-link,
+.login-split-page[data-theme="dark"] .login-forgot-link {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .login-forgot-link:hover,
+.login-split-page[data-theme="dark"] .login-forgot-link:hover {
+  color: #fb923c;
+}
+
 .login-error-alert {
   background: #fef2f2;
   border: 1px solid #fecaca;
@@ -335,9 +458,9 @@
   margin: 0 0 16px;
 }
 
-/* Button 1: White Sign In To Workspace */
+/* Button 1: White Sign In To Workspace (Dark Mode Aware) */
 .login-btn-workspace {
-  background: #ffffff;
+  background-color: #ffffff;
   border: 1px solid #f1f5f9;
   box-shadow:
     0 4px 14px rgba(100, 116, 139, 0.1),
@@ -355,7 +478,7 @@
 }
 
 .login-btn-workspace:hover {
-  background: #fffbf7;
+  background-color: #fffbf7;
   border-color: #fed7aa;
   box-shadow: 0 6px 18px rgba(234, 88, 12, 0.15);
   transform: translateY(-1px);
@@ -363,6 +486,21 @@
 
 .login-btn-workspace:active {
   transform: translateY(0);
+}
+
+[data-theme="dark"] .login-btn-workspace,
+.login-split-page[data-theme="dark"] .login-btn-workspace {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #fb923c;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .login-btn-workspace:hover,
+.login-split-page[data-theme="dark"] .login-btn-workspace:hover {
+  background-color: #26354a;
+  border-color: #475569;
+  color: #fdba74;
 }
 
 /* Divider: Quick Demo Sign-In */
@@ -376,7 +514,13 @@
 .login-demo-divider__line {
   flex: 1;
   height: 1px;
-  background: #e2e8f0;
+  background-color: #e2e8f0;
+  transition: background-color 220ms ease;
+}
+
+[data-theme="dark"] .login-demo-divider__line,
+.login-split-page[data-theme="dark"] .login-demo-divider__line {
+  background-color: #334155;
 }
 
 .login-demo-divider__text {
@@ -386,6 +530,12 @@
   color: #94a3b8;
   text-transform: uppercase;
   white-space: nowrap;
+  transition: color 220ms ease;
+}
+
+[data-theme="dark"] .login-demo-divider__text,
+.login-split-page[data-theme="dark"] .login-demo-divider__text {
+  color: #64748b;
 }
 
 .login-not-member {
@@ -393,6 +543,12 @@
   font-size: 13px;
   color: #64748b;
   margin: 0 0 14px;
+  transition: color 220ms ease;
+}
+
+[data-theme="dark"] .login-not-member,
+.login-split-page[data-theme="dark"] .login-not-member {
+  color: #94a3b8;
 }
 
 /* Button 2: Orange Quick Demo Sign-In */
@@ -422,7 +578,9 @@
   transform: translateY(0);
 }
 
-/* Interactive Demo Modal */
+/* ==========================================================================
+   Interactive Demo Modal (Dark Mode Aware)
+   ========================================================================== */
 .login-demo-modal-overlay {
   position: fixed;
   inset: 0;
@@ -437,7 +595,7 @@
 }
 
 .login-demo-modal-card {
-  background: #ffffff;
+  background-color: #ffffff;
   border-radius: 18px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   max-width: 440px;
@@ -445,6 +603,13 @@
   padding: 24px;
   position: relative;
   animation: loginModalIn 0.2s ease-out;
+}
+
+[data-theme="dark"] .login-demo-modal-card,
+.login-split-page[data-theme="dark"] .login-demo-modal-card {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: #f8fafc;
 }
 
 @keyframes loginModalIn {
@@ -472,8 +637,13 @@
   margin: 0;
 }
 
+[data-theme="dark"] .login-demo-modal-header h3,
+.login-split-page[data-theme="dark"] .login-demo-modal-header h3 {
+  color: #f8fafc;
+}
+
 .login-demo-modal-close {
-  background: #f1f5f9;
+  background-color: #f1f5f9;
   border: none;
   border-radius: 50%;
   width: 28px;
@@ -488,8 +658,20 @@
 }
 
 .login-demo-modal-close:hover {
-  background: #e2e8f0;
+  background-color: #e2e8f0;
   color: #0f172a;
+}
+
+[data-theme="dark"] .login-demo-modal-close,
+.login-split-page[data-theme="dark"] .login-demo-modal-close {
+  background-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .login-demo-modal-close:hover,
+.login-split-page[data-theme="dark"] .login-demo-modal-close:hover {
+  background-color: #475569;
+  color: #ffffff;
 }
 
 .login-demo-modal-desc {
@@ -497,6 +679,11 @@
   color: #64748b;
   line-height: 1.5;
   margin: 0 0 18px;
+}
+
+[data-theme="dark"] .login-demo-modal-desc,
+.login-split-page[data-theme="dark"] .login-demo-modal-desc {
+  color: #94a3b8;
 }
 
 .login-demo-modal-list {
@@ -509,7 +696,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: #f8fafc;
+  background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   cursor: pointer;
@@ -520,9 +707,21 @@
 }
 
 .login-demo-modal-item:hover {
-  background: #fff7ed;
+  background-color: #fff7ed;
   border-color: #fdba74;
   transform: translateY(-1px);
+}
+
+[data-theme="dark"] .login-demo-modal-item,
+.login-split-page[data-theme="dark"] .login-demo-modal-item {
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .login-demo-modal-item:hover,
+.login-split-page[data-theme="dark"] .login-demo-modal-item:hover {
+  background-color: rgba(234, 88, 12, 0.14);
+  border-color: #ea580c;
 }
 
 .login-demo-modal-avatar {
@@ -552,6 +751,11 @@
   color: #1e293b;
 }
 
+[data-theme="dark"] .login-demo-modal-info strong,
+.login-split-page[data-theme="dark"] .login-demo-modal-info strong {
+  color: #f8fafc;
+}
+
 .login-demo-modal-info span {
   font-size: 11.5px;
   color: #ea580c;
@@ -563,6 +767,11 @@
   color: #64748b;
 }
 
+[data-theme="dark"] .login-demo-modal-info small,
+.login-split-page[data-theme="dark"] .login-demo-modal-info small {
+  color: #94a3b8;
+}
+
 .login-demo-modal-action {
   font-size: 12px;
   color: #ea580c;
@@ -570,7 +779,36 @@
   white-space: nowrap;
 }
 
-/* Mobile & Tablet Responsiveness */
+/* ==========================================================================
+   Loading Spinner & Feedback
+   ========================================================================== */
+.login-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(194, 65, 12, 0.28);
+  border-top-color: #c2410c;
+  border-radius: 50%;
+  animation: loginSpinnerRotate 0.6s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+[data-theme="dark"] .login-spinner,
+.login-split-page[data-theme="dark"] .login-spinner {
+  border-color: rgba(251, 146, 60, 0.28);
+  border-top-color: #fb923c;
+}
+
+@keyframes loginSpinnerRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Mobile & Tablet Responsiveness
+   ========================================================================== */
 @media (max-width: 900px) {
   .login-split-page {
     flex-direction: column;
@@ -593,5 +831,23 @@
 
   .login-form-panel {
     padding: 36px 24px;
+  }
+}
+
+/* ==========================================================================
+   Accessibility: prefers-reduced-motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .login-split-page,
+  .login-split-page--exiting,
+  .login-brand-panel,
+  .login-form-panel,
+  .login-form-container,
+  .login-brand-decorations,
+  .login-brand-hero,
+  .login-brand-footer {
+    transition: opacity 120ms ease !important;
+    animation: none !important;
+    transform: none !important;
   }
 }

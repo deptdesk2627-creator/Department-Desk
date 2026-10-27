@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import "./Sidebar.css";
 import SidebarLogout from "./SidebarLogout";
 import SidebarNavigation from "./SidebarNavigation";
@@ -12,12 +11,6 @@ function SideBar({
   onToggle,
 }) {
   const homePage = role?.pages?.[0] || "dashboard";
-
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.documentElement.removeAttribute("data-theme");
-    }
-  }, []);
 
   return (
     <aside

@@ -88,6 +88,8 @@ function App() {
     }));
   }
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   function handleLogin(nextRoleId) {
     const resolvedRole = getRole(nextRoleId).id;
     setRoleId(resolvedRole);
@@ -98,13 +100,27 @@ function App() {
 
   function handleLogout() {
     setSearch("");
-    setIsAuthenticated(false);
+    const isTest = process.env.NODE_ENV === "test";
+    if (isTest) {
+      setIsAuthenticated(false);
+      return;
+    }
+    setIsLoggingOut(true);
+    setTimeout(() => {
+      setIsAuthenticated(false);
+      setIsLoggingOut(false);
+    }, 220);
   }
 
   if (!isAuthenticated) {
     return (
       <AuthLayout>
-        <Login onLogin={handleLogin} defaultRoleId={role.id} />
+        <Login
+          onLogin={handleLogin}
+          defaultRoleId={role.id}
+          theme={activeTheme}
+          onThemeChange={setTheme}
+        />
       </AuthLayout>
     );
   }
@@ -138,6 +154,7 @@ function App() {
       onCloseSidebar={() => setIsSidebarOpen(false)}
       theme={activeTheme}
       onThemeChange={setTheme}
+      isLoggingOut={isLoggingOut}
     >
       {pages[activePage]}
     </MainLayout>

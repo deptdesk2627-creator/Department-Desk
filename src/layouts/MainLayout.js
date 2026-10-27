@@ -17,10 +17,11 @@ function MainLayout({
   onCloseSidebar,
   theme,
   onThemeChange,
+  isLoggingOut = false,
 }) {
   return (
     <div
-      className={`main-layout${isOpen ? "" : " main-layout--sidebar-closed"}`}
+      className={`main-layout${isOpen ? "" : " main-layout--sidebar-closed"}${isLoggingOut ? " main-layout--logging-out" : ""}`}
     >
       {isOpen && (
         <div
