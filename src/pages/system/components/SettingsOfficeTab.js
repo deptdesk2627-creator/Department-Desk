@@ -42,49 +42,53 @@ function SettingsOfficeTab({ settings, canManageData, onSave, onNotice }) {
       OFFICE_FIELDS.map(({ key }) => [key, String(draft?.[key] || "").trim()]),
     );
     onSave(trimmed);
-    onNotice({ type: "success", text: "Office details saved." });
+    onNotice?.({ type: "success", text: "Office details saved." });
   }
 
   return (
-    <form
-      className="module-form system-form"
-      role="tabpanel"
-      id="settings-panel-office"
-      aria-labelledby="settings-tab-office"
-      onSubmit={handleSubmit}
-    >
-      <p className="system-form__full system-hint">
-        Shown to everyone under Help &amp; FAQ → Contact the office.
-        {!canManageData && " Only the Secretary can change these details."}
-      </p>
-      {OFFICE_FIELDS.map((field) => (
-        <label key={field.key}>
-          {field.label}
-          <input
-            type={field.type || "text"}
-            value={draft?.[field.key] || ""}
-            placeholder={field.placeholder}
-            readOnly={!canManageData}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                [field.key]: event.target.value,
-              }))
-            }
-          />
-        </label>
-      ))}
-      {canManageData && (
-        <div className="system-form__full system-actions">
-          <span className="system-actions__spacer" />
-          <button type="submit" className="primary-button">
-            Save office details
-          </button>
+    <section className="card panel">
+      <div className="panel-heading">
+        <div>
+          <h2>Office details</h2>
+          <p>
+            Shown under Help &amp; FAQ → Contact the office.
+            {!canManageData && " Only the Secretary can change these details."}
+          </p>
         </div>
-      )}
-    </form>
+      </div>
+
+      <form className="module-form system-form" onSubmit={handleSubmit}>
+        {OFFICE_FIELDS.map((field) => (
+          <label
+            key={field.key}
+            className={field.key === "department" ? "system-form__full" : undefined}
+          >
+            {field.label}
+            <input
+              type={field.type || "text"}
+              value={draft?.[field.key] || ""}
+              placeholder={field.placeholder}
+              readOnly={!canManageData}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  [field.key]: event.target.value,
+                }))
+              }
+            />
+          </label>
+        ))}
+        {canManageData && (
+          <div className="system-form__full system-actions">
+            <span className="system-actions__spacer" />
+            <button type="submit" className="primary-button">
+              Save office details
+            </button>
+          </div>
+        )}
+      </form>
+    </section>
   );
 }
 
 export default SettingsOfficeTab;
-

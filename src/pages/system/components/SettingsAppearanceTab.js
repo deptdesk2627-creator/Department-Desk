@@ -35,30 +35,39 @@ function ChoiceGroup({ label, name, value, options, onChange }) {
   );
 }
 
-function SettingsAppearanceTab({ theme, onThemeChange, sidebarDefault, onSidebarDefaultChange }) {
+function SettingsAppearanceTab({
+  theme,
+  onThemeChange,
+  sidebarDefault,
+  onSidebarDefaultChange,
+}) {
   return (
-    <div
-      role="tabpanel"
-      id="settings-panel-appearance"
-      aria-labelledby="settings-tab-appearance"
-    >
-      <ChoiceGroup
-        label="Theme"
-        name="settings-theme"
-        value={theme}
-        onChange={onThemeChange}
-        options={THEME_OPTIONS}
-      />
-      <ChoiceGroup
-        label="Sidebar on startup (desktop)"
-        name="settings-sidebar"
-        value={sidebarDefault}
-        onChange={onSidebarDefaultChange}
-        options={SIDEBAR_OPTIONS}
-      />
-    </div>
+    <section className="card panel">
+      <div className="panel-heading">
+        <div>
+          <h2>Appearance &amp; layout</h2>
+          <p>Choose your color theme and default sidebar state on desktop.</p>
+        </div>
+      </div>
+
+      <div className="system-section-body">
+        <ChoiceGroup
+          label="Theme"
+          name="settings-theme"
+          value={theme}
+          onChange={onThemeChange}
+          options={THEME_OPTIONS}
+        />
+        <ChoiceGroup
+          label="Sidebar on startup (desktop)"
+          name="settings-sidebar"
+          value={sidebarDefault}
+          onChange={onSidebarDefaultChange}
+          options={SIDEBAR_OPTIONS}
+        />
+      </div>
+    </section>
   );
 }
 
 export default SettingsAppearanceTab;
-
