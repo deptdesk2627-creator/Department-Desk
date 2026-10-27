@@ -29,8 +29,6 @@ function Dashboard({
     recentInventory,
     recentTasks,
   } = useDashboardData({ requests, tasks, inventory, search });
-
-  const displayName = userName || role?.name || "Ma'am Aubrey";
   const hasQuery = Boolean(query);
   const canCreateRequests = role ? Boolean(role.can?.createRequests) : true;
   const canManageInventory = role ? Boolean(role.can?.manageInventory) : true;
@@ -40,7 +38,6 @@ function Dashboard({
       <div className="dashboard-overview">
         <DashboardWelcome
           greeting={greeting}
-          displayName={displayName}
           dateTime={dateTime}
           formattedDate={formattedDate}
           role={role}

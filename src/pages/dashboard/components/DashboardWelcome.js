@@ -1,6 +1,5 @@
 function DashboardWelcome({
   greeting,
-  displayName,
   dateTime,
   formattedDate,
   role,
@@ -16,7 +15,8 @@ function DashboardWelcome({
           </p>
         )}
         <h1>
-          {greeting}, {displayName}{" "}
+          {greeting}
+          {" "}
           <svg
             className="welcome-sparkle"
             viewBox="0 0 24 24"
@@ -39,7 +39,7 @@ function DashboardWelcome({
         </svg>
         <time dateTime={dateTime}>{formattedDate}</time>
       </div>
-    </section>
+    </section >
   );
 }
 
