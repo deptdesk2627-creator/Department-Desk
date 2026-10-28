@@ -38,10 +38,8 @@ test("opens quick demo modal and signs into demo account", () => {
 });
 
 test("applies dark theme attribute to split page container", () => {
-  const { container } = render(
-    <Login onLogin={jest.fn()} theme="dark" />,
-  );
+  render(<Login onLogin={jest.fn()} theme="dark" />);
 
-  const page = container.querySelector(".login-split-page");
+  const page = screen.getByTestId("login-split-page");
   expect(page).toHaveAttribute("data-theme", "dark");
 });

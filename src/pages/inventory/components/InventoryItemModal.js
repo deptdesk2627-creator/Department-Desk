@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import "./InventoryItemModal.css";
 import { Modal } from "../../../components/ui";
 import { getProductId } from "../../../hooks/useInventoryActions";
 import { getItemUsageType } from "../../../utils/inventory";

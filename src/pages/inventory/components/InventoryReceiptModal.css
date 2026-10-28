@@ -201,24 +201,6 @@
   padding-left: 18px;
 }
 
-.action-borrower-picks {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  margin-top: 14px;
-}
-
-.action-borrower-picks__label {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.action-borrower-picks__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
 
 .inventory-receipt__remarks-box {
   background: var(--surface, #ffffff);

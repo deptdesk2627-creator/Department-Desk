@@ -1,0 +1,200 @@
+/* ==========================================================================
+   Interactive Demo Modal (Dark Mode Aware)
+   ========================================================================== */
+.login-demo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.login-demo-modal-card {
+  background-color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  max-width: 440px;
+  width: 100%;
+  padding: 24px;
+  position: relative;
+  animation: loginModalIn 0.2s ease-out;
+}
+
+[data-theme="dark"] .login-demo-modal-card,
+.login-split-page[data-theme="dark"] .login-demo-modal-card {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: #f8fafc;
+}
+
+@keyframes loginModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.login-demo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.login-demo-modal-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+[data-theme="dark"] .login-demo-modal-header h3,
+.login-split-page[data-theme="dark"] .login-demo-modal-header h3 {
+  color: #f8fafc;
+}
+
+.login-demo-modal-close {
+  background-color: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.login-demo-modal-close:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme="dark"] .login-demo-modal-close,
+.login-split-page[data-theme="dark"] .login-demo-modal-close {
+  background-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .login-demo-modal-close:hover,
+.login-split-page[data-theme="dark"] .login-demo-modal-close:hover {
+  background-color: #475569;
+  color: #ffffff;
+}
+
+.login-demo-modal-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+[data-theme="dark"] .login-demo-modal-desc,
+.login-split-page[data-theme="dark"] .login-demo-modal-desc {
+  color: #94a3b8;
+}
+
+.login-demo-modal-list {
+  display: grid;
+  gap: 10px;
+}
+
+.login-demo-modal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  width: 100%;
+  font-family: inherit;
+}
+
+.login-demo-modal-item:hover {
+  background-color: #fff7ed;
+  border-color: #fdba74;
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .login-demo-modal-item,
+.login-split-page[data-theme="dark"] .login-demo-modal-item {
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .login-demo-modal-item:hover,
+.login-split-page[data-theme="dark"] .login-demo-modal-item:hover {
+  background-color: rgba(234, 88, 12, 0.14);
+  border-color: #ea580c;
+}
+
+.login-demo-modal-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #ea580c;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.login-demo-modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.login-demo-modal-info strong {
+  font-size: 13px;
+  color: #1e293b;
+}
+
+[data-theme="dark"] .login-demo-modal-info strong,
+.login-split-page[data-theme="dark"] .login-demo-modal-info strong {
+  color: #f8fafc;
+}
+
+.login-demo-modal-info span {
+  font-size: 11.5px;
+  color: #ea580c;
+  font-weight: 500;
+}
+
+.login-demo-modal-info small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+[data-theme="dark"] .login-demo-modal-info small,
+.login-split-page[data-theme="dark"] .login-demo-modal-info small {
+  color: #94a3b8;
+}
+
+.login-demo-modal-action {
+  font-size: 12px;
+  color: #ea580c;
+  font-weight: 600;
+  white-space: nowrap;
+}

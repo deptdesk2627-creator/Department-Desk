@@ -1,3 +1,4 @@
+import "./StockActionModal.css";
 import { Modal } from "../../../components/ui";
 
 const PERSON_LABEL = {

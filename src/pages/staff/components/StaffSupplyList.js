@@ -8,8 +8,8 @@ import {
 function StaffSupplyList({
   items,
   totalItems,
-  supplySearch,
-  onSupplySearchChange,
+  supplySearch = "",
+  onSupplySearchChange = () => {},
   canRecord,
   getMyBorrowedBalance,
   onOpenAction,
@@ -48,7 +48,7 @@ function StaffSupplyList({
           <input
             type="search"
             value={supplySearch}
-            onChange={(event) => onSupplySearchChange(event.target.value)}
+            onChange={(event) => onSupplySearchChange?.(event.target.value)}
             placeholder="Search supplies by name or ID..."
             aria-label="Search supplies"
           />
