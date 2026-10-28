@@ -12,6 +12,7 @@ function InventoryTable({
   onOpenAction,
   getBorrowedBalance,
   onDelete,
+  onViewDetails,
   readOnly = false,
 }) {
   return (
@@ -57,9 +58,16 @@ function InventoryTable({
                     </td>
                     <td>
                       <div className="inventory-item-name-cell">
-                        <strong className="inventory-item-name">
-                          {item.name}
-                        </strong>
+                        <button
+                          type="button"
+                          className="inventory-item-name-button"
+                          onClick={() => onViewDetails?.(item)}
+                          aria-label={`View details for ${item.name}`}
+                        >
+                          <strong className="inventory-item-name">
+                            {item.name}
+                          </strong>
+                        </button>
                         {usageType !== "Both" && (
                           <span
                             className={`inventory-usage-badge ${
@@ -106,6 +114,14 @@ function InventoryTable({
                         </span>
                       ) : (
                         <div className="stock-actions stock-actions--right">
+                          <button
+                            type="button"
+                            className="stock-adjust-button details-button"
+                            onClick={() => onViewDetails?.(item)}
+                            aria-label={`Open item details for ${item.name}`}
+                          >
+                            Details
+                          </button>
                           {allowBorrow && (
                             <button
                               type="button"

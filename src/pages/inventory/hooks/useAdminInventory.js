@@ -217,6 +217,14 @@ export function useAdminInventory({
     );
   }
 
+  function updateItem(id, changes) {
+    setInventory((current) =>
+      (Array.isArray(current) ? current : []).map((item) =>
+        item?.id === id ? { ...item, ...changes } : item,
+      ),
+    );
+  }
+
   return {
     form,
     setForm,
@@ -240,5 +248,6 @@ export function useAdminInventory({
     stockActions,
     addItem,
     deleteItem,
+    updateItem,
   };
 }

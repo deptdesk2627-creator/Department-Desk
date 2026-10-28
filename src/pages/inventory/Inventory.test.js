@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import Inventory from "./Inventory";
 
 const SAMPLE_INVENTORY = [
@@ -64,7 +64,7 @@ test("renders bento metrics and switches between Master list and Transaction fol
   expect(
     screen.getByPlaceholderText(/search product name, id, or stock level/i),
   ).toBeInTheDocument();
-  expect(screen.getByText("Folders")).toBeInTheDocument();
+  expect(screen.getAllByText("Folders").length).toBeGreaterThan(0);
   expect(screen.getByText("32 Boxes")).toBeInTheDocument();
 
   // Switch to Transaction tab
@@ -81,4 +81,58 @@ test("renders bento metrics and switches between Master list and Transaction fol
   fireEvent.change(statusSelect, { target: { value: "Used" } });
   expect(screen.queryByText("REC-1792648790538-7")).not.toBeInTheDocument();
   expect(screen.getByText("Dr. Maria Santos")).toBeInTheDocument();
+});
+
+test("opens item details from the master list actions", () => {
+  const setInventory = jest.fn();
+  render(
+    <Inventory
+      inventory={SAMPLE_INVENTORY}
+      setInventory={setInventory}
+      records={[
+        {
+          ...SAMPLE_RECORDS[0],
+          remarks: "Department workshop",
+        },
+      ]}
+      setRecords={jest.fn()}
+    />,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "Open item details for Folders" }),
+  );
+
+  const detailsDialog = within(screen.getByRole("dialog"));
+  expect(detailsDialog.getByText("PRD-0001")).toBeInTheDocument();
+  expect(detailsDialog.getByText("32 Boxes")).toBeInTheDocument();
+  expect(detailsDialog.getByText("Minimum stock")).toBeInTheDocument();
+  expect(detailsDialog.getByText("Usable")).toBeInTheDocument();
+  expect(detailsDialog.getByText("Item")).toBeInTheDocument();
+  expect(detailsDialog.getByText("Prof. Ezekiel Ygan")).toBeInTheDocument();
+  expect(detailsDialog.getByText("Department workshop")).toBeInTheDocument();
+  expect(
+    detailsDialog.getByRole("img", { name: "Usage trend for Folders" }),
+  ).toBeInTheDocument();
+
+  fireEvent.click(detailsDialog.getByRole("button", { name: "Edit stock details" }));
+  fireEvent.change(detailsDialog.getByRole("spinbutton", { name: "Stock on hand" }), {
+    target: { value: "24" },
+  });
+  fireEvent.change(detailsDialog.getByRole("textbox", { name: "Unit" }), {
+    target: { value: "Packs" },
+  });
+  fireEvent.change(detailsDialog.getByRole("spinbutton", { name: "Minimum stock" }), {
+    target: { value: "8" },
+  });
+  fireEvent.click(detailsDialog.getByRole("button", { name: "Save changes" }));
+
+  expect(setInventory).toHaveBeenCalledTimes(1);
+  expect(setInventory.mock.calls[0][0](SAMPLE_INVENTORY)[0]).toMatchObject({
+    quantity: 24,
+    unit: "Packs",
+    lowStockAt: 8,
+  });
+  expect(detailsDialog.getByText("24 Packs")).toBeInTheDocument();
+  expect(detailsDialog.getByText("8 Packs")).toBeInTheDocument();
 });

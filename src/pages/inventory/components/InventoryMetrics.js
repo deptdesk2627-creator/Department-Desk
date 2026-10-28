@@ -334,6 +334,9 @@ function InventoryMetrics({
           </div>
           <div className="inventory-usage-info">
             <span className="inventory-usage-info__label">
+              Recorded usage value
+            </span>
+            <span className="inventory-usage-info__label inventory-usage-info__label--sub">
               Consumable &amp; borrowed pie
             </span>
             {topItem ? (

@@ -6,6 +6,7 @@ import InventoryMetrics from "./components/InventoryMetrics";
 import InventoryReceiptModal from "./components/InventoryReceiptModal";
 import InventoryRecords from "./components/InventoryRecords";
 import InventoryTable from "./components/InventoryTable";
+import InventoryItemModal from "./components/InventoryItemModal";
 import StockActionModal from "./components/StockActionModal";
 import { useAdminInventory } from "./hooks/useAdminInventory";
 
@@ -59,6 +60,7 @@ function Inventory({
     stockActions,
     addItem,
     deleteItem,
+    updateItem,
   } = useAdminInventory({
     inventory,
     setInventory,
@@ -68,6 +70,7 @@ function Inventory({
   });
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
 
   function handleAddSubmit(event) {
     if (addItem(event)) {
@@ -210,6 +213,7 @@ function Inventory({
             onOpenAction={stockActions.openAction}
             getBorrowedBalance={stockActions.getBorrowedBalance}
             onDelete={deleteItem}
+            onViewDetails={setSelectedInventoryItem}
             readOnly={readOnly}
           />
         ) : (
@@ -222,6 +226,20 @@ function Inventory({
           />
         )}
       </div>
+
+      <InventoryItemModal
+        item={selectedInventoryItem}
+        records={recordItems}
+        isOpen={Boolean(selectedInventoryItem)}
+        editable={!readOnly}
+        onSave={(changes) => {
+          updateItem(selectedInventoryItem.id, changes);
+          setSelectedInventoryItem((current) =>
+            current ? { ...current, ...changes } : current,
+          );
+        }}
+        onClose={() => setSelectedInventoryItem(null)}
+      />
 
       <StockActionModal
         action={stockActions.action}
