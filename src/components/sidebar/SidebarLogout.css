@@ -1,0 +1,32 @@
+.workspace-sidebar__footer {
+  border-top: 1px solid rgb(255 237 213 / 14%);
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.workspace-sidebar__logout-link {
+  color: #fed7aa;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease;
+}
+
+.workspace-sidebar__logout-link .workspace-sidebar__icon {
+  color: #fed7aa;
+  transition: color 200ms ease, transform 200ms ease;
+}
+
+.workspace-sidebar__logout-link:hover,
+.workspace-sidebar__logout-link:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 237, 213, 0.2);
+  color: #ffffff;
+}
+
+.workspace-sidebar__logout-link:hover .workspace-sidebar__icon,
+.workspace-sidebar__logout-link:focus-visible .workspace-sidebar__icon {
+  color: #ffffff;
+  transform: translateX(2px);
+}
+

@@ -1,10 +1,51 @@
 import Dashboard from "./dashboard/Dashboard";
 import Inventory from "./inventory/Inventory";
 import StaffInventory from "./staff/Inventory";
+import HelpPage from "./system/HelpPage";
+import ProfilePage from "./system/ProfilePage";
+import SettingsPage from "./system/SettingsPage";
 import TaskManagement from "./task-management/TaskManagement";
 import Transactions from "./transactions/Transactions";
 
-export function getRolePages({ role, data, search, navigate }) {
+export function getRolePages({
+  role,
+  data,
+  search,
+  navigate,
+  profile,
+  onSaveProfile,
+  settings,
+  onSettingsChange,
+  theme,
+  onThemeChange,
+}) {
+  const systemPages = {
+    profile: (
+      <ProfilePage
+        role={role}
+        profile={profile}
+        onSave={onSaveProfile}
+      />
+    ),
+    settings: (
+      <SettingsPage
+        role={role}
+        settings={settings}
+        onSettingsChange={onSettingsChange}
+        theme={theme}
+        onThemeChange={onThemeChange}
+        data={data}
+      />
+    ),
+    help: (
+      <HelpPage
+        role={role}
+        settings={settings}
+        search={search}
+      />
+    ),
+  };
+
   if (role?.id === "staff") {
     return {
       "staff-inventory": (
@@ -16,6 +57,7 @@ export function getRolePages({ role, data, search, navigate }) {
           search={search}
         />
       ),
+      ...systemPages,
     };
   }
 
@@ -59,5 +101,6 @@ export function getRolePages({ role, data, search, navigate }) {
         readOnly={!canManageInventory}
       />
     ),
+    ...systemPages,
   };
 }

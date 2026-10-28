@@ -13,8 +13,9 @@ const workspaceItems = [
 ];
 
 const systemItems = [
+  { id: "profile", label: "Profile", icon: "profile" },
   { id: "settings", label: "Settings", icon: "settings" },
-  { id: "help", label: "Help & Support", icon: "help" },
+  { id: "help", label: "Help & FAQ", icon: "help" },
 ];
 
 function NavigationIcon({ name }) {
@@ -61,6 +62,15 @@ function NavigationIcon({ name }) {
       <svg {...sharedProps}>
         <path d="M11 4.2a8 8 0 1 0 8.8 8.8H11V4.2Z" />
         <path d="M14.5 3.5A8 8 0 0 1 20.5 9.5h-6v-6Z" />
+      </svg>
+    );
+  }
+
+  if (name === "profile") {
+    return (
+      <svg {...sharedProps}>
+        <circle cx="12" cy="8.5" r="3.5" />
+        <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
       </svg>
     );
   }

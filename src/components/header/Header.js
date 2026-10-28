@@ -166,6 +166,7 @@ function Header({
           role={role}
           onLogout={onLogout}
           isOpen={isMenuOpen}
+          onNavigate={onNavigate}
           onClose={closeMenu}
           onToggle={toggleProfileMenu}
           profileRef={profileRef}

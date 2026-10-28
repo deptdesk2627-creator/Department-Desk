@@ -59,7 +59,10 @@ export function getRole(roleId) {
 }
 
 export function canAccessPage(roleId, page) {
-  return getRole(roleId).pages.includes(page);
+  return (
+    getRole(roleId).pages.includes(page) ||
+    ["profile", "settings", "help"].includes(page)
+  );
 }
 
 export function getHomePage(roleId) {

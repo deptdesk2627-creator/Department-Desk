@@ -1,0 +1,218 @@
+/* Help & FAQ search toolbar, 2-column topic cards, and office contact banner */
+
+.system-help-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.system-search {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-sizing: border-box;
+  color: var(--ink);
+  flex: 1 1 280px;
+  font: inherit;
+  font-size: 14px;
+  min-height: 42px;
+  outline: none;
+  padding: 9px 14px;
+}
+
+.system-search:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 14%);
+}
+
+.system-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.system-filter-pills button {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.system-filter-pills button:hover {
+  border-color: rgb(var(--purple-rgb) / 45%);
+  color: var(--ink);
+}
+
+.system-filter-pills button[aria-selected="true"] {
+  background: var(--purple);
+  border-color: var(--purple);
+  color: #fff;
+}
+
+.system-filter-pills button:focus-visible {
+  outline: 3px solid rgb(var(--purple-rgb) / 35%);
+  outline-offset: 1px;
+}
+
+.system-faq-grid {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+}
+
+.system-count-pill {
+  background: var(--purple-soft);
+  border-radius: var(--radius-pill);
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.system-faq-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.system-faq-item {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  transition: border-color 150ms ease;
+}
+
+.system-faq-item[open] {
+  border-color: rgb(var(--purple-rgb) / 45%);
+}
+
+.system-faq-item summary {
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  list-style: none;
+  padding: 13px 40px 13px 15px;
+  position: relative;
+}
+
+.system-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.system-faq-item summary::after {
+  color: var(--muted);
+  content: "+";
+  font-size: 18px;
+  font-weight: 500;
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.system-faq-item[open] summary::after {
+  color: var(--purple);
+  content: "−";
+}
+
+.system-faq-item summary:focus-visible {
+  border-radius: 10px;
+  outline: 3px solid rgb(var(--purple-rgb) / 30%);
+}
+
+.system-faq-item p {
+  color: var(--ink-secondary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0 15px 14px;
+}
+
+.system-contact-banner__head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.system-contact-banner__head h2 {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.system-contact-banner__head p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.system-contact-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin: 16px 0 0;
+}
+
+.system-contact-grid > div {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 3px;
+  padding: 11px 14px;
+}
+
+.system-contact-grid dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.system-contact-grid dd {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 500;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.system-contact-grid a {
+  color: var(--purple);
+}
+
+.system-mail-button {
+  display: inline-flex;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .system-faq-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .system-filter-pills button,
+  .system-faq-item {
+    transition: none;
+  }
+}
+

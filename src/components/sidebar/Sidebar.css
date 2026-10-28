@@ -9,11 +9,12 @@
   flex-direction: column;
   justify-content: space-between;
   left: 0;
-  min-height: 100vh;
+  top: 0;
+  bottom: 0;
+  height: 100vh;
+  height: 100dvh;
   padding: 20px 14px 18px;
   position: fixed;
-  top: 0;
-  transform: translateZ(0);
   transition:
     width var(--sidebar-duration) var(--sidebar-ease),
     padding var(--sidebar-duration) var(--sidebar-ease),
