@@ -313,6 +313,24 @@
   margin: 0 0 16px;
 }
 
+.login-signup-notice {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  color: #9a3412;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  margin: 0 0 16px;
+}
+
+[data-theme="dark"] .login-signup-notice,
+.login-split-page[data-theme="dark"] .login-signup-notice {
+  background: rgba(124, 45, 18, 0.2);
+  border-color: #7c2d12;
+  color: #fdba74;
+}
+
 /* Button 1: White Sign In To Workspace (Dark Mode Aware) */
 .login-btn-workspace {
   background-color: #ffffff;
@@ -401,9 +419,39 @@
   transition: color 220ms ease;
 }
 
+.login-account-prompt {
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
+  margin: 18px 0 0;
+  transition: color 220ms ease;
+}
+
 [data-theme="dark"] .login-not-member,
+[data-theme="dark"] .login-account-prompt,
+.login-split-page[data-theme="dark"] .login-account-prompt,
 .login-split-page[data-theme="dark"] .login-not-member {
   color: #94a3b8;
+}
+
+.login-mode-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #ea580c;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-mode-link:hover {
+  color: #c2410c;
+  text-decoration: underline;
+}
+
+[data-theme="dark"] .login-mode-link,
+.login-split-page[data-theme="dark"] .login-mode-link {
+  color: #fb923c;
 }
 
 /* Button 2: Orange Quick Demo Sign-In */

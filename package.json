@@ -40,6 +40,8 @@
   },
   "allowScripts": {
     "core-js@3.50.0": true,
-    "core-js-pure@3.50.0": true
+    "core-js-pure@3.50.0": true,
+    "@firebase/util@1.15.3": true,
+    "protobufjs@7.6.6": true
   }
 }
