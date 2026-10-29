@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./TaskManagement.css";
+import { registerUser } from "../../firebase/authService";
 import TaskMetrics from "./components/TaskMetrics";
 import TaskQuickAdd from "./components/TaskQuickAdd";
 import TaskStatusView from "./components/TaskStatusView";
