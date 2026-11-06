@@ -454,33 +454,6 @@
   color: #fb923c;
 }
 
-/* Button 2: Orange Quick Demo Sign-In */
-.login-btn-demo {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  border: none;
-  border-radius: 14px;
-  padding: 13px 20px;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 600;
-  width: 100%;
-  text-align: center;
-  cursor: pointer;
-  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.35);
-  transition: all 0.15s ease;
-  font-family: inherit;
-}
-
-.login-btn-demo:hover {
-  box-shadow: 0 10px 28px rgba(234, 88, 12, 0.45);
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-}
-
-.login-btn-demo:active {
-  transform: translateY(0);
-}
-
 /* ==========================================================================
    Loading Spinner & Feedback
    ========================================================================= */

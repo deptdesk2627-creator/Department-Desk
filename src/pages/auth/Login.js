@@ -1,18 +1,12 @@
 import { useState } from "react";
 import "./Login.css";
 import { ROLE_LIST } from "../../constants/roles";
-import { registerUser } from "../../firebase/authService";
+import {
+  authenticateUser,
+  registerUser,
+  resetUserPassword,
+} from "../../firebase/authService";
 import LoginBrandPanel from "./components/LoginBrandPanel";
-import LoginDemoModal from "./components/LoginDemoModal";
-
-const DEMO_ACCOUNTS = {
-  "secretary@deptdesk.edu": "secretary",
-  "dean@deptdesk.edu": "dean",
-  "staff@deptdesk.edu": "staff",
-  secretary: "secretary",
-  dean: "dean",
-  staff: "staff",
-};
 
 function Login({
   onLogin,
@@ -22,22 +16,23 @@ function Login({
 }) {
   const [selectedRole, setSelectedRole] = useState(defaultRoleId);
   const [email, setEmail] = useState(`${defaultRoleId}@deptdesk.edu`);
-  const [password, setPassword] = useState("deptdesk123");
+  const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
+  const [resetNotice, setResetNotice] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [signUpSubmitted, setSignUpSubmitted] = useState(false);
-  const [showDemoModal, setShowDemoModal] = useState(false);
-  const [modalMode, setModalMode] = useState("demo"); // 'demo' | 'forgot'
   const [isValidating, setIsValidating] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
   function handleRoleSelect(roleId) {
     setSelectedRole(roleId);
     setEmail(`${roleId}@deptdesk.edu`);
     setError("");
+    setResetNotice("");
   }
 
   function triggerLogin(roleId) {
@@ -100,29 +95,47 @@ function Login({
       return;
     }
 
-    const matchedRole = DEMO_ACCOUNTS[trimmedEmail] || selectedRole;
     setError("");
+    setIsValidating(true);
+    try {
+      await authenticateUser(trimmedEmail, password, selectedRole);
+      triggerLogin(selectedRole);
+    } catch (authenticationError) {
+      const errorCode = authenticationError?.code;
+      setError(
+        errorCode === "auth/invalid-credential" ||
+          errorCode === "auth/user-not-found" ||
+          errorCode === "auth/wrong-password"
+          ? "The email address or password is incorrect."
+          : authenticationError?.message ||
+              "Unable to sign in. Please check your credentials and try again.",
+      );
+    } finally {
+      setIsValidating(false);
+    }
+  }
 
-    const isTest = process.env.NODE_ENV === "test";
-    if (isTest) {
-      triggerLogin(matchedRole);
+  async function handlePasswordReset() {
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      setError("Enter your email address to reset your password.");
       return;
     }
 
-    setIsValidating(true);
-    setTimeout(() => {
-      setIsValidating(false);
-      triggerLogin(matchedRole);
-    }, 180);
-  }
-
-  function handleQuickSignIn(roleId) {
-    setSelectedRole(roleId);
-    setEmail(`${roleId}@deptdesk.edu`);
-    setPassword("deptdesk123");
     setError("");
-    setShowDemoModal(false);
-    triggerLogin(roleId);
+    setResetNotice("");
+    setIsResettingPassword(true);
+    try {
+      await resetUserPassword(trimmedEmail);
+      setResetNotice("If an account exists for this email, a reset link has been sent.");
+    } catch (resetError) {
+      setError(
+        resetError?.message ||
+          "Unable to send a password reset email. Please try again.",
+      );
+    } finally {
+      setIsResettingPassword(false);
+    }
   }
 
   return (
@@ -342,6 +355,7 @@ function Login({
                   onChange={(e) => {
                     setEmail(e.target.value);
                     setSignUpSubmitted(false);
+                    setResetNotice("");
                   }}
                   placeholder="name@deptdesk.edu"
                   autoComplete={isSignUp ? "email" : "username"}
@@ -447,13 +461,10 @@ function Login({
                 <button
                   type="button"
                   className="login-forgot-link"
-                  onClick={() => {
-                    setModalMode("forgot");
-                    setShowDemoModal(true);
-                  }}
-                  disabled={isExiting || isValidating}
+                  onClick={handlePasswordReset}
+                  disabled={isExiting || isValidating || isResettingPassword}
                 >
-                  Forgot password?
+                  {isResettingPassword ? "Sending reset link..." : "Forgot password?"}
                 </button>
               </div>
             )}
@@ -466,6 +477,11 @@ function Login({
             {signUpSubmitted && (
               <p className="login-signup-notice" role="status">
                 Account created successfully. You can now sign in.
+              </p>
+            )}
+            {resetNotice && (
+              <p className="login-signup-notice" role="status">
+                {resetNotice}
               </p>
             )}
 
@@ -488,30 +504,6 @@ function Login({
             </button>
           </form>
 
-          {!isSignUp && (
-            <>
-              <div className="login-demo-divider">
-                <span className="login-demo-divider__line" />
-                <span className="login-demo-divider__text">
-                  QUICK DEMO SIGN-IN
-                </span>
-                <span className="login-demo-divider__line" />
-              </div>
-
-              <button
-                type="button"
-                className="login-btn-demo"
-                onClick={() => {
-                  setModalMode("demo");
-                  setShowDemoModal(true);
-                }}
-                disabled={isExiting || isValidating}
-              >
-                Quick demo sign-in
-              </button>
-            </>
-          )}
-
           <p className="login-account-prompt">
             {isSignUp ? "Already have an account?" : "Not a member yet?"}{" "}
             <button
@@ -523,9 +515,10 @@ function Login({
                 setError("");
                 setSignUpSubmitted(false);
                 setEmail(nextIsSignUp ? "" : `${selectedRole}@deptdesk.edu`);
-                setPassword(nextIsSignUp ? "" : "deptdesk123");
+                setPassword("");
                 setFullName("");
                 setConfirmPassword("");
+                setResetNotice("");
               }}
               disabled={isExiting || isValidating}
             >
@@ -535,13 +528,6 @@ function Login({
         </div>
       </main>
 
-      {/* Interactive Modal for Quick Demo Accounts or Password Help */}
-      <LoginDemoModal
-        isOpen={showDemoModal}
-        modalMode={modalMode}
-        onClose={() => setShowDemoModal(false)}
-        onSelectRole={handleQuickSignIn}
-      />
     </div>
   );
 }
