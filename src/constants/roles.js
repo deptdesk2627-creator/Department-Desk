@@ -8,6 +8,7 @@ export const ROLES = {
     name: "Ma'am Aubrey",
     initials: "MA",
     description: "Main Administrator",
+    maxUsers: 3,
     pages: ["dashboard", "transactions", "tasks", "inventory"],
     can: {
       editDocuments: true,
@@ -24,6 +25,7 @@ export const ROLES = {
     name: "Ma'am Beth",
     initials: "MB",
     description: "Supervisor",
+    maxUsers: 1,
     pages: ["dashboard", "transactions", "tasks", "inventory"],
     can: {
       editDocuments: false, // monitor only; cannot modify document histories
