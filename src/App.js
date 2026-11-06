@@ -6,9 +6,14 @@ import {
   isPlainObject,
 } from "./constants/system";
 import { canAccessPage, getHomePage, getRole } from "./constants/roles";
+import { useAuth } from "./context/AuthContext";
 import { useOfficeData } from "./hooks/useOfficeData";
 import { useStoredState } from "./hooks/useStoredState";
 import { signOutUser } from "./firebase/authService";
+import {
+  saveUserProfileToFirestore,
+  saveWorkspaceSettingsToFirestore,
+} from "./firebase/firestoreService";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 import { getRolePages } from "./pages";
@@ -18,6 +23,7 @@ const EMPTY_PROFILES = {};
 const storedObjectOptions = { validate: isPlainObject };
 
 function App() {
+  const { user, userData } = useAuth() || {};
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [roleId, setRoleId] = useStoredState("officeflow.role", "secretary");
   const [theme, setTheme] = useStoredState("officeflow.theme", "light", {
@@ -45,8 +51,23 @@ function App() {
   const data = useOfficeData();
   const safeSearch = typeof search === "string" ? search : "";
 
-  // Saved profile edits for the signed-in role, merged over role defaults.
-  const storedProfile = profiles?.[role.id];
+  // Saved profile edits for the signed-in role, merged over role defaults and Firebase userData.
+  const storedProfile = useMemo(() => {
+    const localProfile = profiles?.[role.id];
+    if (!userData || userData.role !== role.id) {
+      return localProfile;
+    }
+    return {
+      ...(isPlainObject(localProfile) ? localProfile : {}),
+      name: localProfile?.name || userData.fullname || role.name,
+      email: localProfile?.email || userData.email || "",
+      title: localProfile?.title || userData.title || role.description,
+      phone: localProfile?.phone || userData.phone || "",
+      office: localProfile?.office || userData.office || "",
+      status: localProfile?.status || userData.status || "available",
+    };
+  }, [profiles, role, userData]);
+
   const profile = useMemo(
     () => getProfile(role, storedProfile),
     [role, storedProfile],
@@ -84,6 +105,14 @@ function App() {
       ...(isPlainObject(current) ? current : {}),
       [role.id]: nextProfile,
     }));
+    if (user?.uid) {
+      saveUserProfileToFirestore(user.uid, nextProfile);
+    }
+  }
+
+  function handleSettingsChange(nextSettings) {
+    setSettings(nextSettings);
+    saveWorkspaceSettingsToFirestore(nextSettings);
   }
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -133,7 +162,7 @@ function App() {
     profile,
     onSaveProfile: saveProfile,
     settings,
-    onSettingsChange: setSettings,
+    onSettingsChange: handleSettingsChange,
     theme: activeTheme,
     onThemeChange: setTheme,
   });
