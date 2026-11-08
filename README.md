@@ -23,7 +23,6 @@ Enable **Email/Password** in Firebase Authentication and create a Cloud Firestor
 * *(Task Management - Add Task)* *
 * *- Organize Transactions and Inventory tables into tabs similar to Task Management* *
 * *- Display the 5 most recent transactions on the Dashboard* *
-* *- Integrate Supabase Database* *
 * *- Apply the orange color scheme throughout the system* *
 * *- Add filtering functionality* *
 * *- Implement file locator based on document circulation/release location* *
@@ -41,4 +40,3 @@ Enable **Email/Password** in Firebase Authentication and create a Cloud Firestor
 * *- Develop Supply and Inventory usage statistics* *
 * *- Refine terminology to better align with the project scope* *
 * *- Share demo version with Ma'am Aubrey* *
-
