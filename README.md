@@ -1,3 +1,18 @@
+## Firebase setup
+
+Create a `.env` file in the project root using the Firebase web app settings from your Firebase project:
+
+```env
+REACT_APP_FIREBASE_API_KEY=your-api-key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your-project-id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+REACT_APP_FIREBASE_APP_ID=your-app-id
+```
+
+Enable **Email/Password** in Firebase Authentication and create a Cloud Firestore database. Restart the development server after adding or changing `.env` values.
+
 ## To Do
 * *- Share Vercel deployment link and GitHub repository in the GC* *
 * *- Convert selected components into modal forms* *
@@ -26,6 +41,4 @@
 * *- Develop Supply and Inventory usage statistics* *
 * *- Refine terminology to better align with the project scope* *
 * *- Share demo version with Ma'am Aubrey* *
-
-
 

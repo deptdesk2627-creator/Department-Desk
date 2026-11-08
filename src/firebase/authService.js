@@ -19,6 +19,12 @@ import { ROLE_LIST } from "../constants/roles";
 import { auth, db } from "./firebaseConfig";
 
 export async function registerUser(email, password, fullname, role) {
+    if (!auth || !db) {
+        throw new Error(
+            "Firebase is not configured. Add the Firebase settings to your .env file and restart the app.",
+        );
+    }
+
     const roleConfig = ROLE_LIST.find((item) => item.id === role);
     if (!roleConfig) {
         throw new Error("Please select a valid workspace role.");

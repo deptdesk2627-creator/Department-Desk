@@ -1,4 +1,5 @@
 import {
+  collection,
   doc,
   getDoc,
   getDocs,
@@ -17,6 +18,9 @@ import {
   resetUserPassword,
 } from "./authService";
 import { auth, db } from "./firebaseConfig";
+
+const firebaseConfigMock = jest.requireMock("./firebaseConfig");
+const configuredDb = db;
 
 jest.mock("firebase/auth", () => ({
   createUserWithEmailAndPassword: jest.fn(),
@@ -73,6 +77,21 @@ beforeEach(() => {
   );
   transactionSet.mockClear();
   signOut.mockResolvedValue(undefined);
+});
+
+afterEach(() => {
+  firebaseConfigMock.db = configuredDb;
+});
+
+test("reports missing Firebase configuration before accessing Firestore", async () => {
+  firebaseConfigMock.db = null;
+
+  await expect(
+    registerUser("new@example.com", "secure-password", "Taylor User", "dean"),
+  ).rejects.toThrow(/firebase is not configured.*\.env file/i);
+
+  expect(collection).not.toHaveBeenCalled();
+  expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
 });
 
 test("validates Firebase credentials and the matching Firestore email and role", async () => {
