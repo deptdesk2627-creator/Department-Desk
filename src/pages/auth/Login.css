@@ -366,33 +366,6 @@
   gap: 12px;
 }
 
-.login-demo-divider__line {
-  flex: 1;
-  height: 1px;
-  background-color: #e2e8f0;
-  transition: background-color 220ms ease;
-}
-
-[data-theme="dark"] .login-demo-divider__line,
-.login-split-page[data-theme="dark"] .login-demo-divider__line {
-  background-color: #334155;
-}
-
-.login-demo-divider__text {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  color: #94a3b8;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transition: color 220ms ease;
-}
-
-[data-theme="dark"] .login-demo-divider__text,
-.login-split-page[data-theme="dark"] .login-demo-divider__text {
-  color: #64748b;
-}
-
 .login-not-member {
   text-align: center;
   font-size: 13px;
@@ -406,7 +379,7 @@
   color: #94a3b8;
 }
 
-/* Button 2: Orange Quick Demo Sign-In */
+/* Account mode switch */
 .login-btn-demo {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   border: none;
@@ -431,6 +404,31 @@
 
 .login-btn-demo:active {
   transform: translateY(0);
+}
+
+.login-btn-demo:disabled,
+.login-btn-workspace:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+.login-success-alert {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  color: #166534;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  margin: 0 0 16px;
+}
+
+[data-theme="dark"] .login-success-alert,
+.login-split-page[data-theme="dark"] .login-success-alert {
+  background: rgba(22, 101, 52, 0.2);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: #86efac;
 }
 
 /* ==========================================================================

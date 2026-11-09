@@ -1,191 +1,181 @@
 import { useState } from "react";
 import "./Login.css";
 import { ROLE_LIST } from "../../constants/roles";
+import { supabase } from "../../supabase/supabaseClient";
 import LoginBrandPanel from "./components/LoginBrandPanel";
-import LoginDemoModal from "./components/LoginDemoModal";
 
-const DEMO_ACCOUNTS = {
-  "secretary@deptdesk.edu": "secretary",
-  "dean@deptdesk.edu": "dean",
-  "staff@deptdesk.edu": "staff",
-  secretary: "secretary",
-  dean: "dean",
-  staff: "staff",
-};
-
-function Login({
-  onLogin,
-  defaultRoleId = "secretary",
-  theme = "light",
-  onThemeChange,
-}) {
-  const [selectedRole, setSelectedRole] = useState(defaultRoleId);
-  const [email, setEmail] = useState(`${defaultRoleId}@deptdesk.edu`);
-  const [password, setPassword] = useState("deptdesk123");
-  const [rememberMe, setRememberMe] = useState(false);
+function Login({ onLogin, theme = "light" }) {
+  const [mode, setMode] = useState("login");
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("staff");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [showDemoModal, setShowDemoModal] = useState(false);
-  const [modalMode, setModalMode] = useState("demo"); // 'demo' | 'forgot'
-  const [isValidating, setIsValidating] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleRoleSelect(roleId) {
-    setSelectedRole(roleId);
-    setEmail(`${roleId}@deptdesk.edu`);
+  function changeMode(nextMode) {
+    setMode(nextMode);
     setError("");
+    setMessage("");
   }
 
-  function triggerLogin(roleId) {
-    if (isExiting) return;
-    setIsExiting(true);
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
 
-    const isTest = process.env.NODE_ENV === "test";
-    if (isTest) {
-      onLogin?.(roleId);
-      return;
-    }
-
-    setTimeout(() => {
-      onLogin?.(roleId);
-    }, 220);
-  }
-
-  function handleSubmit(event) {
-    if (event) event.preventDefault();
     const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail || !password.trim()) {
-      setError("Please enter both your email address and password.");
-      return;
+    if (mode === "signup") {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Your password must be at least 6 characters.");
+        return;
+      }
     }
 
-    const matchedRole = DEMO_ACCOUNTS[trimmedEmail] || selectedRole;
-    setError("");
+    setIsSubmitting(true);
+    try {
+      if (mode === "signup") {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password,
+          options: {
+            data: {
+              full_name: name.trim(),
+              role,
+            },
+          },
+        });
+        if (signUpError) throw signUpError;
 
-    const isTest = process.env.NODE_ENV === "test";
-    if (isTest) {
-      triggerLogin(matchedRole);
-      return;
+        if (data.session) {
+          const { error: signOutError } = await supabase.auth.signOut();
+          if (signOutError) throw signOutError;
+        }
+
+        setMode("login");
+        setPassword("");
+        setConfirmPassword("");
+        setMessage(
+          "Account created. If email confirmation is enabled, verify your address, then sign in.",
+        );
+        return;
+      }
+
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        });
+      if (signInError) throw signInError;
+
+      const userRole = data.user?.user_metadata?.role;
+      if (!ROLE_LIST.some((item) => item.id === userRole)) {
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (signOutError) throw signOutError;
+        throw new Error(
+          "This account does not have a valid workspace role. Contact your administrator.",
+        );
+      }
+
+      onLogin?.(data.user);
+    } catch (submitError) {
+      setError(submitError.message || "Authentication failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsValidating(true);
-    setTimeout(() => {
-      setIsValidating(false);
-      triggerLogin(matchedRole);
-    }, 180);
   }
 
-  function handleQuickSignIn(roleId) {
-    setSelectedRole(roleId);
-    setEmail(`${roleId}@deptdesk.edu`);
-    setPassword("deptdesk123");
-    setError("");
-    setShowDemoModal(false);
-    triggerLogin(roleId);
-  }
+  const isSignup = mode === "signup";
 
   return (
     <div
-      className={`login-split-page${isExiting ? " login-split-page--exiting" : ""}`}
+      className="login-split-page"
       data-theme={theme}
       data-testid="login-split-page"
     >
-      {/* Left Brand Panel */}
       <LoginBrandPanel />
 
-      {/* Right Form Panel */}
       <main className="login-form-panel">
         <div className="login-form-container">
           <div className="login-form-header">
             <h2 id="login-heading" className="login-form-title">
-              Sign in to DeptDesk
+              {isSignup ? "Create your account" : "Sign in to DeptDesk"}
             </h2>
             <p className="login-form-subtitle">
-              Enter your account credentials or choose a workspace role below.
+              {isSignup
+                ? "Enter your details to create a DeptDesk account."
+                : "Enter your account credentials to continue."}
             </p>
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
-            {/* 1. Workspace Role Card */}
-            <div className="login-card-field">
-              <div className="login-card-field__icon" aria-hidden="true">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#64748b"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="2" y="3" width="20" height="14" rx="2" />
-                  <line x1="8" y1="21" x2="16" y2="21" />
-                  <line x1="12" y1="17" x2="12" y2="21" />
-                  <circle cx="9" cy="9" r="2" />
-                  <path d="M14 8h3M14 12h3" />
-                </svg>
-              </div>
-              <div className="login-card-field__content">
-                <label
-                  htmlFor="login-workspace-role"
-                  className="login-card-field__label"
-                >
-                  Workspace role
-                </label>
-                <div className="login-select-wrapper">
-                  <select
-                    id="login-workspace-role"
-                    className="login-card-field__select"
-                    value={selectedRole}
-                    onChange={(e) => handleRoleSelect(e.target.value)}
-                    disabled={isExiting || isValidating}
-                  >
-                    {ROLE_LIST.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.label} ({role.name})
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    className="login-select-chevron"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
+            {isSignup && (
+              <>
+                <div className="login-card-field">
+                  <div className="login-card-field__content">
+                    <label className="login-card-field__label" htmlFor="signup-name">
+                      Full name
+                    </label>
+                    <input
+                      id="signup-name"
+                      className="login-card-field__input"
+                      type="text"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      autoComplete="name"
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
+                <div className="login-card-field">
+                  <div className="login-card-field__content">
+                    <label className="login-card-field__label" htmlFor="signup-role">
+                      Role
+                    </label>
+                    <div className="login-select-wrapper">
+                      <select
+                        id="signup-role"
+                        className="login-card-field__select"
+                        value={role}
+                        onChange={(event) => setRole(event.target.value)}
+                        disabled={isSubmitting}
+                      >
+                        {ROLE_LIST.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </select>
+                      <svg
+                        className="login-select-chevron"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
-            {/* 2. Email Address Card */}
             <div className="login-card-field">
-              <div className="login-card-field__icon" aria-hidden="true">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#64748b"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="2" y="4" width="20" height="16" rx="2" />
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                </svg>
-              </div>
               <div className="login-card-field__content">
-                <label
-                  htmlFor="login-email"
-                  className="login-card-field__label"
-                >
+                <label className="login-card-field__label" htmlFor="login-email">
                   Email address
                 </label>
                 <input
@@ -193,36 +183,20 @@ function Login({
                   type="email"
                   className="login-card-field__input"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(event) => setEmail(event.target.value)}
                   placeholder="name@deptdesk.edu"
-                  autoComplete="username"
+                  autoComplete="email"
                   required
-                  disabled={isExiting || isValidating}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
 
-            {/* 3. Password Card */}
             <div className="login-card-field">
-              <div className="login-card-field__icon" aria-hidden="true">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#64748b"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              </div>
               <div className="login-card-field__content">
                 <label
-                  htmlFor="login-password"
                   className="login-card-field__label"
+                  htmlFor="login-password"
                 >
                   Password
                 </label>
@@ -231,96 +205,76 @@ function Login({
                   type="password"
                   className="login-card-field__input"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••••"
-                  autoComplete="current-password"
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete={isSignup ? "new-password" : "current-password"}
                   required
-                  disabled={isExiting || isValidating}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
 
-            {/* Options: Remember Me & Forgot Password */}
-            <div className="login-options-row">
-              <label className="login-checkbox-label">
-                <input
-                  type="checkbox"
-                  className="login-checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  disabled={isExiting || isValidating}
-                />
-                <span>Remember me</span>
-              </label>
-
-              <button
-                type="button"
-                className="login-forgot-link"
-                onClick={() => {
-                  setModalMode("forgot");
-                  setShowDemoModal(true);
-                }}
-                disabled={isExiting || isValidating}
-              >
-                Forgot password?
-              </button>
-            </div>
+            {isSignup && (
+              <div className="login-card-field">
+                <div className="login-card-field__content">
+                  <label
+                    className="login-card-field__label"
+                    htmlFor="signup-confirm-password"
+                  >
+                    Confirm password
+                  </label>
+                  <input
+                    id="signup-confirm-password"
+                    type="password"
+                    className="login-card-field__input"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    autoComplete="new-password"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+            )}
 
             {error && (
               <p className="login-error-alert" role="alert">
                 {error}
               </p>
             )}
+            {message && (
+              <p className="login-success-alert" role="status">
+                {message}
+              </p>
+            )}
 
-            {/* Button 1: White Sign In To Workspace with Validating Feedback */}
             <button
               type="submit"
               className="login-btn-workspace"
-              aria-label="Sign in to workspace"
-              disabled={isExiting || isValidating}
+              disabled={isSubmitting}
             >
-              {isValidating ? (
-                <>
-                  <span className="login-spinner" aria-hidden="true" />
-                  Authenticating...
-                </>
-              ) : (
-                "Sign in to workspace"
-              )}
+              {isSubmitting
+                ? isSignup
+                  ? "Creating account..."
+                  : "Signing in..."
+                : isSignup
+                  ? "Create account"
+                  : "Sign in to workspace"}
             </button>
           </form>
 
-          {/* Divider: Quick Demo Sign-In */}
-          <div className="login-demo-divider">
-            <span className="login-demo-divider__line" />
-            <span className="login-demo-divider__text">QUICK DEMO SIGN-IN</span>
-            <span className="login-demo-divider__line" />
-          </div>
-
-          <p className="login-not-member">Not a member yet?</p>
-
-          {/* Button 2: Orange Quick Demo Sign-In */}
+          <p className="login-not-member">
+            {isSignup ? "Already have an account?" : "Not a member yet?"}
+          </p>
           <button
             type="button"
             className="login-btn-demo"
-            onClick={() => {
-              setModalMode("demo");
-              setShowDemoModal(true);
-            }}
-            disabled={isExiting || isValidating}
+            onClick={() => changeMode(isSignup ? "login" : "signup")}
+            disabled={isSubmitting}
           >
-            Quick demo sign-in
+            {isSignup ? "Sign in" : "Create an account"}
           </button>
         </div>
       </main>
-
-      {/* Interactive Modal for Quick Demo Accounts or Password Help */}
-      <LoginDemoModal
-        isOpen={showDemoModal}
-        modalMode={modalMode}
-        onClose={() => setShowDemoModal(false)}
-        onSelectRole={handleQuickSignIn}
-      />
     </div>
   );
 }

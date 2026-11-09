@@ -5,22 +5,25 @@ import {
   getProfile,
   isPlainObject,
 } from "./constants/system";
-import { canAccessPage, getHomePage, getRole } from "./constants/roles";
+import {
+  canAccessPage,
+  getHomePage,
+  getRole,
+  ROLES,
+} from "./constants/roles";
 import { useOfficeData } from "./hooks/useOfficeData";
 import { useStoredState } from "./hooks/useStoredState";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 import { getRolePages } from "./pages";
 import Login from "./pages/auth/Login";
+import { supabase } from "./supabase/supabaseClient";
 
 const EMPTY_PROFILES = {};
 const storedObjectOptions = { validate: isPlainObject };
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useStoredState(
-    "officeflow.authenticated",
-    false,
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [roleId, setRoleId] = useStoredState("officeflow.role", "secretary");
   const [theme, setTheme] = useStoredState("officeflow.theme", "light", {
     raw: true,
@@ -69,6 +72,54 @@ function App() {
     }
   }, [activeTheme]);
 
+  useEffect(() => {
+    let isMounted = true;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+
+      const sessionRole = session?.user?.user_metadata?.role;
+      if (
+        !session ||
+        !Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
+      ) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      setRoleId(sessionRole);
+      setIsAuthenticated(true);
+    });
+
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (!isMounted) return;
+
+        const session = data.session;
+        const sessionRole = session?.user?.user_metadata?.role;
+        if (
+          session &&
+          Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
+        ) {
+          setRoleId(sessionRole);
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      })
+      .catch((error) => {
+        console.error("Could not restore the Supabase session.", error);
+      });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [setRoleId]);
+
   // Never show a page the current role is not allowed to open.
   const activePage = canAccessPage(role.id, page) ? page : getHomePage(role.id);
 
@@ -90,26 +141,44 @@ function App() {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  function handleLogin(nextRoleId) {
-    const resolvedRole = getRole(nextRoleId).id;
+  function handleLogin(user) {
+    const resolvedRole = user?.user_metadata?.role;
+    if (!Object.prototype.hasOwnProperty.call(ROLES, resolvedRole)) {
+      console.error("Cannot open workspace: the account role is invalid.");
+      return;
+    }
+
     setRoleId(resolvedRole);
+    const name = user.user_metadata?.full_name;
+    if (name || user.email) {
+      setProfiles((current) => ({
+        ...(isPlainObject(current) ? current : {}),
+        [resolvedRole]: {
+          ...getProfile(getRole(resolvedRole), current?.[resolvedRole]),
+          ...(name ? { name } : {}),
+          ...(user.email ? { email: user.email } : {}),
+        },
+      }));
+    }
     setSearch("");
     setPage(getHomePage(resolvedRole));
     setIsAuthenticated(true);
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     setSearch("");
-    const isTest = process.env.NODE_ENV === "test";
-    if (isTest) {
-      setIsAuthenticated(false);
-      return;
-    }
     setIsLoggingOut(true);
-    setTimeout(() => {
-      setIsAuthenticated(false);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setTimeout(() => {
+        setIsAuthenticated(false);
+        setIsLoggingOut(false);
+      }, 220);
+    } catch (error) {
       setIsLoggingOut(false);
-    }, 220);
+      console.error("Could not sign out of Supabase.", error);
+    }
   }
 
   if (!isAuthenticated) {
