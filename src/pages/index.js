@@ -55,6 +55,8 @@ export function getRolePages({
           records={data.inventoryRecords}
           setRecords={data.setInventoryRecords}
           search={search}
+          profile={profile}
+          role={role}
         />
       ),
       ...systemPages,

@@ -74,6 +74,22 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
+
+    function syncSessionProfile(user, sessionRole) {
+      const name = user?.user_metadata?.full_name;
+      const email = user?.email;
+      if (name || email) {
+        setProfiles((current) => ({
+          ...(isPlainObject(current) ? current : {}),
+          [sessionRole]: {
+            ...getProfile(getRole(sessionRole), current?.[sessionRole]),
+            ...(name ? { name } : {}),
+            ...(email ? { email } : {}),
+          },
+        }));
+      }
+    }
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -89,6 +105,7 @@ function App() {
       }
 
       setRoleId(sessionRole);
+      syncSessionProfile(session.user, sessionRole);
       setIsAuthenticated(true);
     });
 
@@ -105,6 +122,7 @@ function App() {
           Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
         ) {
           setRoleId(sessionRole);
+          syncSessionProfile(session.user, sessionRole);
           setIsAuthenticated(true);
         } else {
           setIsAuthenticated(false);
@@ -118,7 +136,7 @@ function App() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setRoleId]);
+  }, [setProfiles, setRoleId]);
 
   // Never show a page the current role is not allowed to open.
   const activePage = canAccessPage(role.id, page) ? page : getHomePage(role.id);
