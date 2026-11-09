@@ -44,12 +44,16 @@ test("filters available supplies by name or product ID", () => {
 });
 
 test("automatically uses logged-in account credentials when recording supplies", () => {
-  const setRecords = jest.fn();
+  let savedRecords = [];
+  const setRecords = jest.fn((updater) => {
+    savedRecords =
+      typeof updater === "function" ? updater(savedRecords) : updater;
+  });
   render(
     <StaffInventory
       inventory={SAMPLE_INVENTORY}
       setInventory={jest.fn()}
-      records={[]}
+      records={savedRecords}
       setRecords={setRecords}
       profile={{ name: "Prof. Maria Clara", email: "maria@deptdesk.edu" }}
     />,
@@ -66,7 +70,7 @@ test("automatically uses logged-in account credentials when recording supplies",
     screen.getByRole("button", { name: /record borrow & view receipt/i }),
   );
 
-  expect(setRecords).toHaveBeenCalledWith(
+  expect(savedRecords).toEqual(
     expect.arrayContaining([
       expect.objectContaining({
         person: "Prof. Maria Clara",
