@@ -1,63 +1,103 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "./App";
-import { authenticateUser, signOutUser } from "./firebase/authService";
+import { supabase } from "./supabase/supabaseClient";
 
-jest.mock("./firebase/authService", () => ({
-  authenticateUser: jest.fn(),
-  signOutUser: jest.fn(),
+jest.mock("./supabase/supabaseClient", () => ({
+  supabase: {
+    auth: {
+      getSession: jest.fn(),
+      onAuthStateChange: jest.fn(),
+      signInWithPassword: jest.fn(),
+      signOut: jest.fn(),
+    },
+  },
 }));
 
 beforeEach(() => {
   window.localStorage.clear();
   jest.clearAllMocks();
-  authenticateUser.mockResolvedValue({ role: "secretary" });
-  signOutUser.mockResolvedValue(undefined);
+  supabase.auth.getSession.mockResolvedValue({
+    data: { session: null },
+    error: null,
+  });
+  supabase.auth.onAuthStateChange.mockReturnValue({
+    data: { subscription: { unsubscribe: jest.fn() } },
+  });
+  supabase.auth.signOut.mockResolvedValue({ error: null });
 });
 
-test("renders DeptDesk login screen, authenticates, and logs out from header and sidebar", async () => {
+test("signs in with Supabase and logs out from header and sidebar", async () => {
+  const user = {
+    email: "secretary@example.com",
+    user_metadata: { full_name: "Ma'am Aubrey", role: "secretary" },
+  };
+  supabase.auth.signInWithPassword.mockResolvedValue({
+    data: { user },
+    error: null,
+  });
   render(<App />);
+
   expect(
     screen.getByRole("heading", { name: /sign in to deptdesk/i }),
   ).toBeInTheDocument();
 
-  fireEvent.change(screen.getByLabelText("Password"), {
-    target: { value: "securepass123" },
+  fireEvent.change(screen.getByLabelText(/email address/i), {
+    target: { value: user.email },
   });
-  fireEvent.click(
-    screen.getByRole("button", { name: /sign in to workspace/i }),
-  );
-
-  await waitFor(() => {
-    expect(
-      screen.getByRole("complementary", { name: /main navigation/i }),
-    ).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText(/^password$/i), {
+    target: { value: "secure-password" },
   });
+  fireEvent.click(screen.getByRole("button", { name: /sign in to workspace/i }));
 
-  // Log out from top-right header profile menu
+  expect(
+    await screen.findByRole("complementary", { name: /main navigation/i }),
+  ).toBeInTheDocument();
+
   fireEvent.click(
     screen.getByRole("button", { name: /ma'am aubrey|cha gamay/i }),
   );
   fireEvent.click(screen.getByRole("menuitem", { name: /log out/i }));
-
-  await screen.findByRole("heading", { name: /sign in to deptdesk/i });
-  expect(signOutUser).toHaveBeenCalledTimes(1);
-
-  // Sign back in and log out from sidebar logout button
-  fireEvent.change(screen.getByLabelText("Password"), {
-    target: { value: "securepass123" },
-  });
-  fireEvent.click(
-    screen.getByRole("button", { name: /sign in to workspace/i }),
-  );
-  await waitFor(() => {
+  await waitFor(() =>
     expect(
-      screen.getByRole("complementary", { name: /main navigation/i }),
-    ).toBeInTheDocument();
-  });
-  fireEvent.click(
-    screen.getByRole("button", { name: /^log out$/i }),
+      screen.getByRole("heading", { name: /sign in to deptdesk/i }),
+    ).toBeInTheDocument(),
   );
 
-  await screen.findByRole("heading", { name: /sign in to deptdesk/i });
-  expect(signOutUser).toHaveBeenCalledTimes(2);
+  fireEvent.change(screen.getByLabelText(/email address/i), {
+    target: { value: user.email },
+  });
+  fireEvent.change(screen.getByLabelText(/^password$/i), {
+    target: { value: "secure-password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /sign in to workspace/i }));
+  expect(
+    await screen.findByRole("complementary", { name: /main navigation/i }),
+  ).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /^log out$/i }));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("heading", { name: /sign in to deptdesk/i }),
+    ).toBeInTheDocument(),
+  );
+  expect(supabase.auth.signOut).toHaveBeenCalledTimes(2);
+});
+
+test("restores a valid Supabase session on page load", async () => {
+  supabase.auth.getSession.mockResolvedValue({
+    data: {
+      session: {
+        user: {
+          email: "dean@example.com",
+          user_metadata: { role: "dean" },
+        },
+      },
+    },
+    error: null,
+  });
+
+  render(<App />);
+  expect(
+    await screen.findByRole("complementary", { name: /main navigation/i }),
+  ).toBeInTheDocument();
 });

@@ -6,22 +6,6 @@ import ProfilePage from "./system/ProfilePage";
 import SettingsPage from "./system/SettingsPage";
 import TaskManagement from "./task-management/TaskManagement";
 import Transactions from "./transactions/Transactions";
-import { useAuth } from "../context/AuthContext";
-
-function AuthProfileSummary() {
-  const { user, userData, loading } = useAuth();
-
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <div>Please log in.</div>;
-
-  return (
-    <section className="card panel">
-      <h2>Hello, {userData?.fullname}</h2>
-      <p>Email: {userData?.email}</p>
-      <p>Role: {userData?.role}</p>
-    </section>
-  );
-}
 
 export function getRolePages({
   role,
@@ -37,14 +21,7 @@ export function getRolePages({
 }) {
   const systemPages = {
     profile: (
-      <>
-        <AuthProfileSummary />
-        <ProfilePage
-          role={role}
-          profile={profile}
-          onSave={onSaveProfile}
-        />
-      </>
+      <ProfilePage role={role} profile={profile} onSave={onSaveProfile} />
     ),
     settings: (
       <SettingsPage
@@ -74,6 +51,8 @@ export function getRolePages({
           records={data.inventoryRecords}
           setRecords={data.setInventoryRecords}
           search={search}
+          profile={profile}
+          role={role}
         />
       ),
       ...systemPages,

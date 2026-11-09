@@ -1,117 +1,93 @@
 import { useState } from "react";
 import "./Login.css";
 import { ROLE_LIST } from "../../constants/roles";
-import {
-  authenticateUser,
-  registerUser,
-  resetUserPassword,
-} from "../../firebase/authService";
+import { supabase } from "../../supabase/supabaseClient";
 import LoginBrandPanel from "./components/LoginBrandPanel";
 
-function Login({
-  onLogin,
-  defaultRoleId = "secretary",
-  theme = "light",
-  onThemeChange,
-}) {
-  const [selectedRole, setSelectedRole] = useState(defaultRoleId);
-  const [email, setEmail] = useState(`${defaultRoleId}@deptdesk.edu`);
+function Login({ onLogin, theme = "light" }) {
+  const [mode, setMode] = useState("login");
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("staff");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
-  const [resetNotice, setResetNotice] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [signUpSubmitted, setSignUpSubmitted] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleRoleSelect(roleId) {
-    setSelectedRole(roleId);
-    setEmail(`${roleId}@deptdesk.edu`);
+  function changeMode(nextMode) {
+    setMode(nextMode);
     setError("");
-    setResetNotice("");
-  }
-
-  function triggerLogin(roleId) {
-    if (isExiting) return;
-    setIsExiting(true);
-
-    const isTest = process.env.NODE_ENV === "test";
-    if (isTest) {
-      onLogin?.(roleId);
-      return;
-    }
-
-    setTimeout(() => {
-      onLogin?.(roleId);
-    }, 220);
+    setMessage("");
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const trimmedEmail = email.trim().toLowerCase();
-
-    if (isSignUp) {
-      if (!fullName.trim() || !trimmedEmail || !password || !confirmPassword) {
-        setError("Please complete all fields.");
-        return;
-      }
-      if (password.length < 8) {
-        setError("Your password must be at least 8 characters.");
-        return;
-      }
-      if (password !== confirmPassword) {
-        setError("Your passwords do not match.");
-        return;
-      }
-
-      setError("");
-      setSignUpSubmitted(false);
-      setIsValidating(true);
-      try {
-        await registerUser(
-          trimmedEmail,
-          password,
-          fullName.trim(),
-          selectedRole,
-        );
-        setSignUpSubmitted(true);
-      } catch (registrationError) {
-        setError(
-          registrationError?.message ||
-            "Unable to create your account. Please try again.",
-        );
-      } finally {
-        setIsValidating(false);
-      }
-      return;
-    }
-
-    if (!trimmedEmail || !password.trim()) {
-      setError("Please enter both your email address and password.");
-      return;
-    }
-
     setError("");
-    setIsValidating(true);
+    setMessage("");
+
+    const trimmedEmail = email.trim().toLowerCase();
+    if (mode === "signup") {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Your password must be at least 6 characters.");
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
     try {
-      await authenticateUser(trimmedEmail, password, selectedRole);
-      triggerLogin(selectedRole);
-    } catch (authenticationError) {
-      const errorCode = authenticationError?.code;
-      setError(
-        errorCode === "auth/invalid-credential" ||
-          errorCode === "auth/user-not-found" ||
-          errorCode === "auth/wrong-password"
-          ? "The email address or password is incorrect."
-          : authenticationError?.message ||
-              "Unable to sign in. Please check your credentials and try again.",
-      );
+      if (mode === "signup") {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password,
+          options: {
+            data: {
+              full_name: name.trim(),
+              role,
+            },
+          },
+        });
+        if (signUpError) throw signUpError;
+
+        if (data.session) {
+          const { error: signOutError } = await supabase.auth.signOut();
+          if (signOutError) throw signOutError;
+        }
+
+        setMode("login");
+        setPassword("");
+        setConfirmPassword("");
+        setMessage(
+          "Account created. If email confirmation is enabled, verify your address, then sign in.",
+        );
+        return;
+      }
+
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        });
+      if (signInError) throw signInError;
+
+      const userRole = data.user?.user_metadata?.role;
+      if (!ROLE_LIST.some((item) => item.id === userRole)) {
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (signOutError) throw signOutError;
+        throw new Error(
+          "This account does not have a valid workspace role. Contact your administrator.",
+        );
+      }
+
+      onLogin?.(data.user);
+    } catch (submitError) {
+      setError(submitError.message || "Authentication failed. Please try again.");
     } finally {
-      setIsValidating(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -123,184 +99,79 @@ function Login({
     }
 
     setError("");
-    setResetNotice("");
-    setIsResettingPassword(true);
+    setMessage("");
+    setIsSubmitting(true);
     try {
-      await resetUserPassword(trimmedEmail);
-      setResetNotice("If an account exists for this email, a reset link has been sent.");
+      const { error: resetError } =
+        await supabase.auth.resetPasswordForEmail(trimmedEmail);
+      if (resetError) throw resetError;
+      setMessage("If an account exists for this email, a reset link has been sent.");
     } catch (resetError) {
-      setError(
-        resetError?.message ||
-          "Unable to send a password reset email. Please try again.",
-      );
+      setError(resetError.message || "Unable to send a password reset email.");
     } finally {
-      setIsResettingPassword(false);
+      setIsSubmitting(false);
     }
   }
 
+  const isSignup = mode === "signup";
+
   return (
     <div
-      className={`login-split-page${isExiting ? " login-split-page--exiting" : ""}`}
+      className="login-split-page"
       data-theme={theme}
       data-testid="login-split-page"
     >
-      {/* Left Brand Panel */}
       <LoginBrandPanel />
 
-      {/* Right Form Panel */}
       <main className="login-form-panel">
         <div className="login-form-container">
           <div className="login-form-header">
             <h2 id="login-heading" className="login-form-title">
-              {isSignUp ? "Create your DeptDesk account" : "Sign in to DeptDesk"}
+              {isSignup ? "Create your account" : "Sign in to DeptDesk"}
             </h2>
             <p className="login-form-subtitle">
-              {isSignUp
-                ? "Join your department workspace with a new account."
-                : "Enter your account credentials or choose a workspace role below."}
+              {isSignup
+                ? "Enter your details to create a DeptDesk account."
+                : "Enter your account credentials to continue."}
             </p>
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
-            {!isSignUp && (
-              <div className="login-card-field">
-                <div className="login-card-field__icon" aria-hidden="true">
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#64748b"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="2" y="3" width="20" height="14" rx="2" />
-                    <line x1="8" y1="21" x2="16" y2="21" />
-                    <line x1="12" y1="17" x2="12" y2="21" />
-                    <circle cx="9" cy="9" r="2" />
-                    <path d="M14 8h3M14 12h3" />
-                  </svg>
-                </div>
-                <div className="login-card-field__content">
-                  <label
-                    htmlFor="login-workspace-role"
-                    className="login-card-field__label"
-                  >
-                    Workspace role
-                  </label>
-                  <div className="login-select-wrapper">
-                    <select
-                      id="login-workspace-role"
-                      className="login-card-field__select"
-                      value={selectedRole}
-                      onChange={(e) => handleRoleSelect(e.target.value)}
-                      disabled={isExiting || isValidating}
-                    >
-                      {ROLE_LIST.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.label} ({role.name})
-                        </option>
-                      ))}
-                    </select>
-                    <svg
-                      className="login-select-chevron"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {isSignUp && (
+            {isSignup && (
               <>
                 <div className="login-card-field">
-                  <div className="login-card-field__icon" aria-hidden="true">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#64748b"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="8" r="4" />
-                      <path d="M5 21a7 7 0 0 1 14 0" />
-                    </svg>
-                  </div>
                   <div className="login-card-field__content">
-                    <label
-                      htmlFor="signup-name"
-                      className="login-card-field__label"
-                    >
+                    <label className="login-card-field__label" htmlFor="signup-name">
                       Full name
                     </label>
                     <input
                       id="signup-name"
-                      type="text"
                       className="login-card-field__input"
-                      value={fullName}
-                      onChange={(e) => {
-                        setFullName(e.target.value);
-                        setSignUpSubmitted(false);
-                      }}
-                      placeholder="Your full name"
+                      type="text"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
                       autoComplete="name"
                       required
-                      disabled={isExiting || isValidating}
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
-
                 <div className="login-card-field">
-                  <div className="login-card-field__icon" aria-hidden="true">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#64748b"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="2" y="3" width="20" height="14" rx="2" />
-                      <line x1="8" y1="21" x2="16" y2="21" />
-                      <line x1="12" y1="17" x2="12" y2="21" />
-                      <circle cx="9" cy="9" r="2" />
-                      <path d="M14 8h3M14 12h3" />
-                    </svg>
-                  </div>
                   <div className="login-card-field__content">
-                    <label
-                      htmlFor="signup-role"
-                      className="login-card-field__label"
-                    >
-                      Account role
+                    <label className="login-card-field__label" htmlFor="signup-role">
+                      Role
                     </label>
                     <div className="login-select-wrapper">
                       <select
                         id="signup-role"
                         className="login-card-field__select"
-                        value={selectedRole}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        disabled={isExiting || isValidating}
+                        value={role}
+                        onChange={(event) => setRole(event.target.value)}
+                        disabled={isSubmitting}
                       >
-                        {ROLE_LIST.map((role) => (
-                          <option key={role.id} value={role.id}>
-                            {role.label}
+                        {ROLE_LIST.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.label}
                           </option>
                         ))}
                       </select>
@@ -325,26 +196,8 @@ function Login({
             )}
 
             <div className="login-card-field">
-              <div className="login-card-field__icon" aria-hidden="true">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#64748b"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="2" y="4" width="20" height="16" rx="2" />
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                </svg>
-              </div>
               <div className="login-card-field__content">
-                <label
-                  htmlFor="login-email"
-                  className="login-card-field__label"
-                >
+                <label className="login-card-field__label" htmlFor="login-email">
                   Email address
                 </label>
                 <input
@@ -352,39 +205,20 @@ function Login({
                   type="email"
                   className="login-card-field__input"
                   value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setSignUpSubmitted(false);
-                    setResetNotice("");
-                  }}
+                  onChange={(event) => setEmail(event.target.value)}
                   placeholder="name@deptdesk.edu"
-                  autoComplete={isSignUp ? "email" : "username"}
+                  autoComplete="email"
                   required
-                  disabled={isExiting || isValidating}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
 
             <div className="login-card-field">
-              <div className="login-card-field__icon" aria-hidden="true">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#64748b"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              </div>
               <div className="login-card-field__content">
                 <label
-                  htmlFor="login-password"
                   className="login-card-field__label"
+                  htmlFor="login-password"
                 >
                   Password
                 </label>
@@ -393,39 +227,20 @@ function Login({
                   type="password"
                   className="login-card-field__input"
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setSignUpSubmitted(false);
-                  }}
-                  placeholder="••••••••••••••"
-                  autoComplete={isSignUp ? "new-password" : "current-password"}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete={isSignup ? "new-password" : "current-password"}
                   required
-                  disabled={isExiting || isValidating}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
 
-            {isSignUp ? (
+            {isSignup && (
               <div className="login-card-field">
-                <div className="login-card-field__icon" aria-hidden="true">
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#64748b"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
                 <div className="login-card-field__content">
                   <label
-                    htmlFor="signup-confirm-password"
                     className="login-card-field__label"
+                    htmlFor="signup-confirm-password"
                   >
                     Confirm password
                   </label>
@@ -434,37 +249,25 @@ function Login({
                     type="password"
                     className="login-card-field__input"
                     value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      setSignUpSubmitted(false);
-                    }}
-                    placeholder="Re-enter your password"
+                    onChange={(event) => setConfirmPassword(event.target.value)}
                     autoComplete="new-password"
                     required
-                    disabled={isExiting || isValidating}
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
-            ) : (
-              <div className="login-options-row">
-                <label className="login-checkbox-label">
-                  <input
-                    type="checkbox"
-                    className="login-checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    disabled={isExiting || isValidating}
-                  />
-                  <span>Remember me</span>
-                </label>
+            )}
 
+            {!isSignup && (
+              <div className="login-options-row">
+                <span />
                 <button
                   type="button"
                   className="login-forgot-link"
                   onClick={handlePasswordReset}
-                  disabled={isExiting || isValidating || isResettingPassword}
+                  disabled={isSubmitting}
                 >
-                  {isResettingPassword ? "Sending reset link..." : "Forgot password?"}
+                  Forgot password?
                 </button>
               </div>
             )}
@@ -474,60 +277,40 @@ function Login({
                 {error}
               </p>
             )}
-            {signUpSubmitted && (
-              <p className="login-signup-notice" role="status">
-                Account created successfully. You can now sign in.
-              </p>
-            )}
-            {resetNotice && (
-              <p className="login-signup-notice" role="status">
-                {resetNotice}
+            {message && (
+              <p className="login-success-alert" role="status">
+                {message}
               </p>
             )}
 
             <button
               type="submit"
               className="login-btn-workspace"
-              aria-label={isSignUp ? "Create account" : "Sign in to workspace"}
-              disabled={isExiting || isValidating}
+              disabled={isSubmitting}
             >
-              {isSignUp ? (
-                "Create account"
-              ) : isValidating ? (
-                <>
-                  <span className="login-spinner" aria-hidden="true" />
-                  Authenticating...
-                </>
-              ) : (
-                "Sign in to workspace"
-              )}
+              {isSubmitting
+                ? isSignup
+                  ? "Creating account..."
+                  : "Signing in..."
+                : isSignup
+                  ? "Create account"
+                  : "Sign in to workspace"}
             </button>
           </form>
 
-          <p className="login-account-prompt">
-            {isSignUp ? "Already have an account?" : "Not a member yet?"}{" "}
-            <button
-              type="button"
-              className="login-mode-link"
-              onClick={() => {
-                const nextIsSignUp = !isSignUp;
-                setIsSignUp(nextIsSignUp);
-                setError("");
-                setSignUpSubmitted(false);
-                setEmail(nextIsSignUp ? "" : `${selectedRole}@deptdesk.edu`);
-                setPassword("");
-                setFullName("");
-                setConfirmPassword("");
-                setResetNotice("");
-              }}
-              disabled={isExiting || isValidating}
-            >
-              {isSignUp ? "Sign in" : "Sign up"}
-            </button>
+          <p className="login-not-member">
+            {isSignup ? "Already have an account?" : "Not a member yet?"}
           </p>
+          <button
+            type="button"
+            className="login-btn-demo"
+            onClick={() => changeMode(isSignup ? "login" : "signup")}
+            disabled={isSubmitting}
+          >
+            {isSignup ? "Sign in" : "Create an account"}
+          </button>
         </div>
       </main>
-
     </div>
   );
 }

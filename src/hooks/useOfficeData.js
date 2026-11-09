@@ -1,30 +1,20 @@
 import { useEffect, useMemo } from "react";
-import {
-  COLLECTIONS,
-  useFirestoreCollection,
-} from "../firebase/firestoreService";
+import { useStoredState } from "./useStoredState";
 
 const EMPTY_ARRAY = [];
 const asArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
 
 export function useOfficeData() {
-  const [requests, setRequests] = useFirestoreCollection(
-    COLLECTIONS.REQUESTS,
+  const [requests, setRequests] = useStoredState(
     "officeflow.requests.v2",
     EMPTY_ARRAY,
   );
-  const [tasks, setTasks] = useFirestoreCollection(
-    COLLECTIONS.TASKS,
-    "officeflow.tasks.v2",
-    EMPTY_ARRAY,
-  );
-  const [inventory, setInventory] = useFirestoreCollection(
-    COLLECTIONS.INVENTORY,
+  const [tasks, setTasks] = useStoredState("officeflow.tasks.v2", EMPTY_ARRAY);
+  const [inventory, setInventory] = useStoredState(
     "officeflow.inventory.v5",
     EMPTY_ARRAY,
   );
-  const [inventoryRecords, setInventoryRecords] = useFirestoreCollection(
-    COLLECTIONS.INVENTORY_RECORDS,
+  const [inventoryRecords, setInventoryRecords] = useStoredState(
     "officeflow.inventory-records.v5",
     EMPTY_ARRAY,
   );

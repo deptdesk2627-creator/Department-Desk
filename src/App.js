@@ -5,25 +5,24 @@ import {
   getProfile,
   isPlainObject,
 } from "./constants/system";
-import { canAccessPage, getHomePage, getRole } from "./constants/roles";
-import { useAuth } from "./context/AuthContext";
+import {
+  canAccessPage,
+  getHomePage,
+  getRole,
+  ROLES,
+} from "./constants/roles";
 import { useOfficeData } from "./hooks/useOfficeData";
 import { useStoredState } from "./hooks/useStoredState";
-import { signOutUser } from "./firebase/authService";
-import {
-  saveUserProfileToFirestore,
-  saveWorkspaceSettingsToFirestore,
-} from "./firebase/firestoreService";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 import { getRolePages } from "./pages";
 import Login from "./pages/auth/Login";
+import { supabase } from "./supabase/supabaseClient";
 
 const EMPTY_PROFILES = {};
 const storedObjectOptions = { validate: isPlainObject };
 
 function App() {
-  const { user, userData } = useAuth() || {};
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [roleId, setRoleId] = useStoredState("officeflow.role", "secretary");
   const [theme, setTheme] = useStoredState("officeflow.theme", "light", {
@@ -39,6 +38,8 @@ function App() {
     DEFAULT_SETTINGS,
     storedObjectOptions,
   );
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
   const activeTheme = theme === "dark" ? "dark" : "light";
   const role = getRole(roleId);
   const [page, setPage] = useState(() => getHomePage(roleId));
@@ -51,23 +52,7 @@ function App() {
   const data = useOfficeData();
   const safeSearch = typeof search === "string" ? search : "";
 
-  // Saved profile edits for the signed-in role, merged over role defaults and Firebase userData.
-  const storedProfile = useMemo(() => {
-    const localProfile = profiles?.[role.id];
-    if (!userData || userData.role !== role.id) {
-      return localProfile;
-    }
-    return {
-      ...(isPlainObject(localProfile) ? localProfile : {}),
-      name: localProfile?.name || userData.fullname || role.name,
-      email: localProfile?.email || userData.email || "",
-      title: localProfile?.title || userData.title || role.description,
-      phone: localProfile?.phone || userData.phone || "",
-      office: localProfile?.office || userData.office || "",
-      status: localProfile?.status || userData.status || "available",
-    };
-  }, [profiles, role, userData]);
-
+  const storedProfile = profiles?.[role.id];
   const profile = useMemo(
     () => getProfile(role, storedProfile),
     [role, storedProfile],
@@ -83,12 +68,67 @@ function App() {
   );
 
   useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.documentElement.setAttribute("data-theme", activeTheme);
-    }
+    document.documentElement.setAttribute("data-theme", activeTheme);
   }, [activeTheme]);
 
-  // Never show a page the current role is not allowed to open.
+  useEffect(() => {
+    let isMounted = true;
+
+    function syncSessionProfile(user, sessionRole) {
+      const name = user?.user_metadata?.full_name;
+      const email = user?.email;
+      if (!name && !email) return;
+
+      setProfiles((current) => ({
+        ...(isPlainObject(current) ? current : {}),
+        [sessionRole]: {
+          ...getProfile(getRole(sessionRole), current?.[sessionRole]),
+          ...(name ? { name } : {}),
+          ...(email ? { email } : {}),
+        },
+      }));
+    }
+
+    function handleSession(session) {
+      if (!isMounted) return;
+
+      const user = session?.user;
+      const sessionRole = user?.user_metadata?.role;
+      if (
+        !session ||
+        !Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
+      ) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      setRoleId(sessionRole);
+      syncSessionProfile(user, sessionRole);
+      setIsAuthenticated(true);
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSession(session);
+    });
+
+    supabase.auth
+      .getSession()
+      .then(({ data: sessionData, error }) => {
+        if (error) throw error;
+        handleSession(sessionData.session);
+      })
+      .catch((error) => {
+        console.error("Could not restore the Supabase session.", error);
+      });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [setProfiles, setRoleId]);
+
   const activePage = canAccessPage(role.id, page) ? page : getHomePage(role.id);
 
   function navigate(nextPage) {
@@ -105,22 +145,31 @@ function App() {
       ...(isPlainObject(current) ? current : {}),
       [role.id]: nextProfile,
     }));
-    if (user?.uid) {
-      saveUserProfileToFirestore(user.uid, nextProfile);
-    }
   }
 
   function handleSettingsChange(nextSettings) {
     setSettings(nextSettings);
-    saveWorkspaceSettingsToFirestore(nextSettings);
   }
 
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [logoutError, setLogoutError] = useState("");
+  function handleLogin(user) {
+    const resolvedRole = user?.user_metadata?.role;
+    if (!Object.prototype.hasOwnProperty.call(ROLES, resolvedRole)) {
+      console.error("Cannot open workspace: the account role is invalid.");
+      return;
+    }
 
-  function handleLogin(nextRoleId) {
-    const resolvedRole = getRole(nextRoleId).id;
     setRoleId(resolvedRole);
+    const name = user.user_metadata?.full_name;
+    if (name || user.email) {
+      setProfiles((current) => ({
+        ...(isPlainObject(current) ? current : {}),
+        [resolvedRole]: {
+          ...getProfile(getRole(resolvedRole), current?.[resolvedRole]),
+          ...(name ? { name } : {}),
+          ...(user.email ? { email: user.email } : {}),
+        },
+      }));
+    }
     setSearch("");
     setPage(getHomePage(resolvedRole));
     setIsAuthenticated(true);
@@ -131,11 +180,12 @@ function App() {
     setLogoutError("");
     setIsLoggingOut(true);
     try {
-      await signOutUser();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       setIsAuthenticated(false);
     } catch (error) {
-      console.error("Unable to sign out from Firebase:", error);
-      setLogoutError(error?.message || "Unable to log out. Please try again.");
+      console.error("Could not sign out of Supabase.", error);
+      setLogoutError(error.message || "Unable to log out. Please try again.");
     } finally {
       setIsLoggingOut(false);
     }
