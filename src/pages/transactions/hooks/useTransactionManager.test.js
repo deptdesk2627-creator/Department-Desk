@@ -131,3 +131,63 @@ test("logs an incoming document with INC prefix and updates signature and forwar
   expect(updated[1].history[1].status).toBe("Signed by Dean");
   expect(updated[1].history[2].status).toBe("Sent Out");
 });
+
+test("places a transaction in a CICT cabinet drawer, logs history, and filters by cabinet", () => {
+  let storedRequests = [
+    {
+      id: "REQ-2026-000010",
+      direction: "outgoing",
+      student: "Jordan Lee",
+      document: "Budget request",
+      office: "Finance Office",
+      type: "Request",
+      status: "Approved",
+      history: [{ status: "Approved", location: "Finance Office" }],
+    },
+    {
+      id: "REQ-2026-000011",
+      direction: "outgoing",
+      student: "Maria Clara",
+      document: "Research proposal",
+      office: "Dean's Office",
+      type: "Document",
+      status: "Approved",
+      fileLocation: "College Dean - Research & Extension",
+      history: [{ status: "Approved", location: "Dean's Office" }],
+    },
+  ];
+  const setRequests = jest.fn((updater) => {
+    storedRequests =
+      typeof updater === "function" ? updater(storedRequests) : updater;
+  });
+
+  const { result, rerender } = renderHook(() =>
+    useTransactionManager({
+      requests: storedRequests,
+      setRequests,
+      search: "",
+    }),
+  );
+
+  act(() => {
+    result.current.updateFileLocation("REQ-2026-000010", "CICT Cabinet 4 - D2");
+  });
+  rerender();
+
+  expect(storedRequests[0].fileLocation).toBe("CICT Cabinet 4 - D2");
+  expect(storedRequests[0].history).toHaveLength(2);
+  expect(storedRequests[0].history[1]).toEqual(
+    expect.objectContaining({
+      status: "Filed in Cabinet",
+      location: "CICT Cabinet 4 - D2",
+    }),
+  );
+
+  act(() => result.current.setCabinetFilter("CICT Cabinet 4"));
+  expect(result.current.visibleRequests).toEqual([storedRequests[0]]);
+
+  act(() =>
+    result.current.setCabinetFilter("College Dean - Research & Extension"),
+  );
+  expect(result.current.visibleRequests).toEqual([storedRequests[1]]);
+});

@@ -1,5 +1,6 @@
 import { getRequestStatus } from "../../../constants/requestStatus";
 import { formatDateTime } from "../../../utils/formatters";
+import { UNFILED_LOCATION } from "../constants";
 
 export function statusClass(status) {
   const normalized = getRequestStatus(status);
@@ -26,6 +27,10 @@ export function requestDirection(request) {
   return request?.direction === "incoming" ? "incoming" : "outgoing";
 }
 
+export function requestFileLocation(request) {
+  return request?.fileLocation || UNFILED_LOCATION;
+}
+
 export function csvValue(value) {
   return `"${String(value || "").replaceAll('"', '""')}"`;
 }
@@ -42,6 +47,7 @@ export function exportRequest(request) {
         "Category",
         "Our Office Signature",
         "Sent Out To",
+        "Cabinet / Drawer",
         "Status",
         "Notes",
       ]
@@ -52,6 +58,7 @@ export function exportRequest(request) {
         "Office",
         "Date Submitted",
         "Category",
+        "Cabinet / Drawer",
         "Status",
         "Request Notes",
       ];
@@ -65,6 +72,7 @@ export function exportRequest(request) {
         requestCategory(request),
         request.signedByOffice || "Unsigned",
         request.forwardedTo || "Not sent out",
+        requestFileLocation(request),
         getRequestStatus(request.status),
         request.notes || request.description,
       ]
@@ -75,6 +83,7 @@ export function exportRequest(request) {
         requestOffice(request),
         formatDateTime(request.dateTime),
         requestCategory(request),
+        requestFileLocation(request),
         getRequestStatus(request.status),
         request.notes || request.description,
       ];
@@ -169,6 +178,31 @@ export function applyIncomingChanges(request, changes) {
     status: nextStatus,
     signedByOffice: nextSigned,
     forwardedTo: nextForwarded,
+    history,
+  };
+}
+
+export function updateRequestFileLocation(request, fileLocation) {
+  const nextFileLocation = fileLocation || UNFILED_LOCATION;
+  const previousLocation = requestFileLocation(request);
+  if (previousLocation === nextFileLocation) {
+    return {
+      ...request,
+      fileLocation: nextFileLocation,
+    };
+  }
+  const history = Array.isArray(request.history) ? [...request.history] : [];
+  history.push({
+    status:
+      nextFileLocation === UNFILED_LOCATION
+        ? "In Process"
+        : "Filed in Cabinet",
+    location: nextFileLocation,
+    dateTime: new Date().toISOString(),
+  });
+  return {
+    ...request,
+    fileLocation: nextFileLocation,
     history,
   };
 }

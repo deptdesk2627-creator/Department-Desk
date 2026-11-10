@@ -1,4 +1,5 @@
 import { Modal } from "../../../components/ui";
+import { cabinetGroups, UNFILED_LOCATION } from "../constants";
 
 function TransactionForm({
   isOpen = true,
@@ -152,6 +153,29 @@ function TransactionForm({
           >
             {activeStatuses.map((status) => (
               <option key={status}>{status}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Cabinet / Drawer location
+          <select
+            value={form.fileLocation || UNFILED_LOCATION}
+            onChange={(event) =>
+              setForm({ ...form, fileLocation: event.target.value })
+            }
+          >
+            <option value={UNFILED_LOCATION}>{UNFILED_LOCATION}</option>
+            {cabinetGroups.map((group) => (
+              <optgroup
+                key={group.id}
+                label={`${group.title} (${group.owner})`}
+              >
+                {group.drawers.map((drawer) => (
+                  <option key={drawer.id} value={drawer.id}>
+                    {drawer.label}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>

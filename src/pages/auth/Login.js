@@ -21,6 +21,18 @@ function Login({ onLogin, theme = "light" }) {
     setMessage("");
   }
 
+  function handleDemoLogin(roleItem) {
+    setError("");
+    setMessage("");
+    onLogin?.({
+      email: `${roleItem.id}@deptdesk.edu`,
+      user_metadata: {
+        full_name: roleItem.name,
+        role: roleItem.id,
+      },
+    });
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
@@ -263,16 +275,38 @@ function Login({ onLogin, theme = "light" }) {
           </form>
 
           <p className="login-not-member">
-            {isSignup ? "Already have an account?" : "Not a member yet?"}
+            <span>
+              {isSignup ? "Already have an account?" : "Not a member yet?"}
+            </span>
+            <button
+              type="button"
+              className="login-btn-demo"
+              onClick={() => changeMode(isSignup ? "login" : "signup")}
+              disabled={isSubmitting}
+            >
+              {isSignup ? "Sign in" : "Create an account"}
+            </button>
           </p>
-          <button
-            type="button"
-            className="login-btn-demo"
-            onClick={() => changeMode(isSignup ? "login" : "signup")}
-            disabled={isSubmitting}
-          >
-            {isSignup ? "Sign in" : "Create an account"}
-          </button>
+
+          <div className="login-demo-section" aria-label="Quick demo sign-in">
+            <div className="login-demo-divider">
+              <span>Quick demo sign-in</span>
+            </div>
+            <div className="login-demo-grid">
+              {ROLE_LIST.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="login-demo-role-btn"
+                  onClick={() => handleDemoLogin(item)}
+                  disabled={isSubmitting}
+                >
+                  <strong>{item.label}</strong>
+                  <span>{item.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </main>
     </div>

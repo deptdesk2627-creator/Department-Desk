@@ -1,4 +1,5 @@
 import "./TransactionTable.css";
+import { cabinetGroups, UNFILED_LOCATION } from "../constants";
 
 function TransactionTable({
   activeTab = "outgoing",
@@ -19,6 +20,7 @@ function TransactionTable({
   formatDate,
   onUpdateStatus,
   onUpdateIncoming,
+  onUpdateFileLocation,
   onSelect,
   onExport,
   onDelete,
@@ -38,6 +40,7 @@ function TransactionTable({
               <th>Date Received</th>
               <th>Our Signature</th>
               <th>Sent Out To</th>
+              <th>Cabinet / Drawer</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -48,6 +51,7 @@ function TransactionTable({
               <th>Office</th>
               <th>Date submitted</th>
               <th>Category</th>
+              <th>Cabinet / Drawer</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -59,6 +63,8 @@ function TransactionTable({
             const isSigned = signedValue !== "Unsigned";
             const forwardedValue = request.forwardedTo || "Not sent out";
             const isForwarded = forwardedValue !== "Not sent out";
+            const fileLocation = request.fileLocation || UNFILED_LOCATION;
+            const isFiled = fileLocation !== UNFILED_LOCATION;
 
             return (
               <tr
@@ -149,6 +155,42 @@ function TransactionTable({
                     </span>
                   </td>
                 )}
+                <td onClick={(event) => event.stopPropagation()}>
+                  {readOnly ? (
+                    <span
+                      className={`request-status-badge ${
+                        isFiled ? "status-approved" : "status-archived"
+                      }`}
+                    >
+                      {fileLocation}
+                    </span>
+                  ) : (
+                    <select
+                      aria-label={`Cabinet location for ${request.id}`}
+                      className={`request-status-select ${
+                        isFiled ? "status-approved" : "status-archived"
+                      }`}
+                      value={fileLocation}
+                      onChange={(event) =>
+                        onUpdateFileLocation?.(request.id, event.target.value)
+                      }
+                    >
+                      <option value={UNFILED_LOCATION}>{UNFILED_LOCATION}</option>
+                      {cabinetGroups.map((group) => (
+                        <optgroup
+                          key={group.id}
+                          label={`${group.title} (${group.owner})`}
+                        >
+                          {group.drawers.map((drawer) => (
+                            <option key={drawer.id} value={drawer.id}>
+                              {drawer.id}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  )}
+                </td>
                 <td onClick={(event) => event.stopPropagation()}>
                   {readOnly ? (
                     <span

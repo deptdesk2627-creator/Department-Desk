@@ -9,6 +9,9 @@ import {
   categories,
   signatureOptions,
   forwardedDestinations,
+  cabinetGroups,
+  cabinetLocations,
+  UNFILED_LOCATION,
   emptyForm,
 } from "../constants";
 import {
@@ -17,8 +20,10 @@ import {
   requestOffice,
   requestCategory,
   requestDirection,
+  requestFileLocation,
   exportRequest,
   updateRequestStatus,
+  updateRequestFileLocation,
   applyIncomingChanges,
   buildRequestTrail,
 } from "../utils/transactionHelpers";
@@ -44,6 +49,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
   const [activeFilter, setActiveFilter] = useState("All Requests");
   const [officeFilter, setOfficeFilter] = useState("All Offices");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
+  const [cabinetFilter, setCabinetFilter] = useState("All Cabinets");
   const [requestSearch, setRequestSearch] = useState("");
   const [formError, setFormError] = useState("");
   const [view, setView] = useState("table");
@@ -109,6 +115,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
       const normalizedStatus = getRequestStatus(request.status);
       const office = requestOffice(request);
       const category = requestCategory(request);
+      const fileLocation = requestFileLocation(request);
 
       const matchesStatus =
         activeFilter === "All Requests" ||
@@ -122,6 +129,11 @@ export function useTransactionManager({ requests, setRequests, search }) {
         categoryFilter === "All Categories" ||
         categoryFilter === "All" ||
         category === categoryFilter;
+      const matchesCabinet =
+        cabinetFilter === "All Cabinets" ||
+        cabinetFilter === "All" ||
+        fileLocation === cabinetFilter ||
+        fileLocation.startsWith(`${cabinetFilter} - `);
 
       const searchableValues = [
         request.id,
@@ -134,12 +146,14 @@ export function useTransactionManager({ requests, setRequests, search }) {
         normalizedStatus,
         request.signedByOffice,
         request.forwardedTo,
+        fileLocation,
         request.dateTime,
       ];
       return (
         matchesStatus &&
         matchesOffice &&
         matchesCategory &&
+        matchesCabinet &&
         matchesQuery(search, ...searchableValues) &&
         matchesQuery(requestSearch, ...searchableValues)
       );
@@ -151,19 +165,22 @@ export function useTransactionManager({ requests, setRequests, search }) {
     activeFilter,
     officeFilter,
     categoryFilter,
+    cabinetFilter,
   ]);
 
   const hasActiveFilters = Boolean(
     requestSearch.trim() ||
       (activeFilter !== "All Requests" && activeFilter !== "All") ||
       (officeFilter !== "All Offices" && officeFilter !== "All") ||
-      (categoryFilter !== "All Categories" && categoryFilter !== "All"),
+      (categoryFilter !== "All Categories" && categoryFilter !== "All") ||
+      (cabinetFilter !== "All Cabinets" && cabinetFilter !== "All"),
   );
 
   function resetFilters() {
     setActiveFilter("All Requests");
     setOfficeFilter("All Offices");
     setCategoryFilter("All Categories");
+    setCabinetFilter("All Cabinets");
     setRequestSearch("");
   }
 
@@ -186,7 +203,9 @@ export function useTransactionManager({ requests, setRequests, search }) {
     const resolvedForwarded = isIncoming
       ? form.forwardedTo || "Not sent out"
       : undefined;
+    const resolvedFileLocation = form.fileLocation || UNFILED_LOCATION;
 
+    const nowIso = new Date().toISOString();
     const initialHistory = [
       {
         status: resolvedStatus,
@@ -195,14 +214,24 @@ export function useTransactionManager({ requests, setRequests, search }) {
             ? `${form.office} → ${resolvedForwarded}`
             : `From ${form.office}`
           : form.office,
-        dateTime: new Date().toISOString(),
+        dateTime: nowIso,
       },
+      ...(resolvedFileLocation !== UNFILED_LOCATION
+        ? [
+            {
+              status: "Filed in Cabinet",
+              location: resolvedFileLocation,
+              dateTime: nowIso,
+            },
+          ]
+        : []),
     ];
 
     const request = {
       ...form,
       direction: isIncoming ? "incoming" : "outgoing",
       status: resolvedStatus,
+      fileLocation: resolvedFileLocation,
       ...(isIncoming
         ? {
             signedByOffice: resolvedSigned,
@@ -252,6 +281,21 @@ export function useTransactionManager({ requests, setRequests, search }) {
     );
   }
 
+  function updateFileLocation(id, fileLocation) {
+    setRequests((current) =>
+      (Array.isArray(current) ? current : []).map((request) =>
+        request?.id === id
+          ? updateRequestFileLocation(request, fileLocation)
+          : request,
+      ),
+    );
+    setSelectedTransaction((current) =>
+      current?.id === id
+        ? updateRequestFileLocation(current, fileLocation)
+        : current,
+    );
+  }
+
   function deleteRequest(id) {
     setRequests((current) =>
       (Array.isArray(current) ? current : []).filter(
@@ -267,6 +311,9 @@ export function useTransactionManager({ requests, setRequests, search }) {
     activeFilter,
     activeTab,
     addRequest,
+    cabinetFilter,
+    cabinetGroups,
+    cabinetLocations,
     categories,
     categoryFilter,
     deleteRequest,
@@ -284,6 +331,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
     outgoingStatuses,
     requestCategory,
     requestDirection,
+    requestFileLocation,
     requestName,
     requestOffice,
     requestSearch,
@@ -292,6 +340,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
     selectedTransaction,
     setActiveFilter,
     setActiveTab,
+    setCabinetFilter,
     setCategoryFilter,
     setForm,
     setOfficeFilter,
@@ -302,6 +351,7 @@ export function useTransactionManager({ requests, setRequests, search }) {
     statusClass,
     statuses,
     tabTotalRequests: tabRequests.length,
+    updateFileLocation,
     updateIncomingRequest,
     updateStatus,
     view,

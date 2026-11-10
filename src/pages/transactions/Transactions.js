@@ -135,6 +135,8 @@ function Transactions({
           categoryFilter={manager.categoryFilter}
           setCategoryFilter={manager.setCategoryFilter}
           categories={manager.categories}
+          cabinetFilter={manager.cabinetFilter}
+          setCabinetFilter={manager.setCabinetFilter}
           hasActiveFilters={manager.hasActiveFilters}
           onResetFilters={manager.resetFilters}
           requestSearch={manager.requestSearch}
@@ -152,6 +154,7 @@ function Transactions({
           formatDate={manager.formatDate}
           onUpdateStatus={manager.updateStatus}
           onUpdateIncoming={manager.updateIncomingRequest}
+          onUpdateFileLocation={manager.updateFileLocation}
           onSelect={manager.setSelectedTransaction}
           onExport={manager.exportRequest}
           onDelete={manager.deleteRequest}

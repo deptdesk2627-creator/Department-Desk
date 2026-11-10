@@ -1,4 +1,6 @@
 import "./TransactionList.css";
+import { cabinetGroups, UNFILED_LOCATION } from "../constants";
+import TransactionCabinets from "./TransactionCabinets";
 import TransactionKanban from "./TransactionKanban";
 import TransactionTable from "./TransactionTable";
 
@@ -15,6 +17,8 @@ function TransactionList({
   categoryFilter = "All Categories",
   setCategoryFilter = () => {},
   categories = [],
+  cabinetFilter = "All Cabinets",
+  setCabinetFilter = () => {},
   hasActiveFilters = false,
   onResetFilters = () => {},
   requestSearch,
@@ -32,6 +36,7 @@ function TransactionList({
   formatDate,
   onUpdateStatus,
   onUpdateIncoming,
+  onUpdateFileLocation,
   onSelect,
   onExport,
   onDelete,
@@ -85,6 +90,18 @@ function TransactionList({
                 <path d="M9 5v14M15 5v14" />
               </svg>
               Kanban View
+            </button>
+            <button
+              type="button"
+              className={view === "cabinets" ? "is-active" : ""}
+              aria-pressed={view === "cabinets"}
+              onClick={() => setView("cabinets")}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="4" y="3" width="16" height="18" rx="2" />
+                <path d="M4 9h16M4 15h16M10 6h4M10 12h4M10 18h4" />
+              </svg>
+              Cabinet Locator
             </button>
           </div>
         </div>
@@ -144,6 +161,30 @@ function TransactionList({
                   </option>
                 ))}
               </select>
+              <select
+                className="request-filter-select"
+                value={cabinetFilter}
+                onChange={(event) => setCabinetFilter(event.target.value)}
+                aria-label="Filter by cabinet"
+              >
+                <option value="All Cabinets">All cabinets</option>
+                <option value={UNFILED_LOCATION}>{UNFILED_LOCATION}</option>
+                {cabinetGroups.map((group) => (
+                  <optgroup
+                    key={group.id}
+                    label={`${group.title} (${group.owner})`}
+                  >
+                    <option value={group.title}>
+                      All {group.title} ({group.owner})
+                    </option>
+                    {group.drawers.map((drawer) => (
+                      <option key={drawer.id} value={drawer.id}>
+                        {drawer.id}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
               {hasActiveFilters && (
                 <button
                   type="button"
@@ -173,9 +214,22 @@ function TransactionList({
             formatDate={formatDate}
             onUpdateStatus={onUpdateStatus}
             onUpdateIncoming={onUpdateIncoming}
+            onUpdateFileLocation={onUpdateFileLocation}
             onSelect={onSelect}
             onExport={onExport}
             onDelete={onDelete}
+            readOnly={readOnly}
+          />
+        ) : view === "cabinets" ? (
+          <TransactionCabinets
+            requests={requests}
+            statusClass={statusClass}
+            getRequestStatus={getRequestStatus}
+            requestName={requestName}
+            requestOffice={requestOffice}
+            formatDate={formatDate}
+            onUpdateFileLocation={onUpdateFileLocation}
+            onSelect={onSelect}
             readOnly={readOnly}
           />
         ) : (

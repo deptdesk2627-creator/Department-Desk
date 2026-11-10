@@ -1,5 +1,6 @@
 import "./TransactionDrawer.css";
 import { formatDateTime } from "../../../utils/formatters";
+import { UNFILED_LOCATION } from "../constants";
 
 function TransactionDrawer({
   request,
@@ -80,6 +81,10 @@ function TransactionDrawer({
             <div>
               <dt>Category</dt>
               <dd>{requestCategory(request)}</dd>
+            </div>
+            <div>
+              <dt>Cabinet / Drawer</dt>
+              <dd>{request.fileLocation || UNFILED_LOCATION}</dd>
             </div>
             {isIncoming && (
               <>
