@@ -72,7 +72,7 @@ function ProfilePage({ role, profile, onSave }) {
           <div className="panel-heading">
             <div>
               <h2>Edit profile details</h2>
-              <p>Changes are saved in this browser for your current role.</p>
+              <p>Changes apply for this session only.</p>
             </div>
           </div>
 

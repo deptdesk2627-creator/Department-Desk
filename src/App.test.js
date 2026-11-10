@@ -101,3 +101,17 @@ test("restores a valid Supabase session on page load", async () => {
     await screen.findByRole("complementary", { name: /main navigation/i }),
   ).toBeInTheDocument();
 });
+
+test("clears previously saved local profiles without removing Supabase accounts", async () => {
+  window.localStorage.setItem(
+    "officeflow.profiles",
+    JSON.stringify({ secretary: { name: "Old profile" } }),
+  );
+
+  render(<App />);
+
+  await waitFor(() =>
+    expect(window.localStorage.getItem("officeflow.profiles")).toBeNull(),
+  );
+  expect(supabase.auth.getSession).toHaveBeenCalled();
+});

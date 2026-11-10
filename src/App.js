@@ -28,11 +28,7 @@ function App() {
   const [theme, setTheme] = useStoredState("officeflow.theme", "light", {
     raw: true,
   });
-  const [profiles, setProfiles] = useStoredState(
-    "officeflow.profiles",
-    EMPTY_PROFILES,
-    storedObjectOptions,
-  );
+  const [profiles, setProfiles] = useState(EMPTY_PROFILES);
   const [settings, setSettings] = useStoredState(
     "officeflow.settings",
     DEFAULT_SETTINGS,
@@ -71,6 +67,16 @@ function App() {
       document.documentElement.setAttribute("data-theme", activeTheme);
     }
   }, [activeTheme]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      window.localStorage.removeItem("officeflow.profiles");
+    } catch (error) {
+      console.error("Could not clear saved profile data.", error);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
