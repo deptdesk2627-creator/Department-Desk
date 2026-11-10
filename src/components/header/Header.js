@@ -88,7 +88,13 @@ function Header({
           onClick={() => onNavigate?.(role?.pages?.[0] || "dashboard")}
           aria-hidden="true"
         >
-          <span className="app-header__brand-mark">D</span>
+          <span className="app-header__brand-mark">
+            <img
+              src={`${process.env.PUBLIC_URL || ""}/deptdesk-logo.jpg`}
+              alt=""
+              className="app-header__brand-img"
+            />
+          </span>
         </span>
       </div>
 

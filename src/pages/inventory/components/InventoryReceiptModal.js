@@ -51,7 +51,11 @@ function InventoryReceiptModal({
         <div className="inventory-receipt__top">
           <div className="inventory-receipt__brand">
             <span className="inventory-receipt__logo" aria-hidden="true">
-              D
+              <img
+                src={`${process.env.PUBLIC_URL || ""}/deptdesk-logo.jpg`}
+                alt=""
+                className="inventory-receipt__logo-img"
+              />
             </span>
             <div className="inventory-receipt__brand-text">
               <strong>DeptDesk Office Portal</strong>

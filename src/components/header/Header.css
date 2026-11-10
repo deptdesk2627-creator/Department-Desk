@@ -225,7 +225,7 @@
 
   .app-header__brand-mark {
     align-items: center;
-    background: var(--purple);
+    background: #000000;
     border-radius: 9px;
     color: #fff;
     display: inline-flex;
@@ -233,7 +233,15 @@
     font-weight: 700;
     height: 32px;
     justify-content: center;
+    overflow: hidden;
     width: 32px;
+  }
+
+  .app-header__brand-img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
   }
 
   .app-header__actions {

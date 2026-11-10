@@ -68,8 +68,8 @@
 
 .workspace-sidebar__brand-mark {
   align-items: center;
-  background: #ea580c;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 13px;
   box-shadow: 0 3px 10px rgba(28, 10, 4, 0.22);
   color: #fff;
@@ -80,7 +80,15 @@
   height: 40px;
   justify-content: center;
   letter-spacing: -1px;
+  overflow: hidden;
   width: 40px;
+}
+
+.workspace-sidebar__brand-img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .workspace-sidebar__brand-name {

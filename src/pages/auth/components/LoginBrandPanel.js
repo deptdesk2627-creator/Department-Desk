@@ -71,7 +71,11 @@ function LoginBrandPanel() {
       {/* Brand Header */}
       <div className="login-brand-header">
         <div className="login-brand-logo-mark" aria-hidden="true">
-          D
+          <img
+            src={`${process.env.PUBLIC_URL || ""}/deptdesk-logo.jpg`}
+            alt=""
+            className="login-brand-logo-img"
+          />
         </div>
         <span className="login-brand-name">DeptDesk</span>
       </div>

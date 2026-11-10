@@ -55,7 +55,11 @@ function SideBar({
             title={!isOpen ? "DeptDesk home" : undefined}
           >
             <span className="workspace-sidebar__brand-mark" aria-hidden="true">
-              D
+              <img
+                src={`${process.env.PUBLIC_URL || ""}/deptdesk-logo.jpg`}
+                alt=""
+                className="workspace-sidebar__brand-img"
+              />
             </span>
             <span className="workspace-sidebar__brand-name">
               <strong>Dept</strong>

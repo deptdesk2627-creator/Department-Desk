@@ -36,7 +36,7 @@
 
 .inventory-receipt__logo {
   align-items: center;
-  background: var(--purple);
+  background: #000000;
   border-radius: 10px;
   color: #ffffff;
   display: inline-flex;
@@ -44,7 +44,15 @@
   font-weight: 800;
   height: 36px;
   justify-content: center;
+  overflow: hidden;
   width: 36px;
+}
+
+.inventory-receipt__logo-img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .inventory-receipt__brand-text strong {
