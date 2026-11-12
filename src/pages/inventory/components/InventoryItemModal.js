@@ -66,7 +66,7 @@ function InventoryItemModal({
 
   if (!item || !isOpen) return null;
 
-  function handleSave(event) {
+  async function handleSave(event) {
     event.preventDefault();
     const quantity = Number(draft.quantity);
     const lowStockAt = Number(draft.lowStockAt);
@@ -85,9 +85,13 @@ function InventoryItemModal({
       return;
     }
 
-    onSave?.({ quantity, unit, lowStockAt });
-    setFormError("");
-    setIsEditing(false);
+    try {
+      await onSave?.({ quantity, unit, lowStockAt });
+      setFormError("");
+      setIsEditing(false);
+    } catch (error) {
+      setFormError(error.message || "Could not save these stock details.");
+    }
   }
 
   function cancelEdit() {

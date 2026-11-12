@@ -7,6 +7,10 @@ import {
   useInventoryActions,
 } from "../../hooks/useInventoryActions";
 import { supabase } from "../../supabase/supabaseClient";
+import {
+  MASTERLIST_COLUMNS,
+  mapMasterlistItem,
+} from "../../utils/inventory";
 import { matchesQuery } from "../../utils/search";
 import InventoryReceiptModal from "../inventory/components/InventoryReceiptModal";
 import StaffBorrowModal from "./components/StaffBorrowModal";
@@ -39,9 +43,7 @@ function StaffInventory({
     async function loadInventory() {
       const { data: items, error: fetchError } = await supabase
         .from("items_masterlist")
-        .select(
-          "item_id, item_name, stock_onhand, unit, min_stock, category, classification, archived_at, created_at",
-        )
+        .select(MASTERLIST_COLUMNS)
         .is("archived_at", null)
         .order("item_name");
 
@@ -51,18 +53,7 @@ function StaffInventory({
         setInventoryError("Could not load supplies. Please try again later.");
       } else {
         setInventory(
-          (Array.isArray(items) ? items : []).map((item) => ({
-            ...item,
-            id: item.item_id,
-            name: item.item_name,
-            quantity: item.stock_onhand,
-            lowStockAt: item.min_stock,
-            usageType:
-              item.classification === "Usable" ||
-              item.classification === "Borrowable"
-                ? item.classification
-                : undefined,
-          })),
+          (Array.isArray(items) ? items : []).map(mapMasterlistItem),
         );
         setInventoryError("");
       }

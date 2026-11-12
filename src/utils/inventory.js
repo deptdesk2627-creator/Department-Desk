@@ -14,6 +14,24 @@ export const PRODUCT_USAGE_TYPES = [
   },
 ];
 
+export const MASTERLIST_COLUMNS =
+  "item_id, item_name, stock_onhand, unit, min_stock, category, classification, archived_at, created_at";
+
+export function mapMasterlistItem(item) {
+  const usageType = [item.category, item.classification].find(
+    (value) => value === "Usable" || value === "Borrowable",
+  );
+  return {
+    ...item,
+    id: item.item_id,
+    productId: `PRD-${String(item.item_id).padStart(4, "0")}`,
+    name: item.item_name,
+    quantity: item.stock_onhand,
+    lowStockAt: item.min_stock,
+    ...(usageType ? { usageType } : {}),
+  };
+}
+
 export function getItemUsageType(item) {
   const raw = String(item?.usageType || "").trim();
   if (raw === "Usable" || raw === "Borrowable") {

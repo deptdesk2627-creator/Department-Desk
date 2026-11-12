@@ -10,6 +10,10 @@ import InventoryTable from "./components/InventoryTable";
 import InventoryItemModal from "./components/InventoryItemModal";
 import StockActionModal from "./components/StockActionModal";
 import { useAdminInventory } from "./hooks/useAdminInventory";
+import {
+  MASTERLIST_COLUMNS,
+  mapMasterlistItem,
+} from "../../utils/inventory";
 
 const SEARCH_ICON = (
   <svg
@@ -52,6 +56,7 @@ function Inventory({
     setRecordSearch,
     recordFilter,
     setRecordFilter,
+    inventoryError,
     inventoryItems,
     recordItems,
     visibleItems,
@@ -81,9 +86,7 @@ function Inventory({
     async function loadInventoryMasterlist() {
       const { data: items, error } = await supabase
         .from("items_masterlist")
-        .select(
-          "item_id, item_name, stock_onhand, unit, min_stock, category, classification, archived_at, created_at",
-        )
+        .select(MASTERLIST_COLUMNS)
         .is("archived_at", null)
         .order("item_name");
 
@@ -93,18 +96,7 @@ function Inventory({
         setInventoryLoadError("Could not load the inventory masterlist.");
       } else {
         setInventory(
-          (Array.isArray(items) ? items : []).map((item) => ({
-            ...item,
-            id: item.item_id,
-            productId: `PRD-${String(item.item_id).padStart(4, "0")}`,
-            name: item.item_name,
-            quantity: item.stock_onhand,
-            lowStockAt: item.min_stock,
-            usageType:
-              [item.category, item.classification].find(
-                (value) => value === "Usable" || value === "Borrowable",
-              ) || undefined,
-          })),
+          (Array.isArray(items) ? items : []).map(mapMasterlistItem),
         );
         setInventoryLoadError("");
       }
@@ -123,8 +115,8 @@ function Inventory({
     };
   }, [setInventory]);
 
-  function handleAddSubmit(event) {
-    if (addItem(event)) {
+  async function handleAddSubmit(event) {
+    if (await addItem(event)) {
       setIsFormOpen(false);
     }
   }
@@ -262,7 +254,7 @@ function Inventory({
             items={visibleItems}
             totalItems={inventoryItems.length}
             isLoading={inventoryLoading}
-            loadError={inventoryLoadError}
+            loadError={inventoryLoadError || inventoryError}
             onOpenAction={stockActions.openAction}
             getBorrowedBalance={stockActions.getBorrowedBalance}
             onDelete={deleteItem}
@@ -285,10 +277,10 @@ function Inventory({
         records={recordItems}
         isOpen={Boolean(selectedInventoryItem)}
         editable={!readOnly}
-        onSave={(changes) => {
-          updateItem(selectedInventoryItem.id, changes);
+        onSave={async (changes) => {
+          const savedItem = await updateItem(selectedInventoryItem.id, changes);
           setSelectedInventoryItem((current) =>
-            current ? { ...current, ...changes } : current,
+            current ? { ...current, ...savedItem } : current,
           );
         }}
         onClose={() => setSelectedInventoryItem(null)}

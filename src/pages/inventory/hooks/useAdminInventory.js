@@ -1,9 +1,15 @@
 import { useMemo, useState } from "react";
 import {
+  getItemUsageType,
+  isLowStock,
+  MASTERLIST_COLUMNS,
+  mapMasterlistItem,
+} from "../../../utils/inventory";
+import {
   getProductId,
   useInventoryActions,
 } from "../../../hooks/useInventoryActions";
-import { getItemUsageType, isLowStock } from "../../../utils/inventory";
+import { supabase } from "../../../supabase/supabaseClient";
 import { matchesQuery } from "../../../utils/search";
 
 const INITIAL_FORM = {
@@ -23,6 +29,7 @@ export function useAdminInventory({
 }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [formError, setFormError] = useState("");
+  const [inventoryError, setInventoryError] = useState("");
   const [activeTab, setActiveTab] = useState("master");
   const [productSearch, setProductSearch] = useState("");
   const [stockFilter, setStockFilter] = useState("All");
@@ -162,7 +169,7 @@ export function useAdminInventory({
     requireRemarks: true,
   });
 
-  function addItem(event) {
+  async function addItem(event) {
     event.preventDefault();
     const quantity = Number(form.quantity);
     const lowStockAt = Number(form.lowStockAt);
@@ -183,52 +190,97 @@ export function useAdminInventory({
       );
       return false;
     }
-    setFormError("");
-    setInventory((current) => {
-      const currentItems = Array.isArray(current) ? current.filter(Boolean) : [];
-      const nextProductNumber =
-        currentItems.reduce((highest, item) => {
-          const productNumber =
-            Number(getProductId(item).match(/(\d+)$/)?.[1]) || 0;
-          return Math.max(highest, productNumber);
-        }, 0) + 1;
-      return [
-        {
-          ...form,
-          name: form.name.trim(),
-          unit: form.unit.trim(),
-          usageType,
-          id: `supply-${nextProductNumber}`,
-          productId: `PRD-${String(nextProductNumber).padStart(4, "0")}`,
-          quantity,
-          lowStockAt,
-          usedThisYear: 0,
-        },
-        ...currentItems,
-      ];
-    });
+
+    const itemRecord = {
+      item_name: form.name.trim(),
+      stock_onhand: quantity,
+      unit: form.unit.trim(),
+      min_stock: lowStockAt,
+      category: usageType,
+      classification: usageType === "Borrowable" ? "Equipment" : "Item",
+      archived_at: null,
+      created_at: new Date().toISOString().slice(0, 10),
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from("items_masterlist")
+        .insert(itemRecord)
+        .select(MASTERLIST_COLUMNS)
+        .single();
+      if (error) throw error;
+      if (!data) throw new Error("Supabase did not return the saved inventory item.");
+
+      const savedItem = mapMasterlistItem(data);
+      setInventory((current) => [savedItem, ...(Array.isArray(current) ? current : [])]);
+      setFormError("");
+      setInventoryError("");
+    } catch (error) {
+      console.error("Could not save the inventory item to Supabase.", error);
+      setFormError("Could not save this product. Please try again.");
+      return false;
+    }
+
     setForm(INITIAL_FORM);
     return true;
   }
 
-  function deleteItem(id) {
-    setInventory((current) =>
-      (Array.isArray(current) ? current : []).filter((item) => item?.id !== id),
-    );
+  async function deleteItem(id) {
+    try {
+      const { data, error } = await supabase
+        .from("items_masterlist")
+        .update({ archived_at: new Date().toISOString().slice(0, 10) })
+        .eq("item_id", id)
+        .is("archived_at", null)
+        .select("item_id")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("The inventory item was not found or is already archived.");
+
+      setInventory((current) =>
+        (Array.isArray(current) ? current : []).filter((item) => item?.id !== id),
+      );
+      setInventoryError("");
+    } catch (error) {
+      console.error("Could not archive the inventory item in Supabase.", error);
+      setInventoryError("Could not remove this product from the masterlist.");
+    }
   }
 
-  function updateItem(id, changes) {
-    setInventory((current) =>
-      (Array.isArray(current) ? current : []).map((item) =>
-        item?.id === id ? { ...item, ...changes } : item,
-      ),
-    );
+  async function updateItem(id, changes) {
+    try {
+      const { data, error } = await supabase
+        .from("items_masterlist")
+        .update({
+          stock_onhand: changes.quantity,
+          unit: changes.unit,
+          min_stock: changes.lowStockAt,
+        })
+        .eq("item_id", id)
+        .select(MASTERLIST_COLUMNS)
+        .single();
+      if (error) throw error;
+      if (!data) throw new Error("Supabase did not return the updated inventory item.");
+
+      const savedItem = mapMasterlistItem(data);
+      setInventory((current) =>
+        (Array.isArray(current) ? current : []).map((item) =>
+          item?.id === id ? { ...item, ...savedItem } : item,
+        ),
+      );
+      setInventoryError("");
+      return savedItem;
+    } catch (error) {
+      console.error("Could not update the inventory item in Supabase.", error);
+      throw new Error("Could not save these stock details. Please try again.");
+    }
   }
 
   return {
     form,
     setForm,
     formError,
+    inventoryError,
     activeTab,
     setActiveTab,
     productSearch,

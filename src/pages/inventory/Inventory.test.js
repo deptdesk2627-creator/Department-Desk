@@ -11,7 +11,7 @@ jest.mock("../../supabase/supabaseClient", () => ({
 
 const SAMPLE_INVENTORY = [
   {
-    id: "supply-1",
+    id: 1,
     productId: "PRD-0001",
     name: "Folders",
     quantity: 32,
@@ -45,14 +45,22 @@ const SAMPLE_RECORDS = [
   },
 ];
 
-function mockMasterlistResponse(data = [], error = null) {
+function mockMasterlistResponse(data = [], error = null, savedItem = null) {
   const query = {
     select: jest.fn(),
     is: jest.fn(),
+    insert: jest.fn(),
+    update: jest.fn(),
+    eq: jest.fn(),
+    single: jest.fn().mockResolvedValue({ data: savedItem, error }),
+    maybeSingle: jest.fn().mockResolvedValue({ data: savedItem, error }),
     order: jest.fn().mockResolvedValue({ data, error }),
   };
   query.select.mockReturnValue(query);
   query.is.mockReturnValue(query);
+  query.insert.mockReturnValue(query);
+  query.update.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
   supabase.from.mockReturnValue(query);
   return query;
 }
@@ -153,8 +161,76 @@ test("loads and renders secretary masterlist items from Supabase", async () => {
   expect(query.order).toHaveBeenCalledWith("item_name");
 });
 
+test("saves newly added masterlist items to Supabase", async () => {
+  const savedItem = {
+    item_id: 28,
+    item_name: "Stapler",
+    stock_onhand: 3,
+    unit: "pieces",
+    min_stock: 1,
+    category: "Borrowable",
+    classification: "Equipment",
+    archived_at: null,
+    created_at: "2026-11-13",
+  };
+  const query = mockMasterlistResponse([], null, savedItem);
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        setRecords={jest.fn()}
+      />,
+    );
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: /add product/i }));
+  const formDialog = within(screen.getByRole("dialog"));
+  fireEvent.change(formDialog.getByLabelText(/product name/i), {
+    target: { value: "Stapler" },
+  });
+  fireEvent.change(formDialog.getByLabelText(/product rule/i), {
+    target: { value: "Borrowable" },
+  });
+  fireEvent.change(formDialog.getByLabelText(/^unit$/i), {
+    target: { value: "pieces" },
+  });
+  fireEvent.change(formDialog.getByLabelText(/starting quantity/i), {
+    target: { value: "3" },
+  });
+  fireEvent.change(formDialog.getByLabelText(/low-stock level/i), {
+    target: { value: "1" },
+  });
+  fireEvent.click(formDialog.getByRole("button", { name: /add product/i }));
+
+  expect(await screen.findByText("Stapler")).toBeInTheDocument();
+  expect(query.insert).toHaveBeenCalledWith({
+    item_name: "Stapler",
+    stock_onhand: 3,
+    unit: "pieces",
+    min_stock: 1,
+    category: "Borrowable",
+    classification: "Equipment",
+    archived_at: null,
+    created_at: expect.any(String),
+  });
+});
+
 test("opens item details from the master list actions", async () => {
   const setInventory = jest.fn();
+  const updatedItem = {
+    item_id: 1,
+    item_name: "Folders",
+    stock_onhand: 24,
+    unit: "Packs",
+    min_stock: 8,
+    category: "Usable",
+    classification: "Item",
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const query = mockMasterlistResponse([], null, updatedItem);
   await act(async () => {
     render(
       <Inventory
@@ -199,12 +275,18 @@ test("opens item details from the master list actions", async () => {
   });
   fireEvent.click(detailsDialog.getByRole("button", { name: "Save changes" }));
 
+  expect(await screen.findByText("24 Packs")).toBeInTheDocument();
+  expect(query.update).toHaveBeenCalledWith({
+    stock_onhand: 24,
+    unit: "Packs",
+    min_stock: 8,
+  });
+  expect(query.eq).toHaveBeenCalledWith("item_id", 1);
   const inventoryUpdate = setInventory.mock.calls[setInventory.mock.calls.length - 1][0];
   expect(inventoryUpdate(SAMPLE_INVENTORY)[0]).toMatchObject({
     quantity: 24,
     unit: "Packs",
     lowStockAt: 8,
   });
-  expect(detailsDialog.getByText("24 Packs")).toBeInTheDocument();
   expect(detailsDialog.getByText("8 Packs")).toBeInTheDocument();
 });
