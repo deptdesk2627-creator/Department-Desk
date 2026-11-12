@@ -222,11 +222,11 @@ function InventoryItemModal({
             )}
             <div className="inventory-detail-field">
               <span>Category</span>
-              <strong>{category}</strong>
+              <strong>{item.category || category}</strong>
             </div>
             <div className="inventory-detail-field inventory-detail-field--wide">
               <span>Classification</span>
-              <strong>{classification}</strong>
+              <strong>{item.classification || classification}</strong>
             </div>
           </div>
         </div>

@@ -1,5 +1,13 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { useState } from "react";
 import Inventory from "./Inventory";
+import { supabase } from "../../supabase/supabaseClient";
+
+jest.mock("../../supabase/supabaseClient", () => ({
+  supabase: {
+    from: jest.fn(),
+  },
+}));
 
 const SAMPLE_INVENTORY = [
   {
@@ -37,15 +45,39 @@ const SAMPLE_RECORDS = [
   },
 ];
 
-test("renders bento metrics and switches between Master list and Transaction folder tabs", () => {
-  render(
-    <Inventory
-      inventory={SAMPLE_INVENTORY}
-      setInventory={jest.fn()}
-      records={SAMPLE_RECORDS}
-      setRecords={jest.fn()}
-    />,
-  );
+function mockMasterlistResponse(data = [], error = null) {
+  const query = {
+    select: jest.fn(),
+    is: jest.fn(),
+    order: jest.fn().mockResolvedValue({ data, error }),
+  };
+  query.select.mockReturnValue(query);
+  query.is.mockReturnValue(query);
+  supabase.from.mockReturnValue(query);
+  return query;
+}
+
+function InventoryWithState(props) {
+  const [inventory, setInventory] = useState(props.inventory || []);
+  return <Inventory {...props} inventory={inventory} setInventory={setInventory} />;
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockMasterlistResponse();
+});
+
+test("renders bento metrics and switches between Master list and Transaction folder tabs", async () => {
+  await act(async () => {
+    render(
+      <Inventory
+        inventory={SAMPLE_INVENTORY}
+        setInventory={jest.fn()}
+        records={SAMPLE_RECORDS}
+        setRecords={jest.fn()}
+      />,
+    );
+  });
 
   expect(
     screen.getByRole("heading", { name: /supply & inventory/i }),
@@ -83,21 +115,61 @@ test("renders bento metrics and switches between Master list and Transaction fol
   expect(screen.getByText("Dr. Maria Santos")).toBeInTheDocument();
 });
 
-test("opens item details from the master list actions", () => {
-  const setInventory = jest.fn();
-  render(
-    <Inventory
-      inventory={SAMPLE_INVENTORY}
-      setInventory={setInventory}
-      records={[
-        {
-          ...SAMPLE_RECORDS[0],
-          remarks: "Department workshop",
-        },
-      ]}
-      setRecords={jest.fn()}
-    />,
+test("loads and renders secretary masterlist items from Supabase", async () => {
+  const item = {
+    item_id: 17,
+    item_name: "Bond paper",
+    stock_onhand: 120,
+    unit: "reams",
+    min_stock: 10,
+    category: "Office supplies",
+    classification: "Consumable",
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const query = mockMasterlistResponse([item]);
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        setRecords={jest.fn()}
+      />,
+    );
+  });
+
+  expect(await screen.findByText("Bond paper")).toBeInTheDocument();
+  expect(screen.getByText("PRD-0017")).toBeInTheDocument();
+  expect(screen.getByText("120 reams")).toBeInTheDocument();
+  expect(
+    screen.getByText("Office supplies · Consumable"),
+  ).toBeInTheDocument();
+  expect(supabase.from).toHaveBeenCalledWith("items_masterlist");
+  expect(query.select).toHaveBeenCalledWith(
+    "item_id, item_name, stock_onhand, unit, min_stock, category, classification, archived_at, created_at",
   );
+  expect(query.is).toHaveBeenCalledWith("archived_at", null);
+  expect(query.order).toHaveBeenCalledWith("item_name");
+});
+
+test("opens item details from the master list actions", async () => {
+  const setInventory = jest.fn();
+  await act(async () => {
+    render(
+      <Inventory
+        inventory={SAMPLE_INVENTORY}
+        setInventory={setInventory}
+        records={[
+          {
+            ...SAMPLE_RECORDS[0],
+            remarks: "Department workshop",
+          },
+        ]}
+        setRecords={jest.fn()}
+      />,
+    );
+  });
 
   fireEvent.click(
     screen.getByRole("button", { name: "Open item details for Folders" }),
@@ -127,8 +199,8 @@ test("opens item details from the master list actions", () => {
   });
   fireEvent.click(detailsDialog.getByRole("button", { name: "Save changes" }));
 
-  expect(setInventory).toHaveBeenCalledTimes(1);
-  expect(setInventory.mock.calls[0][0](SAMPLE_INVENTORY)[0]).toMatchObject({
+  const inventoryUpdate = setInventory.mock.calls[setInventory.mock.calls.length - 1][0];
+  expect(inventoryUpdate(SAMPLE_INVENTORY)[0]).toMatchObject({
     quantity: 24,
     unit: "Packs",
     lowStockAt: 8,

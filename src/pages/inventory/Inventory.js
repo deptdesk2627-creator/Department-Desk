@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./Inventory.css";
 import { PageHeader } from "../../components/ui";
+import { supabase } from "../../supabase/supabaseClient";
 import InventoryForm from "./components/InventoryForm";
 import InventoryMetrics from "./components/InventoryMetrics";
 import InventoryReceiptModal from "./components/InventoryReceiptModal";
@@ -71,6 +72,56 @@ function Inventory({
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
+  const [inventoryLoading, setInventoryLoading] = useState(true);
+  const [inventoryLoadError, setInventoryLoadError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadInventoryMasterlist() {
+      const { data: items, error } = await supabase
+        .from("items_masterlist")
+        .select(
+          "item_id, item_name, stock_onhand, unit, min_stock, category, classification, archived_at, created_at",
+        )
+        .is("archived_at", null)
+        .order("item_name");
+
+      if (!isMounted) return;
+      if (error) {
+        console.error("Could not load the secretary inventory masterlist.", error);
+        setInventoryLoadError("Could not load the inventory masterlist.");
+      } else {
+        setInventory(
+          (Array.isArray(items) ? items : []).map((item) => ({
+            ...item,
+            id: item.item_id,
+            productId: `PRD-${String(item.item_id).padStart(4, "0")}`,
+            name: item.item_name,
+            quantity: item.stock_onhand,
+            lowStockAt: item.min_stock,
+            usageType:
+              [item.category, item.classification].find(
+                (value) => value === "Usable" || value === "Borrowable",
+              ) || undefined,
+          })),
+        );
+        setInventoryLoadError("");
+      }
+      setInventoryLoading(false);
+    }
+
+    loadInventoryMasterlist().catch((error) => {
+      if (!isMounted) return;
+      console.error("Could not load the secretary inventory masterlist.", error);
+      setInventoryLoadError("Could not load the inventory masterlist.");
+      setInventoryLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [setInventory]);
 
   function handleAddSubmit(event) {
     if (addItem(event)) {
@@ -210,6 +261,8 @@ function Inventory({
           <InventoryTable
             items={visibleItems}
             totalItems={inventoryItems.length}
+            isLoading={inventoryLoading}
+            loadError={inventoryLoadError}
             onOpenAction={stockActions.openAction}
             getBorrowedBalance={stockActions.getBorrowedBalance}
             onDelete={deleteItem}

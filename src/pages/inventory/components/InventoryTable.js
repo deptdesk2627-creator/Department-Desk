@@ -9,6 +9,8 @@ import {
 function InventoryTable({
   items,
   totalItems,
+  isLoading = false,
+  loadError = "",
   onOpenAction,
   getBorrowedBalance,
   onDelete,
@@ -25,6 +27,16 @@ function InventoryTable({
           ? "Current stock levels and status."
           : "Usable items are consumed when used; borrowable items can be borrowed and returned."}
       </p>
+      {isLoading && (
+        <p className="empty-state" role="status">
+          Loading inventory masterlist...
+        </p>
+      )}
+      {loadError && (
+        <p className="empty-state" role="alert">
+          {loadError}
+        </p>
+      )}
       {items.length ? (
         <div className="inventory-table-wrap">
           <table className="request-table inventory-table inventory-master-table">
@@ -68,6 +80,13 @@ function InventoryTable({
                             {item.name}
                           </strong>
                         </button>
+                        {(item.category || item.classification) && (
+                          <span className="inventory-item-meta">
+                            {[item.category, item.classification]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        )}
                         {usageType !== "Both" && (
                           <span
                             className={`inventory-usage-badge ${
@@ -170,11 +189,14 @@ function InventoryTable({
           </table>
         </div>
       ) : (
-        <p className="empty-state">
-          {totalItems
-            ? "No products match your search."
-            : "No products yet. Click '+ Add product' above to start tracking inventory."}
-        </p>
+        !isLoading &&
+        !loadError && (
+          <p className="empty-state">
+            {totalItems
+              ? "No products match your search."
+              : "No products yet. Click '+ Add product' above to start tracking inventory."}
+          </p>
+        )
       )}
     </section>
   );
