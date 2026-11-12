@@ -8,6 +8,8 @@ import {
 function StaffSupplyList({
   items,
   totalItems,
+  isLoading = false,
+  loadError = "",
   supplySearch = "",
   onSupplySearchChange = () => {},
   canRecord,
@@ -54,6 +56,16 @@ function StaffSupplyList({
           />
         </label>
       </div>
+      {isLoading && (
+        <p className="empty-state" role="status">
+          Loading supplies...
+        </p>
+      )}
+      {loadError && (
+        <p className="empty-state" role="alert">
+          {loadError}
+        </p>
+      )}
       {items.length ? (
         <div className="table-scroll module-table-scroll">
           <table className="request-table inventory-table">
@@ -76,11 +88,20 @@ function StaffSupplyList({
                 return (
                   <tr key={item.id}>
                     <td>
-                      <span className="request-id-badge">{getProductId(item)}</span>
+                      <span className="request-id-badge">
+                        {item.item_id ?? getProductId(item)}
+                      </span>
                     </td>
                     <td>
                       <div className="inventory-item-name-cell">
                         <strong className="inventory-item-name">{item.name}</strong>
+                        {(item.category || item.classification) && (
+                          <span className="inventory-item-meta">
+                            {[item.category, item.classification]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        )}
                         {usageType !== "Both" && (
                           <span
                             className={`inventory-usage-badge ${
@@ -153,11 +174,14 @@ function StaffSupplyList({
           </table>
         </div>
       ) : (
-        <p className="empty-state">
-          {totalItems
-            ? "No supplies match your search."
-            : "No supplies are listed yet. Please ask the secretary."}
-        </p>
+        !isLoading &&
+        !loadError && (
+          <p className="empty-state">
+            {totalItems
+              ? "No supplies match your search."
+              : "No supplies are listed yet. Please ask the secretary."}
+          </p>
+        )
       )}
     </section>
   );

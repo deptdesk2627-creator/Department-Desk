@@ -337,6 +337,11 @@
   font-weight: 700;
 }
 
+.inventory-item-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .inventory-usage-badge {
   border-radius: 9999px;
   display: inline-flex;
