@@ -35,31 +35,124 @@ export function mapMasterlistItem(item) {
   };
 }
 
-export function mapInventoryTransaction(row, inventoryById, usersById) {
-  const item = inventoryById.get(Number(row.item_id));
-  const user = usersById.get(Number(row.is_issued_to));
-  const actionType = String(row.action_type || "").toLowerCase();
-  return {
-    id: row.transaction_id,
-    dateTime: row.created_at || row.return_date || row.borrow_date || "",
-    productId: `PRD-${String(row.item_id).padStart(4, "0")}`,
-    productName: item?.name || `Item ${row.item_id}`,
-    usageType:
-      actionType === "borrow" || actionType === "return"
-        ? "Borrowable"
-        : item?.usageType || "Usable",
-    quantity: row.quantity,
-    unit: row.unit,
-    status: row.status,
-    actionType: row.action_type,
-    person: user?.username || "",
-    personUserId: row.is_issued_to,
-    remarks: row.purpose,
-    returnedBy: row.returned_by || "",
-    receivedBy: row.recieved_by || "",
-    borrowDate: row.borrow_date || null,
-    returnDate: row.return_date || null,
-  };
+export function mapInventoryTransactions(rows, inventoryById, usersById) {
+  const mappedRecords = (Array.isArray(rows) ? rows : []).map((row) => {
+    const item = inventoryById.get(Number(row.item_id));
+    const user = usersById.get(Number(row.is_issued_to));
+    const actionType = String(row.action_type || "").toLowerCase();
+    return {
+      id: row.transaction_id,
+      dateTime: row.created_at || row.return_date || row.borrow_date || "",
+      productId: `PRD-${String(row.item_id).padStart(4, "0")}`,
+      productName: item?.name || `Item ${row.item_id}`,
+      usageType:
+        actionType === "borrow" || actionType === "return"
+          ? "Borrowable"
+          : item?.usageType || "Usable",
+      quantity: row.quantity,
+      unit: row.unit,
+      status:
+        actionType === "return"
+          ? "Returned"
+          : row.status,
+      actionType: row.action_type,
+      person: user?.username || "",
+      personUserId: row.is_issued_to,
+      remarks: row.purpose,
+      returnedBy: row.returned_by || "",
+      receivedBy: row.recieved_by || "",
+      borrowDate: row.borrow_date || null,
+      returnDate: row.return_date || null,
+    };
+  });
+  const chronologicalRecords = [...mappedRecords].sort((left, right) => {
+    const dateOrder =
+      new Date(left.dateTime || 0).getTime() -
+      new Date(right.dateTime || 0).getTime();
+    return dateOrder || Number(left.id) - Number(right.id);
+  });
+  const loansByOwnerAndItem = new Map();
+
+  for (const record of chronologicalRecords) {
+    const key = `${record.personUserId}:${record.productId}`;
+    const actionType = String(record.actionType || "").toLowerCase();
+    let account = loansByOwnerAndItem.get(key);
+    if (!account) {
+      account = { loans: [], borrowed: 0, returned: 0 };
+      loansByOwnerAndItem.set(key, account);
+    }
+
+    if (actionType === "borrow") {
+      if (account.borrowed === account.returned) {
+        account.loans = [];
+        account.borrowed = 0;
+        account.returned = 0;
+      }
+      const quantity = Number(record.quantity) || 0;
+      record.returnedQuantity = 0;
+      account.loans.push({
+        record,
+        remaining: quantity,
+      });
+      account.borrowed += quantity;
+      continue;
+    }
+
+    if (actionType !== "return") continue;
+
+    const quantity = Number(record.quantity) || 0;
+    const availableBalance = Math.max(0, account.borrowed - account.returned);
+    const appliedQuantity = Math.min(quantity, availableBalance);
+    let quantityToAllocate = appliedQuantity;
+    let firstMatchedLoan = null;
+    const matchedLoans = [];
+    const returnEvents = [];
+
+    for (const loan of account.loans) {
+      if (quantityToAllocate <= 0) break;
+      if (loan.remaining <= 0) continue;
+
+      const returnedFromLoan = Math.min(quantityToAllocate, loan.remaining);
+      loan.remaining -= returnedFromLoan;
+      quantityToAllocate -= returnedFromLoan;
+      loan.record.returnedQuantity =
+        Number(loan.record.returnedQuantity) + returnedFromLoan;
+      firstMatchedLoan ||= loan;
+      matchedLoans.push(loan);
+
+      const event = {
+        id: record.id,
+        dateTime: record.dateTime,
+        quantity: returnedFromLoan,
+        person: record.person,
+        returnedBy: record.returnedBy || record.person,
+        remarks: record.remarks,
+        remainingAfter: loan.remaining,
+      };
+      returnEvents.push(event);
+      loan.record.returnEvents = [...(loan.record.returnEvents || []), event];
+      if (loan.remaining === 0) {
+        loan.record.returnedAt = record.returnDate || record.dateTime;
+      }
+    }
+
+    account.returned += appliedQuantity;
+    const remainingBalance = Math.max(0, account.borrowed - account.returned);
+    record.isPartialReturn = remainingBalance > 0;
+    record.borrowedQuantity = account.borrowed;
+    record.cumulativeReturnedQuantity = account.returned;
+    record.remainingQuantity = remainingBalance;
+    record.borrowedAt = firstMatchedLoan?.record.dateTime || null;
+    record.borrowRecordId =
+      matchedLoans.length === 1 ? firstMatchedLoan?.record.id || null : null;
+    record.returnedAt =
+      remainingBalance === 0 ? record.returnDate || record.dateTime : null;
+    record.returnEvents = returnEvents;
+    record.borrowRemarks = firstMatchedLoan?.record.remarks || "";
+    record.returnRemarks = record.remarks;
+  }
+
+  return mappedRecords;
 }
 
 export function getItemUsageType(item) {

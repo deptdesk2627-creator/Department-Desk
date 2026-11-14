@@ -20,7 +20,11 @@ function getRecordStatusDisplay(record) {
   }
   if (record.status === "Returned" && record.isPartialReturn) {
     return {
-      label: `Partial Return (${record.cumulativeReturnedQuantity}/${record.borrowedQuantity})`,
+      label:
+        Number.isFinite(Number(record.cumulativeReturnedQuantity)) &&
+        Number.isFinite(Number(record.borrowedQuantity))
+          ? `Partial Return (${record.cumulativeReturnedQuantity}/${record.borrowedQuantity})`
+          : "Partial Return",
       className: "status-waiting",
     };
   }

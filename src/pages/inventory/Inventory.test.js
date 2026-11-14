@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import Inventory from "./Inventory";
 import { supabase } from "../../supabase/supabaseClient";
+import { mapInventoryTransactions } from "../../utils/inventory";
 
 jest.mock("../../supabase/supabaseClient", () => ({
   supabase: {
@@ -306,6 +307,66 @@ test("loads transaction rows and borrower usernames from Supabase", async () => 
   ).toBeInTheDocument();
 });
 
+test("reconstructs partial returns from persisted transaction rows", () => {
+  const item = {
+    item_id: 17,
+    item_name: "Projector",
+    category: "Borrowable",
+    classification: "Equipment",
+  };
+  const user = { user_id: 42, username: "Prof. Test User" };
+  const records = mapInventoryTransactions(
+    [
+      {
+        transaction_id: 1,
+        item_id: 17,
+        is_issued_to: 42,
+        purpose: "Class presentation",
+        quantity: 2,
+        action_type: "Borrow",
+        return_date: null,
+        borrow_date: "2026-11-14",
+        status: "Borrowed",
+        unit: "pieces",
+        created_at: "2026-11-14T08:30:00.000Z",
+        recieved_by: null,
+        returned_by: null,
+      },
+      {
+        transaction_id: 2,
+        item_id: 17,
+        is_issued_to: 42,
+        purpose: "Returning one item",
+        quantity: 1,
+        action_type: "Return",
+        return_date: "2026-11-14",
+        borrow_date: "2026-11-14",
+        status: "Returned",
+        unit: "pieces",
+        created_at: "2026-11-14T10:30:00.000Z",
+        recieved_by: null,
+        returned_by: "Prof. Test User",
+      },
+    ],
+    new Map([[17, item]]),
+    new Map([[42, user]]),
+  );
+
+  expect(records[0]).toMatchObject({
+    id: 1,
+    returnedQuantity: 1,
+  });
+  expect(records[1]).toMatchObject({
+    id: 2,
+    status: "Returned",
+    isPartialReturn: true,
+    borrowedQuantity: 2,
+    cumulativeReturnedQuantity: 1,
+    remainingQuantity: 1,
+    person: "Prof. Test User",
+  });
+});
+
 test("loads and saves secretary inventory transactions in Supabase", async () => {
   const item = {
     item_id: 17,
@@ -402,6 +463,203 @@ test("loads and saves secretary inventory transactions in Supabase", async () =>
   expect(
     within(transactionSection).getByText("Prof. Test User"),
   ).toBeInTheDocument();
+});
+
+test("persists a partial return and displays it as a new transaction row", async () => {
+  const item = {
+    item_id: 17,
+    item_name: "Projector",
+    stock_onhand: 3,
+    unit: "pieces",
+    min_stock: 1,
+    category: "Borrowable",
+    classification: "Equipment",
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const user = { user_id: 42, username: "Prof. Test User" };
+  const borrowTransaction = {
+    transaction_id: 88,
+    item_id: 17,
+    is_issued_to: 42,
+    purpose: "Class presentation",
+    quantity: 2,
+    action_type: "Borrow",
+    return_date: null,
+    borrow_date: "2026-11-14",
+    status: "Borrowed",
+    unit: "pieces",
+    created_at: "2026-11-14T08:30:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+  const savedReturn = {
+    transaction_id: 89,
+    item_id: 17,
+    is_issued_to: 42,
+    purpose: "Returning one item",
+    quantity: 1,
+    action_type: "Return",
+    return_date: "2026-11-14",
+    borrow_date: "2026-11-14",
+    status: "Returned",
+    unit: "pieces",
+    created_at: "2026-11-14T10:30:00.000Z",
+    recieved_by: null,
+    returned_by: "Prof. Test User",
+  };
+  const itemQuery = createTableQuery({
+    rows: [item],
+    maybeSingleRow: { item_id: 17, stock_onhand: 4 },
+  });
+  const userQuery = createTableQuery({ rows: [user] });
+  const transactionQuery = createTableQuery({
+    rows: [borrowTransaction],
+    singleRow: savedReturn,
+  });
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") return itemQuery;
+    if (table === "users") return userQuery;
+    if (table === "inventory_transactions") return transactionQuery;
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        setRecords={jest.fn()}
+      />,
+    );
+  });
+
+  fireEvent.click(await screen.findByRole("button", { name: /^return$/i }));
+  const actionDialog = within(screen.getByRole("dialog"));
+  fireEvent.change(actionDialog.getByLabelText(/borrowed by/i), {
+    target: { value: user.username },
+  });
+  fireEvent.change(actionDialog.getByLabelText(/quantity/i), {
+    target: { value: "1" },
+  });
+  fireEvent.change(actionDialog.getByLabelText(/returned by/i), {
+    target: { value: "Office aide" },
+  });
+  fireEvent.change(actionDialog.getByLabelText(/condition \/ remark/i), {
+    target: { value: "Returning one item" },
+  });
+  fireEvent.click(
+    actionDialog.getByRole("button", { name: /record return/i }),
+  );
+
+  expect(
+    await screen.findByRole("heading", { name: /supply & equipment slip/i }),
+  ).toBeInTheDocument();
+  expect(itemQuery.update).toHaveBeenCalledWith({ stock_onhand: 4 });
+  expect(transactionQuery.insert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      item_id: 17,
+      is_issued_to: 42,
+      quantity: 1,
+      action_type: "Return",
+      status: "Returned",
+      returned_by: "Office aide",
+    }),
+  );
+
+  fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
+  const transactionSection = screen.getByRole("region", {
+    name: "Transaction records",
+  });
+  expect(
+    await within(transactionSection).findByText("89"),
+  ).toBeInTheDocument();
+  expect(
+    within(transactionSection).getByText("Partial Return (1/2)"),
+  ).toBeInTheDocument();
+});
+
+test("persists item use as a new inventory transaction row", async () => {
+  const item = {
+    item_id: 24,
+    item_name: "Bond paper",
+    stock_onhand: 5,
+    unit: "reams",
+    min_stock: 1,
+    category: "Usable",
+    classification: "Consumable",
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const user = { user_id: 42, username: "Prof. Test User" };
+  const savedTransaction = {
+    transaction_id: 90,
+    item_id: 24,
+    is_issued_to: 42,
+    purpose: "Print class handouts",
+    quantity: 2,
+    action_type: "Use",
+    return_date: null,
+    borrow_date: null,
+    status: "Used",
+    unit: "reams",
+    created_at: "2026-11-14T11:30:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+  const itemQuery = createTableQuery({
+    rows: [item],
+    maybeSingleRow: { item_id: 24, stock_onhand: 3 },
+  });
+  const userQuery = createTableQuery({ rows: [user] });
+  const transactionQuery = createTableQuery({
+    rows: [],
+    singleRow: savedTransaction,
+  });
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") return itemQuery;
+    if (table === "users") return userQuery;
+    if (table === "inventory_transactions") return transactionQuery;
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        setRecords={jest.fn()}
+      />,
+    );
+  });
+
+  fireEvent.click(await screen.findByRole("button", { name: /^use$/i }));
+  const actionDialog = within(screen.getByRole("dialog"));
+  fireEvent.change(actionDialog.getByLabelText(/used by/i), {
+    target: { value: user.username },
+  });
+  fireEvent.change(actionDialog.getByLabelText(/quantity/i), {
+    target: { value: "2" },
+  });
+  fireEvent.change(actionDialog.getByLabelText(/remark \/ purpose/i), {
+    target: { value: "Print class handouts" },
+  });
+  fireEvent.click(actionDialog.getByRole("button", { name: /record use/i }));
+
+  expect(
+    await screen.findByRole("heading", { name: /supply & equipment slip/i }),
+  ).toBeInTheDocument();
+  expect(itemQuery.update).toHaveBeenCalledWith({ stock_onhand: 3 });
+  expect(transactionQuery.insert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      item_id: 24,
+      is_issued_to: 42,
+      quantity: 2,
+      action_type: "Use",
+      status: "Used",
+      purpose: "Print class handouts",
+    }),
+  );
 });
 
 test("opens item details from the master list actions", async () => {

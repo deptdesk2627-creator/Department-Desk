@@ -13,7 +13,7 @@ import { useAdminInventory } from "./hooks/useAdminInventory";
 import {
   INVENTORY_TRANSACTION_COLUMNS,
   MASTERLIST_COLUMNS,
-  mapInventoryTransaction,
+  mapInventoryTransactions,
   mapMasterlistItem,
 } from "../../utils/inventory";
 
@@ -149,11 +149,10 @@ function Inventory({
           users.map((user) => [Number(user.user_id), user]),
         );
         setRecords(
-          (Array.isArray(transactionsResult.data)
-            ? transactionsResult.data
-            : []
-          ).map((row) =>
-            mapInventoryTransaction(row, inventoryById, usersById),
+          mapInventoryTransactions(
+            transactionsResult.data,
+            inventoryById,
+            usersById,
           ),
         );
         if (!usersResult.error) setTransactionsLoadError("");

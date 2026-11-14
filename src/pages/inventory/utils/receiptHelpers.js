@@ -103,6 +103,16 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
   const totalReturnedQty = (() => {
     if (!isBorrowable) return 0;
     if (
+      isReturnedStatus &&
+      Number.isFinite(Number(record.cumulativeReturnedQuantity)) &&
+      Number.isFinite(Number(record.borrowedQuantity))
+    ) {
+      return Math.min(
+        totalBorrowedQty,
+        Number(record.cumulativeReturnedQuantity),
+      );
+    }
+    if (
       linkedBorrowRecord &&
       typeof linkedBorrowRecord.returnedQuantity === "number"
     ) {
@@ -147,6 +157,13 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
     : null;
 
   const returnEvents = (() => {
+    if (
+      isReturnedStatus &&
+      Array.isArray(record.returnEvents) &&
+      record.returnEvents.length > 0
+    ) {
+      return record.returnEvents;
+    }
     if (
       Array.isArray(linkedBorrowRecord?.returnEvents) &&
       linkedBorrowRecord.returnEvents.length > 0
