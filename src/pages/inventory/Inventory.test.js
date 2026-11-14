@@ -6,6 +6,7 @@ import { mapInventoryTransactions } from "../../utils/inventory";
 
 jest.mock("../../supabase/supabaseClient", () => ({
   supabase: {
+    auth: { getUser: jest.fn() },
     from: jest.fn(),
   },
 }));
@@ -101,7 +102,34 @@ function InventoryWithState(props) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  supabase.auth.getUser.mockResolvedValue({
+    data: { user: { id: "auth-user-1" } },
+    error: null,
+  });
   mockMasterlistResponse();
+});
+
+test("requires a real Supabase session before loading the secretary masterlist", async () => {
+  supabase.auth.getUser.mockResolvedValue({
+    data: { user: null },
+    error: null,
+  });
+
+  await act(async () => {
+    render(
+      <Inventory
+        inventory={[]}
+        setInventory={jest.fn()}
+        records={[]}
+        setRecords={jest.fn()}
+      />,
+    );
+  });
+
+  expect(
+    screen.getByText(/This session is not authenticated with Supabase/i),
+  ).toBeInTheDocument();
+  expect(supabase.from).not.toHaveBeenCalled();
 });
 
 test("renders bento metrics and switches between Master list and Transaction folder tabs", async () => {

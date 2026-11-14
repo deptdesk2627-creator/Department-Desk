@@ -91,6 +91,29 @@ function Inventory({
     let isMounted = true;
 
     async function loadInventoryData() {
+      const authResult = await supabase.auth.getUser();
+      if (!isMounted) return;
+      if (authResult.error || !authResult.data?.user?.id) {
+        const authError =
+          authResult.error || new Error("No authenticated Supabase user.");
+        console.error(
+          "Could not identify the signed-in inventory account.",
+          authError,
+        );
+        setInventory([]);
+        setRecords([]);
+        setTransactionUsers([]);
+        setInventoryLoadError(
+          "This session is not authenticated with Supabase. Sign in with your account to load inventory.",
+        );
+        setTransactionsLoadError(
+          "This session is not authenticated with Supabase. Sign in with your account to load transactions.",
+        );
+        setInventoryLoading(false);
+        setTransactionsLoading(false);
+        return;
+      }
+
       const [itemsResult, usersResult, transactionsResult] = await Promise.all([
         supabase
           .from("items_masterlist")
@@ -110,7 +133,10 @@ function Inventory({
           "Could not load the secretary inventory masterlist.",
           itemsResult.error,
         );
-        setInventoryLoadError("Could not load the inventory masterlist.");
+        setInventory([]);
+        setInventoryLoadError(
+          `Could not load the inventory masterlist: ${itemsResult.error.message}`,
+        );
       } else {
         const items = (Array.isArray(itemsResult.data) ? itemsResult.data : [])
           .map(mapMasterlistItem);
@@ -128,7 +154,7 @@ function Inventory({
           usersResult.error,
         );
         setTransactionsLoadError(
-          "Could not load recipient accounts. Check the users table SELECT policy.",
+          `Could not load recipient accounts: ${usersResult.error.message}`,
         );
       }
 
@@ -138,7 +164,7 @@ function Inventory({
           transactionsResult.error,
         );
         setTransactionsLoadError(
-          "Could not load inventory transactions. Check the inventory_transactions SELECT policy.",
+          `Could not load inventory transactions: ${transactionsResult.error.message}`,
         );
       } else {
         const inventoryById = new Map(
@@ -165,8 +191,12 @@ function Inventory({
     loadInventoryData().catch((error) => {
       if (!isMounted) return;
       console.error("Could not load secretary inventory data.", error);
-      setInventoryLoadError("Could not load the inventory masterlist.");
-      setTransactionsLoadError("Could not load inventory transactions.");
+      setInventoryLoadError(
+        `Could not load the inventory masterlist: ${error.message}`,
+      );
+      setTransactionsLoadError(
+        `Could not load inventory transactions: ${error.message}`,
+      );
       setInventoryLoading(false);
       setTransactionsLoading(false);
     });

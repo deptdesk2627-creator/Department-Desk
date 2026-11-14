@@ -51,44 +51,34 @@ function StaffInventory({
     let isMounted = true;
 
     async function loadInventoryAndTransactions() {
-      const [itemsResult, authResult] = await Promise.all([
-        supabase
-          .from("items_masterlist")
-          .select(MASTERLIST_COLUMNS)
-          .is("archived_at", null)
-          .order("item_name"),
-        supabase.auth.getUser(),
-      ]);
+      const authResult = await supabase.auth.getUser();
 
       if (!isMounted) return;
-      if (itemsResult.error) {
-        console.error(
-          "Could not load the staff inventory masterlist.",
-          itemsResult.error,
-        );
-        setInventoryError("Could not load supplies. Please try again later.");
-      } else {
-        const items = (Array.isArray(itemsResult.data) ? itemsResult.data : [])
-          .map(mapMasterlistItem);
-        setInventory(items);
-        setInventoryError("");
-      }
-      setInventoryLoading(false);
-
       if (authResult.error || !authResult.data?.user?.id) {
         const authError =
           authResult.error || new Error("No authenticated Supabase user.");
         console.error("Could not identify the signed-in staff account.", authError);
+        setInventory([]);
+        setInventoryError(
+          "This session is not authenticated with Supabase. Sign in with your account to load inventory.",
+        );
         setTransactionsError(
-          "Could not identify your signed-in account. Sign in again to view or record transactions.",
+          "This session is not authenticated with Supabase. Sign in with your account to view or record transactions.",
         );
         setRecords([]);
+        setTransactionUser(null);
+        setInventoryLoading(false);
         setTransactionsLoading(false);
         return;
       }
 
       const authUserId = authResult.data.user.id;
-      const [userResult, transactionsResult] = await Promise.all([
+      const [itemsResult, userResult, transactionsResult] = await Promise.all([
+        supabase
+          .from("items_masterlist")
+          .select(MASTERLIST_COLUMNS)
+          .is("archived_at", null)
+          .order("item_name"),
         supabase
           .from("users")
           .select("user_id, username, auth_user_id")
@@ -101,6 +91,23 @@ function StaffInventory({
       ]);
       if (!isMounted) return;
 
+      if (itemsResult.error) {
+        console.error(
+          "Could not load the staff inventory masterlist.",
+          itemsResult.error,
+        );
+        setInventoryError(
+          `Could not load supplies: ${itemsResult.error.message}`,
+        );
+        setInventory([]);
+      } else {
+        const items = (Array.isArray(itemsResult.data) ? itemsResult.data : [])
+          .map(mapMasterlistItem);
+        setInventory(items);
+        setInventoryError("");
+      }
+      setInventoryLoading(false);
+
       const linkedUser = userResult.data;
       if (userResult.error || !linkedUser?.user_id) {
         console.error(
@@ -109,7 +116,9 @@ function StaffInventory({
         );
         setTransactionUser(null);
         setTransactionsError(
-          "Your account is not linked in public.users. Contact the administrator.",
+          userResult.error
+            ? `Could not read your public.users row: ${userResult.error.message}`
+            : "Your account is not linked in public.users. Contact the administrator.",
         );
       } else {
         setTransactionUser(linkedUser);
@@ -122,7 +131,7 @@ function StaffInventory({
           transactionsResult.error,
         );
         setTransactionsError(
-          "Could not load your inventory transactions. Check the inventory_transactions SELECT policy.",
+          `Could not load your inventory transactions: ${transactionsResult.error.message}`,
         );
       } else {
         const inventoryById = new Map(
@@ -152,7 +161,10 @@ function StaffInventory({
     loadInventoryAndTransactions().catch((error) => {
       if (!isMounted) return;
       console.error("Could not load staff inventory data.", error);
-      setTransactionsError("Could not load your inventory transactions.");
+      setInventoryError(`Could not load supplies: ${error.message}`);
+      setTransactionsError(
+        `Could not load your inventory transactions: ${error.message}`,
+      );
       setInventoryLoading(false);
       setTransactionsLoading(false);
     });

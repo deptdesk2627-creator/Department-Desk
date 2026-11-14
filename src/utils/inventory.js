@@ -48,7 +48,7 @@ export async function persistInventoryTransaction({
   if (stockError) throw stockError;
   if (!updatedItem) {
     throw new Error(
-      "Stock changed in Supabase. Refresh the masterlist and try again.",
+      "Supabase did not update this item's stock. Refresh the masterlist; if stock is unchanged, check the authenticated UPDATE and SELECT policies for items_masterlist.",
     );
   }
 

@@ -127,10 +127,24 @@ test("filters available supplies by name or product ID", async () => {
   expect(screen.getByText("Folders")).toBeInTheDocument();
 
   fireEvent.change(search, { target: { value: "prd-0017" } });
-  expect(screen.getAllByText("Folders")).toHaveLength(2);
+  expect(screen.getByText("Folders")).toBeInTheDocument();
 
   fireEvent.change(search, { target: { value: "missing" } });
   expect(screen.queryByText("Folders")).not.toBeInTheDocument();
+});
+
+test("does not mistake an unauthenticated demo session for database access", async () => {
+  supabase.auth.getUser.mockResolvedValue({
+    data: { user: null },
+    error: null,
+  });
+
+  await act(async () => {
+    render(<StaffInventoryWithState inventory={[]} records={[]} />);
+  });
+
+  expect(screen.getAllByText(/not authenticated with Supabase/i)).toHaveLength(2);
+  expect(supabase.from).not.toHaveBeenCalled();
 });
 
 test("loads active items and the linked user's transactions from Supabase", async () => {
@@ -173,7 +187,7 @@ test("loads active items and the linked user's transactions from Supabase", asyn
     render(<StaffInventoryWithState inventory={[]} records={[]} />);
   });
 
-  expect(screen.getByText("Folders")).toBeInTheDocument();
+  expect(screen.getAllByText("Folders")).toHaveLength(2);
   expect(screen.getByText("17")).toBeInTheDocument();
   expect(screen.getByText("2 Boxes borrowed")).toBeInTheDocument();
   expect(screen.getByText("Prof. Maria Clara")).toBeInTheDocument();

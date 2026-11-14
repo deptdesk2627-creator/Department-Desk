@@ -359,6 +359,10 @@ function Login({ onLogin, theme = "light" }) {
             <div className="login-demo-divider">
               <span>Quick demo sign-in</span>
             </div>
+            <p className="login-form-subtitle">
+              Demo access does not sign in to Supabase. Use your account to
+              load and save database inventory.
+            </p>
             <div className="login-demo-grid">
               {ROLE_LIST.map((item) => (
                 <button
