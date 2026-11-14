@@ -34,12 +34,16 @@ function Login({ onLogin, theme = "light" }) {
           Boolean(entry.is_available),
         ]),
       );
+      if (!Object.prototype.hasOwnProperty.call(availability, "staff")) {
+        throw new Error("Signup availability response omitted the staff role.");
+      }
       setSignupRoleAvailability(availability);
-      setRole((currentRole) =>
-        currentRole === "staff" || availability[currentRole]
-          ? currentRole
-          : "staff",
-      );
+      setRole((currentRole) => {
+        if (availability[currentRole]) return currentRole;
+        return (
+          ROLE_LIST.find((item) => availability[item.id])?.id || currentRole
+        );
+      });
     } catch (availabilityError) {
       console.error("Could not load signup role availability.", availabilityError);
       setSignupRoleAvailability({});
@@ -85,6 +89,18 @@ function Login({ onLogin, theme = "light" }) {
       }
       if (password.length < 6) {
         setError("Your password must be at least 6 characters.");
+        return;
+      }
+      if (isLoadingSignupRoles) {
+        setError("Wait for signup role availability to finish loading.");
+        return;
+      }
+      if (
+        !signupRoleAvailabilityError &&
+        signupRoleAvailability[role] !== true
+      ) {
+        setError("That role is no longer available. Choose another role.");
+        loadSignupRoleAvailability();
         return;
       }
     }
@@ -146,10 +162,9 @@ function Login({ onLogin, theme = "light" }) {
   }
 
   const isSignup = mode === "signup";
-  const signupRoles = ROLE_LIST.filter(
-    (item) =>
-      item.id === "staff" || signupRoleAvailability[item.id] === true,
-  );
+  const signupRoles = signupRoleAvailabilityError
+    ? ROLE_LIST.filter((item) => item.id === "staff")
+    : ROLE_LIST.filter((item) => signupRoleAvailability[item.id] === true);
 
   return (
     <div
@@ -314,7 +329,7 @@ function Login({ onLogin, theme = "light" }) {
             <button
               type="submit"
               className="login-btn-workspace"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isSignup && isLoadingSignupRoles)}
             >
               {isSubmitting
                 ? isSignup

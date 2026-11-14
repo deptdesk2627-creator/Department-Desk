@@ -65,6 +65,10 @@ signup. It copies `full_name` to `username`, copies the selected role to
 rows for existing Auth users that do not yet have a linked `public.users` row.
 Secretary signups are limited to three users, and dean signups to one. The
 migration enforces these limits on the database and exposes a restricted RPC
-used by the signup form to hide roles whose slots are filled. The `role`
-copied from signup metadata is user-provided; do not use it as trusted
-authorization data in RLS policies.
+used by the signup form to hide roles whose slots are filled. Staff signups
+have no limit. Apply
+`supabase/migrations/20261114184600_include_staff_signup_availability.sql`
+after the initial migration so the availability RPC also reports the
+unlimited Staff role; the signup form displays roles reported as available.
+The `role` copied from signup metadata is user-provided; do not use it as
+trusted authorization data in RLS policies.
