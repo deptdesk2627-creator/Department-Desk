@@ -8,6 +8,7 @@ jest.mock("../../supabase/supabaseClient", () => ({
       signInWithPassword: jest.fn(),
       signUp: jest.fn(),
       signOut: jest.fn(),
+      getClaims: jest.fn(),
     },
     rpc: jest.fn(),
   },
@@ -23,6 +24,11 @@ beforeEach(() => {
     ],
     error: null,
   });
+  supabase.auth.getClaims.mockResolvedValue({
+    data: { claims: { app_metadata: { role: "staff" } } },
+    error: null,
+  });
+  supabase.auth.signOut.mockResolvedValue({ error: null });
 });
 
 async function openSignupForm() {
@@ -32,31 +38,74 @@ async function openSignupForm() {
   );
 }
 
-test("signs in with Supabase and passes the authenticated user to the app", async () => {
-  const user = {
-    email: "person@example.com",
-    user_metadata: { role: "dean" },
-  };
+test.each(["secretary", "dean", "staff"])(
+  "accepts the %s app_metadata.role JWT claim",
+  async (role) => {
+    const user = {
+      email: "person@example.com",
+      app_metadata: { role },
+      user_metadata: { role: "secretary" },
+    };
+    supabase.auth.getClaims.mockResolvedValue({
+      data: { claims: { app_metadata: { role } } },
+      error: null,
+    });
+    const onLogin = jest.fn();
+    supabase.auth.signInWithPassword.mockResolvedValue({
+      data: { user },
+      error: null,
+    });
+    render(<Login onLogin={onLogin} />);
+
+    fireEvent.change(screen.getByLabelText(/email address/i), {
+      target: { value: " Person@Example.com " },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "secure-password" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /sign in to workspace/i }),
+    );
+
+    await waitFor(() => expect(onLogin).toHaveBeenCalledWith(user));
+    expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
+      email: "person@example.com",
+      password: "secure-password",
+    });
+    expect(supabase.auth.getClaims).toHaveBeenCalled();
+  },
+);
+
+test("rejects accounts without an allowed app_metadata.role JWT claim", async () => {
   const onLogin = jest.fn();
   supabase.auth.signInWithPassword.mockResolvedValue({
-    data: { user },
+    data: {
+      user: {
+        email: "person@example.com",
+        user_metadata: { role: "secretary" },
+      },
+    },
+    error: null,
+  });
+  supabase.auth.getClaims.mockResolvedValue({
+    data: { claims: { app_metadata: { role: "administrator" } } },
     error: null,
   });
   render(<Login onLogin={onLogin} />);
 
   fireEvent.change(screen.getByLabelText(/email address/i), {
-    target: { value: " Person@Example.com " },
+    target: { value: "person@example.com" },
   });
   fireEvent.change(screen.getByLabelText(/^password$/i), {
     target: { value: "secure-password" },
   });
   fireEvent.click(screen.getByRole("button", { name: /sign in to workspace/i }));
 
-  await waitFor(() => expect(onLogin).toHaveBeenCalledWith(user));
-  expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
-    email: "person@example.com",
-    password: "secure-password",
-  });
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    /app_metadata\.role JWT claim/i,
+  );
+  expect(supabase.auth.signOut).toHaveBeenCalled();
+  expect(onLogin).not.toHaveBeenCalled();
 });
 
 test("creates an account and returns to the sign-in form", async () => {

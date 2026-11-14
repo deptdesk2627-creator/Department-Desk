@@ -10,6 +10,7 @@ jest.mock("./supabase/supabaseClient", () => ({
       signInWithPassword: jest.fn(),
       signOut: jest.fn(),
       signUp: jest.fn(),
+      getClaims: jest.fn(),
     },
   },
 }));
@@ -21,6 +22,10 @@ beforeEach(() => {
     data: { session: null },
     error: null,
   });
+  supabase.auth.getClaims.mockResolvedValue({
+    data: { claims: { app_metadata: { role: "secretary" } } },
+    error: null,
+  });
   supabase.auth.onAuthStateChange.mockReturnValue({
     data: { subscription: { unsubscribe: jest.fn() } },
   });
@@ -30,6 +35,7 @@ beforeEach(() => {
 test("signs in with Supabase and logs out from header and sidebar", async () => {
   const user = {
     email: "secretary@example.com",
+    app_metadata: { role: "secretary" },
     user_metadata: { full_name: "Ma'am Aubrey", role: "secretary" },
   };
   supabase.auth.signInWithPassword.mockResolvedValue({
@@ -87,12 +93,18 @@ test("restores a valid Supabase session on page load", async () => {
   supabase.auth.getSession.mockResolvedValue({
     data: {
       session: {
+        access_token: "signed-jwt",
         user: {
           email: "dean@example.com",
+          app_metadata: { role: "dean" },
           user_metadata: { role: "dean" },
         },
       },
     },
+    error: null,
+  });
+  supabase.auth.getClaims.mockResolvedValue({
+    data: { claims: { app_metadata: { role: "dean" } } },
     error: null,
   });
 
@@ -100,6 +112,7 @@ test("restores a valid Supabase session on page load", async () => {
   expect(
     await screen.findByRole("complementary", { name: /main navigation/i }),
   ).toBeInTheDocument();
+  expect(supabase.auth.getClaims).toHaveBeenCalledWith("signed-jwt");
 });
 
 test("clears previously saved local profiles without removing Supabase accounts", async () => {

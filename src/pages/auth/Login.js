@@ -129,16 +129,30 @@ function Login({ onLogin, theme = "light" }) {
         });
       if (signInError) throw signInError;
 
-      const userRole = data.user?.user_metadata?.role;
+      const { data: claimsData, error: claimsError } =
+        await supabase.auth.getClaims();
+      if (claimsError) {
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (signOutError) throw signOutError;
+        throw claimsError;
+      }
+
+      const userRole = claimsData?.claims?.app_metadata?.role;
       if (!ROLE_LIST.some((item) => item.id === userRole)) {
         const { error: signOutError } = await supabase.auth.signOut();
         if (signOutError) throw signOutError;
         throw new Error(
-          "This account does not have a valid workspace role. Contact your administrator.",
+          "This account is missing a valid app_metadata.role JWT claim. Contact your administrator.",
         );
       }
 
-      onLogin?.(data.user);
+      onLogin?.({
+        ...data.user,
+        app_metadata: {
+          ...data.user?.app_metadata,
+          role: userRole,
+        },
+      });
     } catch (submitError) {
       setError(submitError.message || "Authentication failed. Please try again.");
       if (mode === "signup") {

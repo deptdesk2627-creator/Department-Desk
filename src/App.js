@@ -101,7 +101,7 @@ function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return;
 
-      const sessionRole = session?.user?.user_metadata?.role;
+      const sessionRole = session?.user?.app_metadata?.role;
       if (
         !session ||
         !Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
@@ -117,16 +117,22 @@ function App() {
 
     supabase.auth
       .getSession()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (error) throw error;
         if (!isMounted) return;
 
         const session = data.session;
-        const sessionRole = session?.user?.user_metadata?.role;
-        if (
-          session &&
-          Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
-        ) {
+        if (!session) {
+          setIsAuthenticated(false);
+          return;
+        }
+
+        const { data: claimsData, error: claimsError } =
+          await supabase.auth.getClaims(session.access_token);
+        if (claimsError) throw claimsError;
+
+        const sessionRole = claimsData?.claims?.app_metadata?.role;
+        if (Object.prototype.hasOwnProperty.call(ROLES, sessionRole)) {
           setRoleId(sessionRole);
           syncSessionProfile(session.user, sessionRole);
           setIsAuthenticated(true);
@@ -166,7 +172,7 @@ function App() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   function handleLogin(user) {
-    const resolvedRole = user?.user_metadata?.role;
+    const resolvedRole = user?.app_metadata?.role;
     if (!Object.prototype.hasOwnProperty.call(ROLES, resolvedRole)) {
       console.error("Cannot open workspace: the account role is invalid.");
       return;
