@@ -26,12 +26,14 @@ function StockActionModal({
   returnedBy = "",
   setReturnedBy,
   activeBorrowers = [],
+  personOptions = [],
   quantity,
   setQuantity,
   remarks = "",
   setRemarks,
   error,
   getBorrowedBalance,
+  isSubmitting = false,
   onSubmit,
   onClose,
 }) {
@@ -104,9 +106,17 @@ function StockActionModal({
             required
             type="text"
             placeholder="Enter name (e.g. Prof. Juan Dela Cruz)"
+            list={personOptions.length ? "inventory-transaction-users" : undefined}
             value={personName}
             onChange={(event) => setPersonName?.(event.target.value)}
           />
+          {personOptions.length > 0 && (
+            <datalist id="inventory-transaction-users">
+              {personOptions.map((person) => (
+                <option key={person.user_id} value={person.username} />
+              ))}
+            </datalist>
+          )}
         </label>
         <label>
           Quantity ({action.item.unit})
@@ -148,11 +158,18 @@ function StockActionModal({
             className="secondary-button"
             type="button"
             onClick={onClose}
+            disabled={isSubmitting}
           >
             Cancel
           </button>
-          <button className="primary-button" type="submit">
-            Record {action.type.toLowerCase()} &amp; view receipt
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? "Saving transaction..."
+              : `Record ${action.type.toLowerCase()} & view receipt`}
           </button>
         </div>
       </form>

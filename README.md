@@ -56,3 +56,15 @@ The selected role is stored in Supabase Auth user metadata and controls which
 screens the client displays. Client-side roles are not a security boundary:
 before storing or exposing protected data in Supabase, enforce access with
 database Row Level Security policies and trusted role assignment.
+
+Run `supabase/migrations/20261114170400_create_public_user_on_auth_signup.sql`
+in the Supabase SQL Editor (or apply it with the Supabase CLI) to create a
+database trigger that adds a matching `public.users` row after each Auth
+signup. It copies `full_name` to `username`, copies the selected role to
+`role`, and stores the Auth UUID in `auth_user_id`. The migration also creates
+rows for existing Auth users that do not yet have a linked `public.users` row.
+Secretary signups are limited to three users, and dean signups to one. The
+migration enforces these limits on the database and exposes a restricted RPC
+used by the signup form to hide roles whose slots are filled. The `role`
+copied from signup metadata is user-provided; do not use it as trusted
+authorization data in RLS policies.

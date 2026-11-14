@@ -65,9 +65,37 @@ function mockMasterlistResponse(data = [], error = null, savedItem = null) {
   return query;
 }
 
+function createTableQuery({
+  rows = [],
+  singleRow = null,
+  maybeSingleRow = null,
+  error = null,
+} = {}) {
+  const query = {};
+  ["select", "is", "insert", "update", "eq", "order"].forEach((method) => {
+    query[method] = jest.fn().mockReturnValue(query);
+  });
+  query.order.mockResolvedValue({ data: rows, error });
+  query.single = jest.fn().mockResolvedValue({ data: singleRow, error });
+  query.maybeSingle = jest.fn().mockResolvedValue({
+    data: maybeSingleRow,
+    error,
+  });
+  return query;
+}
+
 function InventoryWithState(props) {
   const [inventory, setInventory] = useState(props.inventory || []);
-  return <Inventory {...props} inventory={inventory} setInventory={setInventory} />;
+  const [records, setRecords] = useState(props.records || []);
+  return (
+    <Inventory
+      {...props}
+      inventory={inventory}
+      setInventory={setInventory}
+      records={records}
+      setRecords={setRecords}
+    />
+  );
 }
 
 beforeEach(() => {
@@ -215,6 +243,165 @@ test("saves newly added masterlist items to Supabase", async () => {
     archived_at: null,
     created_at: expect.any(String),
   });
+});
+
+test("loads transaction rows and borrower usernames from Supabase", async () => {
+  const item = {
+    item_id: 17,
+    item_name: "Projector",
+    stock_onhand: 3,
+    unit: "pieces",
+    min_stock: 1,
+    category: "Borrowable",
+    classification: "Equipment",
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const user = { user_id: 42, username: "Prof. Test User" };
+  const transaction = {
+    transaction_id: 99,
+    item_id: 17,
+    is_issued_to: 42,
+    purpose: "Class presentation",
+    quantity: 2,
+    action_type: "Borrow",
+    return_date: null,
+    borrow_date: "2026-11-14",
+    status: "Borrowed",
+    unit: "pieces",
+    created_at: "2026-11-14T08:30:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") {
+      return createTableQuery({ rows: [item] });
+    }
+    if (table === "users") return createTableQuery({ rows: [user] });
+    if (table === "inventory_transactions") {
+      return createTableQuery({ rows: [transaction] });
+    }
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        setRecords={jest.fn()}
+      />,
+    );
+  });
+
+  fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
+  expect(await screen.findByText("Prof. Test User")).toBeInTheDocument();
+  expect(screen.getByText("99")).toBeInTheDocument();
+  const transactionSection = screen.getByRole("region", {
+    name: "Transaction records",
+  });
+  expect(within(transactionSection).getByText("Projector")).toBeInTheDocument();
+  expect(
+    within(transactionSection).getByText("Class presentation"),
+  ).toBeInTheDocument();
+});
+
+test("loads and saves secretary inventory transactions in Supabase", async () => {
+  const item = {
+    item_id: 17,
+    item_name: "Projector",
+    stock_onhand: 5,
+    unit: "pieces",
+    min_stock: 1,
+    category: "Borrowable",
+    classification: "Equipment",
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const user = { user_id: 42, username: "Prof. Test User" };
+  const savedTransaction = {
+    transaction_id: 99,
+    item_id: 17,
+    is_issued_to: 42,
+    purpose: "Class presentation",
+    quantity: 2,
+    action_type: "Borrow",
+    return_date: null,
+    borrow_date: "2026-11-14",
+    status: "Borrowed",
+    unit: "pieces",
+    created_at: "2026-11-14T08:30:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+  const itemQuery = createTableQuery({
+    rows: [item],
+    maybeSingleRow: { item_id: 17, stock_onhand: 3 },
+  });
+  const userQuery = createTableQuery({ rows: [user] });
+  const transactionQuery = createTableQuery({
+    rows: [],
+    singleRow: savedTransaction,
+  });
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") return itemQuery;
+    if (table === "users") return userQuery;
+    if (table === "inventory_transactions") return transactionQuery;
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        setRecords={jest.fn()}
+      />,
+    );
+  });
+
+  fireEvent.click(await screen.findByRole("button", { name: /^borrow$/i }));
+  const actionDialog = within(screen.getByRole("dialog"));
+  fireEvent.change(actionDialog.getByLabelText(/borrowed by/i), {
+    target: { value: user.username },
+  });
+  fireEvent.change(actionDialog.getByLabelText(/quantity/i), {
+    target: { value: "2" },
+  });
+  fireEvent.change(actionDialog.getByLabelText(/remark \/ reason/i), {
+    target: { value: "Class presentation" },
+  });
+  fireEvent.click(
+    actionDialog.getByRole("button", { name: /record borrow/i }),
+  );
+
+  expect(
+    await screen.findByRole("heading", { name: /supply & equipment slip/i }),
+  ).toBeInTheDocument();
+  expect(itemQuery.update).toHaveBeenCalledWith({ stock_onhand: 3 });
+  expect(transactionQuery.insert).toHaveBeenCalledWith({
+    item_id: 17,
+    is_issued_to: 42,
+    purpose: "Class presentation",
+    quantity: 2,
+    action_type: "Borrow",
+    return_date: null,
+    borrow_date: expect.any(String),
+    status: "Borrowed",
+    unit: "pieces",
+    created_at: expect.any(String),
+    recieved_by: null,
+    returned_by: null,
+  });
+
+  fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
+  const transactionSection = screen.getByRole("region", {
+    name: "Transaction records",
+  });
+  expect(await within(transactionSection).findByText("99")).toBeInTheDocument();
+  expect(
+    within(transactionSection).getByText("Prof. Test User"),
+  ).toBeInTheDocument();
 });
 
 test("opens item details from the master list actions", async () => {

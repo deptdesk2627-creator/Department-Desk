@@ -14,11 +14,50 @@ function Login({ onLogin, theme = "light" }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signupRoleAvailability, setSignupRoleAvailability] = useState({});
+  const [isLoadingSignupRoles, setIsLoadingSignupRoles] = useState(false);
+  const [signupRoleAvailabilityError, setSignupRoleAvailabilityError] =
+    useState("");
+
+  async function loadSignupRoleAvailability() {
+    setIsLoadingSignupRoles(true);
+    setSignupRoleAvailabilityError("");
+    try {
+      const { data, error: availabilityError } = await supabase.rpc(
+        "get_signup_role_availability",
+      );
+      if (availabilityError) throw availabilityError;
+
+      const availability = Object.fromEntries(
+        (Array.isArray(data) ? data : []).map((entry) => [
+          entry.role,
+          Boolean(entry.is_available),
+        ]),
+      );
+      setSignupRoleAvailability(availability);
+      setRole((currentRole) =>
+        currentRole === "staff" || availability[currentRole]
+          ? currentRole
+          : "staff",
+      );
+    } catch (availabilityError) {
+      console.error("Could not load signup role availability.", availabilityError);
+      setSignupRoleAvailability({});
+      setSignupRoleAvailabilityError(
+        "Could not check limited-role availability. Only Staff signup is available right now.",
+      );
+    } finally {
+      setIsLoadingSignupRoles(false);
+    }
+  }
 
   function changeMode(nextMode) {
     setMode(nextMode);
     setError("");
     setMessage("");
+    if (nextMode === "signup") {
+      loadSignupRoleAvailability();
+    }
   }
 
   function handleDemoLogin(roleItem) {
@@ -98,12 +137,19 @@ function Login({ onLogin, theme = "light" }) {
       onLogin?.(data.user);
     } catch (submitError) {
       setError(submitError.message || "Authentication failed. Please try again.");
+      if (mode === "signup") {
+        loadSignupRoleAvailability();
+      }
     } finally {
       setIsSubmitting(false);
     }
   }
 
   const isSignup = mode === "signup";
+  const signupRoles = ROLE_LIST.filter(
+    (item) =>
+      item.id === "staff" || signupRoleAvailability[item.id] === true,
+  );
 
   return (
     <div
@@ -157,9 +203,9 @@ function Login({ onLogin, theme = "light" }) {
                         className="login-card-field__select"
                         value={role}
                         onChange={(event) => setRole(event.target.value)}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isLoadingSignupRoles}
                       >
-                        {ROLE_LIST.map((item) => (
+                        {signupRoles.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.label}
                           </option>
@@ -246,6 +292,12 @@ function Login({ onLogin, theme = "light" }) {
                   />
                 </div>
               </div>
+            )}
+
+            {isSignup && signupRoleAvailabilityError && (
+              <p className="login-error-alert" role="alert">
+                {signupRoleAvailabilityError}
+              </p>
             )}
 
             {error && (

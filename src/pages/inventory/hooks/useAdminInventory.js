@@ -26,6 +26,7 @@ export function useAdminInventory({
   records = [],
   setRecords,
   search = "",
+  persistAction,
 }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [formError, setFormError] = useState("");
@@ -166,6 +167,7 @@ export function useAdminInventory({
     records: recordItems,
     setInventory,
     setRecords,
+    persistAction,
     requireRemarks: true,
   });
 

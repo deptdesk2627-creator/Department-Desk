@@ -11,7 +11,9 @@ import InventoryItemModal from "./components/InventoryItemModal";
 import StockActionModal from "./components/StockActionModal";
 import { useAdminInventory } from "./hooks/useAdminInventory";
 import {
+  INVENTORY_TRANSACTION_COLUMNS,
   MASTERLIST_COLUMNS,
+  mapInventoryTransaction,
   mapMasterlistItem,
 } from "../../utils/inventory";
 
@@ -73,47 +75,210 @@ function Inventory({
     records,
     setRecords,
     search,
+    persistAction: persistInventoryAction,
   });
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
   const [inventoryLoading, setInventoryLoading] = useState(true);
   const [inventoryLoadError, setInventoryLoadError] = useState("");
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionsLoadError, setTransactionsLoadError] = useState("");
+  const [transactionUsers, setTransactionUsers] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadInventoryMasterlist() {
-      const { data: items, error } = await supabase
-        .from("items_masterlist")
-        .select(MASTERLIST_COLUMNS)
-        .is("archived_at", null)
-        .order("item_name");
+    async function loadInventoryData() {
+      const [itemsResult, usersResult, transactionsResult] = await Promise.all([
+        supabase
+          .from("items_masterlist")
+          .select(MASTERLIST_COLUMNS)
+          .is("archived_at", null)
+          .order("item_name"),
+        supabase.from("users").select("user_id, username").order("username"),
+        supabase
+          .from("inventory_transactions")
+          .select(INVENTORY_TRANSACTION_COLUMNS)
+          .order("created_at", { ascending: false }),
+      ]);
 
       if (!isMounted) return;
-      if (error) {
-        console.error("Could not load the secretary inventory masterlist.", error);
+      if (itemsResult.error) {
+        console.error(
+          "Could not load the secretary inventory masterlist.",
+          itemsResult.error,
+        );
         setInventoryLoadError("Could not load the inventory masterlist.");
       } else {
-        setInventory(
-          (Array.isArray(items) ? items : []).map(mapMasterlistItem),
-        );
+        const items = (Array.isArray(itemsResult.data) ? itemsResult.data : [])
+          .map(mapMasterlistItem);
+        setInventory(items);
         setInventoryLoadError("");
       }
+
+      const users = Array.isArray(usersResult.data)
+        ? usersResult.data.filter((user) => user?.user_id && user?.username)
+        : [];
+      setTransactionUsers(users);
+      if (usersResult.error) {
+        console.error(
+          "Could not load inventory recipient accounts.",
+          usersResult.error,
+        );
+        setTransactionsLoadError(
+          "Could not load recipient accounts. Check the users table SELECT policy.",
+        );
+      }
+
+      if (transactionsResult.error) {
+        console.error(
+          "Could not load secretary inventory transactions.",
+          transactionsResult.error,
+        );
+        setTransactionsLoadError(
+          "Could not load inventory transactions. Check the inventory_transactions SELECT policy.",
+        );
+      } else {
+        const inventoryById = new Map(
+          (Array.isArray(itemsResult.data) ? itemsResult.data : [])
+            .map(mapMasterlistItem)
+            .map((item) => [Number(item.item_id), item]),
+        );
+        const usersById = new Map(
+          users.map((user) => [Number(user.user_id), user]),
+        );
+        setRecords(
+          (Array.isArray(transactionsResult.data)
+            ? transactionsResult.data
+            : []
+          ).map((row) =>
+            mapInventoryTransaction(row, inventoryById, usersById),
+          ),
+        );
+        if (!usersResult.error) setTransactionsLoadError("");
+      }
       setInventoryLoading(false);
+      setTransactionsLoading(false);
     }
 
-    loadInventoryMasterlist().catch((error) => {
+    loadInventoryData().catch((error) => {
       if (!isMounted) return;
-      console.error("Could not load the secretary inventory masterlist.", error);
+      console.error("Could not load secretary inventory data.", error);
       setInventoryLoadError("Could not load the inventory masterlist.");
+      setTransactionsLoadError("Could not load inventory transactions.");
       setInventoryLoading(false);
+      setTransactionsLoading(false);
     });
 
     return () => {
       isMounted = false;
     };
-  }, [setInventory]);
+  }, [setInventory, setRecords]);
+
+  async function persistInventoryAction({
+    actionType,
+    amount,
+    item,
+    matchedBorrowRecord,
+    record,
+  }) {
+    const username = String(record.person || "").trim();
+    const recipient = transactionUsers.find(
+      (user) =>
+        String(user.username).trim().toLowerCase() === username.toLowerCase(),
+    );
+    if (!recipient) {
+      throw new Error(
+        "Choose a name that matches a username in the Supabase users table.",
+      );
+    }
+
+    const itemId = Number(item.item_id ?? item.id);
+    const currentQuantity = Number(item.stock_onhand ?? item.quantity);
+    const nextQuantity =
+      currentQuantity + (actionType === "Return" ? amount : -amount);
+    const { data: updatedItem, error: stockError } = await supabase
+      .from("items_masterlist")
+      .update({ stock_onhand: nextQuantity })
+      .eq("item_id", itemId)
+      .eq("stock_onhand", currentQuantity)
+      .is("archived_at", null)
+      .select("item_id, stock_onhand")
+      .maybeSingle();
+    if (stockError) throw stockError;
+    if (!updatedItem) {
+      throw new Error(
+        "Stock changed in Supabase. Refresh the masterlist and try again.",
+      );
+    }
+
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const borrowDate =
+      actionType === "Borrow"
+        ? today
+        : actionType === "Return"
+          ? String(
+              matchedBorrowRecord?.borrowDate ||
+                matchedBorrowRecord?.dateTime ||
+                today,
+            ).slice(0, 10)
+          : null;
+    const transaction = {
+      item_id: itemId,
+      is_issued_to: recipient.user_id,
+      purpose: record.remarks || "",
+      quantity: amount,
+      action_type: actionType,
+      return_date: actionType === "Return" ? today : null,
+      borrow_date: borrowDate,
+      status: record.status,
+      unit: record.unit,
+      created_at: record.dateTime,
+      recieved_by: null,
+      returned_by: actionType === "Return" ? record.returnedBy || null : null,
+    };
+
+    let savedTransaction;
+    try {
+      const { data, error } = await supabase
+        .from("inventory_transactions")
+        .insert(transaction)
+        .select(INVENTORY_TRANSACTION_COLUMNS)
+        .single();
+      if (error) throw error;
+      if (!data) throw new Error("Supabase did not return the saved transaction.");
+      savedTransaction = data;
+    } catch (transactionError) {
+      const { data: rolledBackItem, error: rollbackError } = await supabase
+        .from("items_masterlist")
+        .update({ stock_onhand: currentQuantity })
+        .eq("item_id", itemId)
+        .eq("stock_onhand", nextQuantity)
+        .select("item_id")
+        .maybeSingle();
+      if (rollbackError || !rolledBackItem) {
+        console.error(
+          "Inventory transaction failed and stock rollback did not complete.",
+          rollbackError || transactionError,
+        );
+        throw new Error(
+          "Transaction save failed and stock could not be restored. Contact the administrator before retrying.",
+        );
+      }
+      throw transactionError;
+    }
+
+    return {
+      ...record,
+      id: savedTransaction.transaction_id,
+      dateTime: savedTransaction.created_at || record.dateTime,
+      personUserId: recipient.user_id,
+      borrowDate: savedTransaction.borrow_date,
+      returnDate: savedTransaction.return_date,
+    };
+  }
 
   async function handleAddSubmit(event) {
     if (await addItem(event)) {
@@ -265,6 +430,8 @@ function Inventory({
           <InventoryRecords
             records={visibleRecords}
             totalRecords={recordItems.length}
+            isLoading={transactionsLoading}
+            loadError={transactionsLoadError}
             filter={recordFilter}
             setFilter={setRecordFilter}
             onViewReceipt={stockActions.openReceipt}
@@ -299,6 +466,8 @@ function Inventory({
         setRemarks={stockActions.setRemarks}
         error={stockActions.error}
         getBorrowedBalance={stockActions.getBorrowedBalance}
+        personOptions={transactionUsers}
+        isSubmitting={stockActions.isSubmitting}
         onSubmit={stockActions.submitAction}
         onClose={stockActions.closeAction}
       />

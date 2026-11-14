@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   canBorrowItem,
   canUseItem,
@@ -23,6 +23,7 @@ export function useInventoryActions({
   balanceRecords,
   setInventory,
   setRecords,
+  persistAction,
   person = "",
   requirePerson = false,
   requireRemarks = false,
@@ -35,6 +36,8 @@ export function useInventoryActions({
   const [remarks, setRemarks] = useState("");
   const [error, setError] = useState("");
   const [receiptRecord, setReceiptRecord] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionInProgress = useRef(false);
 
   const inventoryItems = Array.isArray(inventory) ? inventory.filter(Boolean) : [];
   const recordItems = Array.isArray(records) ? records.filter(Boolean) : [];
@@ -301,45 +304,81 @@ export function useInventoryActions({
         : {}),
     };
 
-    setInventory((current) =>
-      (Array.isArray(current) ? current : []).map((stock) =>
-        stock?.id === item.id
-          ? {
-              ...stock,
-              productId: id,
-              quantity:
-                Number(stock.quantity) +
-                (action.type === "Return" ? amount : -amount),
-              usedThisYear:
-                Number(stock.usedThisYear || 0) +
-                (action.type === "Use" ? amount : 0),
-            }
-          : stock,
-      ),
-    );
-    setRecords((current) => {
-      const existingList = Array.isArray(current) ? current : [];
-      const updatedList =
-        action.type === "Return" && matchedBorrowRecord
-          ? existingList.map((entry) =>
-              entry?.id === matchedBorrowRecord.id
-                ? {
-                    ...entry,
-                    returnedQuantity: cumulativeReturnedQty,
-                    remainingQuantity: remainingBorrowedQty,
-                    // Only stamp final returnedAt when all borrowed units are returned
-                    returnedAt: isFullReturn ? nowIso : null,
-                    returnRecordId: record.id,
-                    returnEvents: updatedReturnEvents,
-                    ...(trimmedRemarks ? { returnRemarks: trimmedRemarks } : {}),
-                  }
-                : entry,
-            )
-          : existingList;
-      return [record, ...updatedList];
-    });
-    setReceiptRecord(record);
-    closeAction();
+    function commitRecord(savedRecord) {
+      setInventory((current) =>
+        (Array.isArray(current) ? current : []).map((stock) =>
+          stock?.id === item.id
+            ? {
+                ...stock,
+                productId: id,
+                quantity:
+                  Number(stock.quantity) +
+                  (action.type === "Return" ? amount : -amount),
+                usedThisYear:
+                  Number(stock.usedThisYear || 0) +
+                  (action.type === "Use" ? amount : 0),
+              }
+            : stock,
+        ),
+      );
+      setRecords((current) => {
+        const existingList = Array.isArray(current) ? current : [];
+        const updatedList =
+          action.type === "Return" && matchedBorrowRecord
+            ? existingList.map((entry) =>
+                entry?.id === matchedBorrowRecord.id
+                  ? {
+                      ...entry,
+                      returnedQuantity: cumulativeReturnedQty,
+                      remainingQuantity: remainingBorrowedQty,
+                      returnedAt: isFullReturn ? nowIso : null,
+                      returnRecordId: savedRecord.id,
+                      returnEvents: updatedReturnEvents,
+                      ...(trimmedRemarks ? { returnRemarks: trimmedRemarks } : {}),
+                    }
+                  : entry,
+              )
+            : existingList;
+        return [savedRecord, ...updatedList];
+      });
+      setReceiptRecord(savedRecord);
+      closeAction();
+    }
+
+    if (!persistAction) {
+      commitRecord(record);
+      return;
+    }
+
+    if (submissionInProgress.current) return;
+    submissionInProgress.current = true;
+    setIsSubmitting(true);
+    Promise.resolve()
+      .then(() =>
+        persistAction({
+          actionType: action.type,
+          amount,
+          item,
+          matchedBorrowRecord,
+          record,
+        }),
+      )
+      .then((savedRecord) => {
+        if (!savedRecord) {
+          throw new Error("The inventory transaction was not saved.");
+        }
+        commitRecord(savedRecord);
+      })
+      .catch((saveError) => {
+        console.error("Could not save the inventory transaction.", saveError);
+        setError(
+          saveError.message || "Could not save the inventory transaction.",
+        );
+      })
+      .finally(() => {
+        submissionInProgress.current = false;
+        setIsSubmitting(false);
+      });
   }
 
   return {
@@ -348,6 +387,7 @@ export function useInventoryActions({
     closeAction,
     closeReceipt,
     error,
+    isSubmitting,
     getBorrowedBalance,
     openAction,
     openReceipt,

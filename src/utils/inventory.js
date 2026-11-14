@@ -17,6 +17,9 @@ export const PRODUCT_USAGE_TYPES = [
 export const MASTERLIST_COLUMNS =
   "item_id, item_name, stock_onhand, unit, min_stock, category, classification, archived_at, created_at";
 
+export const INVENTORY_TRANSACTION_COLUMNS =
+  "transaction_id, item_id, is_issued_to, purpose, quantity, action_type, return_date, borrow_date, status, unit, created_at, recieved_by, returned_by";
+
 export function mapMasterlistItem(item) {
   const usageType = [item.category, item.classification].find(
     (value) => value === "Usable" || value === "Borrowable",
@@ -29,6 +32,33 @@ export function mapMasterlistItem(item) {
     quantity: item.stock_onhand,
     lowStockAt: item.min_stock,
     ...(usageType ? { usageType } : {}),
+  };
+}
+
+export function mapInventoryTransaction(row, inventoryById, usersById) {
+  const item = inventoryById.get(Number(row.item_id));
+  const user = usersById.get(Number(row.is_issued_to));
+  const actionType = String(row.action_type || "").toLowerCase();
+  return {
+    id: row.transaction_id,
+    dateTime: row.created_at || row.return_date || row.borrow_date || "",
+    productId: `PRD-${String(row.item_id).padStart(4, "0")}`,
+    productName: item?.name || `Item ${row.item_id}`,
+    usageType:
+      actionType === "borrow" || actionType === "return"
+        ? "Borrowable"
+        : item?.usageType || "Usable",
+    quantity: row.quantity,
+    unit: row.unit,
+    status: row.status,
+    actionType: row.action_type,
+    person: user?.username || "",
+    personUserId: row.is_issued_to,
+    remarks: row.purpose,
+    returnedBy: row.returned_by || "",
+    receivedBy: row.recieved_by || "",
+    borrowDate: row.borrow_date || null,
+    returnDate: row.return_date || null,
   };
 }
 

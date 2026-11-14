@@ -30,7 +30,13 @@ function getRecordStatusDisplay(record) {
   };
 }
 
-function InventoryRecords({ records, totalRecords, onViewReceipt }) {
+function InventoryRecords({
+  records,
+  totalRecords,
+  isLoading = false,
+  loadError = "",
+  onViewReceipt,
+}) {
   return (
     <section
       className="card panel module-list-panel inventory-folder-panel inventory-folder-panel--transactions"
@@ -39,6 +45,16 @@ function InventoryRecords({ records, totalRecords, onViewReceipt }) {
       <p className="inventory-panel-subtitle">
         History of borrowed, used, and returned products with digital receipts.
       </p>
+      {isLoading && (
+        <p className="empty-state" role="status">
+          Loading inventory transactions...
+        </p>
+      )}
+      {loadError && (
+        <p className="empty-state" role="alert">
+          {loadError}
+        </p>
+      )}
       {records.length ? (
         <div className="inventory-table-wrap">
           <table className="request-table inventory-record-table inventory-transactions-table">
@@ -111,11 +127,14 @@ function InventoryRecords({ records, totalRecords, onViewReceipt }) {
           </table>
         </div>
       ) : (
-        <p className="empty-state">
-          {totalRecords
-            ? "No records match this filter or search."
-            : "No inventory transactions yet. Borrow, use, or return an item to create a record."}
-        </p>
+        !isLoading &&
+        !loadError && (
+          <p className="empty-state">
+            {totalRecords
+              ? "No records match this filter or search."
+              : "No inventory transactions yet. Borrow, use, or return an item to create a record."}
+          </p>
+        )
       )}
     </section>
   );

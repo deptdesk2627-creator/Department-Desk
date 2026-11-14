@@ -9,11 +9,19 @@ jest.mock("../../supabase/supabaseClient", () => ({
       signUp: jest.fn(),
       signOut: jest.fn(),
     },
+    rpc: jest.fn(),
   },
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
+  supabase.rpc.mockResolvedValue({
+    data: [
+      { role: "secretary", is_available: true },
+      { role: "dean", is_available: true },
+    ],
+    error: null,
+  });
 });
 
 test("signs in with Supabase and passes the authenticated user to the app", async () => {
@@ -79,6 +87,33 @@ test("creates an account and returns to the sign-in form", async () => {
   expect(
     screen.getByRole("heading", { name: /sign in to deptdesk/i }),
   ).toBeInTheDocument();
+});
+
+test("hides secretary and dean signup choices when their slots are full", async () => {
+  supabase.rpc.mockResolvedValue({
+    data: [
+      { role: "secretary", is_available: false },
+      { role: "dean", is_available: false },
+    ],
+    error: null,
+  });
+  render(<Login />);
+
+  fireEvent.click(screen.getByRole("button", { name: /create an account/i }));
+  const roleSelect = screen.getByRole("combobox", { name: /^role$/i });
+
+  await waitFor(() => {
+    expect(roleSelect).toHaveValue("staff");
+    expect(
+      screen.queryByRole("option", { name: /secretary/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: /^dean$/i }),
+    ).not.toBeInTheDocument();
+  });
+  expect(supabase.rpc).toHaveBeenCalledWith(
+    "get_signup_role_availability",
+  );
 });
 
 test("signs out an automatically authenticated signup and returns to login", async () => {
