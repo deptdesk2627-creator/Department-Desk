@@ -20,6 +20,103 @@ export const MASTERLIST_COLUMNS =
 export const INVENTORY_TRANSACTION_COLUMNS =
   "transaction_id, item_id, is_issued_to, purpose, quantity, action_type, return_date, borrow_date, status, unit, created_at, recieved_by, returned_by";
 
+export async function persistInventoryTransaction({
+  supabaseClient,
+  item,
+  recipientId,
+  actionType,
+  amount,
+  matchedBorrowRecord,
+  record,
+}) {
+  const itemId = Number(item.item_id ?? item.id);
+  const currentQuantity = Number(item.stock_onhand ?? item.quantity);
+  if (!Number.isInteger(itemId) || !Number.isFinite(currentQuantity)) {
+    throw new Error("The selected inventory item has invalid stock details.");
+  }
+
+  const nextQuantity =
+    currentQuantity + (actionType === "Return" ? amount : -amount);
+  const { data: updatedItem, error: stockError } = await supabaseClient
+    .from("items_masterlist")
+    .update({ stock_onhand: nextQuantity })
+    .eq("item_id", itemId)
+    .eq("stock_onhand", currentQuantity)
+    .is("archived_at", null)
+    .select("item_id, stock_onhand")
+    .maybeSingle();
+  if (stockError) throw stockError;
+  if (!updatedItem) {
+    throw new Error(
+      "Stock changed in Supabase. Refresh the masterlist and try again.",
+    );
+  }
+
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const borrowDate =
+    actionType === "Borrow"
+      ? today
+      : actionType === "Return"
+        ? String(
+            matchedBorrowRecord?.borrowDate ||
+              matchedBorrowRecord?.dateTime ||
+              today,
+          ).slice(0, 10)
+        : null;
+  const transaction = {
+    item_id: itemId,
+    is_issued_to: recipientId,
+    purpose: record.remarks || "",
+    quantity: amount,
+    action_type: actionType,
+    return_date: actionType === "Return" ? today : null,
+    borrow_date: borrowDate,
+    status: record.status,
+    unit: record.unit,
+    created_at: record.dateTime,
+    recieved_by: null,
+    returned_by: actionType === "Return" ? record.returnedBy || null : null,
+  };
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("inventory_transactions")
+      .insert(transaction)
+      .select(INVENTORY_TRANSACTION_COLUMNS)
+      .single();
+    if (error) throw error;
+    if (!data) throw new Error("Supabase did not return the saved transaction.");
+
+    return {
+      ...record,
+      id: data.transaction_id,
+      dateTime: data.created_at || record.dateTime,
+      personUserId: recipientId,
+      borrowDate: data.borrow_date,
+      returnDate: data.return_date,
+    };
+  } catch (transactionError) {
+    const { data: rolledBackItem, error: rollbackError } = await supabaseClient
+      .from("items_masterlist")
+      .update({ stock_onhand: currentQuantity })
+      .eq("item_id", itemId)
+      .eq("stock_onhand", nextQuantity)
+      .select("item_id")
+      .maybeSingle();
+    if (rollbackError || !rolledBackItem) {
+      console.error(
+        "Inventory transaction failed and stock rollback did not complete.",
+        rollbackError || transactionError,
+      );
+      throw new Error(
+        "Transaction save failed and stock could not be restored. Contact the administrator before retrying.",
+      );
+    }
+    throw transactionError;
+  }
+}
+
 export function mapMasterlistItem(item) {
   const usageType = [item.category, item.classification].find(
     (value) => value === "Usable" || value === "Borrowable",

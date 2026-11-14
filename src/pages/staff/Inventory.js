@@ -8,8 +8,11 @@ import {
 } from "../../hooks/useInventoryActions";
 import { supabase } from "../../supabase/supabaseClient";
 import {
+  INVENTORY_TRANSACTION_COLUMNS,
   MASTERLIST_COLUMNS,
+  mapInventoryTransactions,
   mapMasterlistItem,
+  persistInventoryTransaction,
 } from "../../utils/inventory";
 import { matchesQuery } from "../../utils/search";
 import InventoryReceiptModal from "../inventory/components/InventoryReceiptModal";
@@ -33,44 +36,131 @@ function StaffInventory({
   const [supplySearch, setSupplySearch] = useState("");
   const [inventoryLoading, setInventoryLoading] = useState(true);
   const [inventoryError, setInventoryError] = useState("");
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionsError, setTransactionsError] = useState("");
+  const [transactionUser, setTransactionUser] = useState(null);
   const person = String(
-    profile?.name || profile?.email || role?.name || "Faculty / Staff",
+    transactionUser?.username ||
+      profile?.name ||
+      profile?.email ||
+      role?.name ||
+      "Faculty / Staff",
   ).trim();
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadInventory() {
-      const { data: items, error: fetchError } = await supabase
-        .from("items_masterlist")
-        .select(MASTERLIST_COLUMNS)
-        .is("archived_at", null)
-        .order("item_name");
+    async function loadInventoryAndTransactions() {
+      const [itemsResult, authResult] = await Promise.all([
+        supabase
+          .from("items_masterlist")
+          .select(MASTERLIST_COLUMNS)
+          .is("archived_at", null)
+          .order("item_name"),
+        supabase.auth.getUser(),
+      ]);
 
       if (!isMounted) return;
-      if (fetchError) {
-        console.error("Could not load the staff inventory masterlist.", fetchError);
+      if (itemsResult.error) {
+        console.error(
+          "Could not load the staff inventory masterlist.",
+          itemsResult.error,
+        );
         setInventoryError("Could not load supplies. Please try again later.");
       } else {
-        setInventory(
-          (Array.isArray(items) ? items : []).map(mapMasterlistItem),
-        );
+        const items = (Array.isArray(itemsResult.data) ? itemsResult.data : [])
+          .map(mapMasterlistItem);
+        setInventory(items);
         setInventoryError("");
       }
       setInventoryLoading(false);
+
+      if (authResult.error || !authResult.data?.user?.id) {
+        const authError =
+          authResult.error || new Error("No authenticated Supabase user.");
+        console.error("Could not identify the signed-in staff account.", authError);
+        setTransactionsError(
+          "Could not identify your signed-in account. Sign in again to view or record transactions.",
+        );
+        setRecords([]);
+        setTransactionsLoading(false);
+        return;
+      }
+
+      const authUserId = authResult.data.user.id;
+      const [userResult, transactionsResult] = await Promise.all([
+        supabase
+          .from("users")
+          .select("user_id, username, auth_user_id")
+          .eq("auth_user_id", authUserId)
+          .maybeSingle(),
+        supabase
+          .from("inventory_transactions")
+          .select(INVENTORY_TRANSACTION_COLUMNS)
+          .order("created_at", { ascending: false }),
+      ]);
+      if (!isMounted) return;
+
+      const linkedUser = userResult.data;
+      if (userResult.error || !linkedUser?.user_id) {
+        console.error(
+          "Could not load the signed-in user's public.users row.",
+          userResult.error || new Error("No linked public.users row found."),
+        );
+        setTransactionUser(null);
+        setTransactionsError(
+          "Your account is not linked in public.users. Contact the administrator.",
+        );
+      } else {
+        setTransactionUser(linkedUser);
+        setTransactionsError("");
+      }
+
+      if (transactionsResult.error) {
+        console.error(
+          "Could not load the staff inventory transactions.",
+          transactionsResult.error,
+        );
+        setTransactionsError(
+          "Could not load your inventory transactions. Check the inventory_transactions SELECT policy.",
+        );
+      } else {
+        const inventoryById = new Map(
+          (Array.isArray(itemsResult.data) ? itemsResult.data : [])
+            .map(mapMasterlistItem)
+            .map((item) => [Number(item.item_id), item]),
+        );
+        const usersById = new Map(
+          linkedUser
+            ? [[Number(linkedUser.user_id), linkedUser]]
+            : [],
+        );
+        const myTransactions = mapInventoryTransactions(
+          transactionsResult.data,
+          inventoryById,
+          usersById,
+        ).filter(
+          (record) =>
+            linkedUser &&
+            Number(record.personUserId) === Number(linkedUser.user_id),
+        );
+        setRecords(myTransactions);
+      }
+      setTransactionsLoading(false);
     }
 
-    loadInventory().catch((error) => {
+    loadInventoryAndTransactions().catch((error) => {
       if (!isMounted) return;
-      console.error("Could not load the staff inventory masterlist.", error);
-      setInventoryError("Could not load supplies. Please try again later.");
+      console.error("Could not load staff inventory data.", error);
+      setTransactionsError("Could not load your inventory transactions.");
       setInventoryLoading(false);
+      setTransactionsLoading(false);
     });
 
     return () => {
       isMounted = false;
     };
-  }, [setInventory]);
+  }, [setInventory, setRecords]);
 
   const inventoryItems = useMemo(
     () => (Array.isArray(inventory) ? inventory.filter(Boolean) : []),
@@ -82,13 +172,18 @@ function StaffInventory({
   );
   const myRecords = useMemo(
     () =>
-      person
+      transactionUser
+        ? recordItems.filter(
+            (record) =>
+              Number(record.personUserId) === Number(transactionUser.user_id),
+          )
+        : person
         ? recordItems.filter(
             (record) =>
               String(record.person || "").toLowerCase() === person.toLowerCase(),
           )
         : [],
-    [recordItems, person],
+    [recordItems, person, transactionUser],
   );
   const visibleItems = useMemo(
     () =>
@@ -121,6 +216,7 @@ function StaffInventory({
     closeAction,
     closeReceipt,
     error,
+    isSubmitting,
     getBorrowedBalance: getMyBorrowedBalance,
     openAction,
     openReceipt,
@@ -138,6 +234,28 @@ function StaffInventory({
     balanceRecords: myRecords,
     setInventory,
     setRecords,
+    persistAction: async ({
+      actionType,
+      amount,
+      item,
+      matchedBorrowRecord,
+      record,
+    }) => {
+      if (!transactionUser?.user_id) {
+        throw new Error(
+          "Your account is not linked in public.users. Contact the administrator.",
+        );
+      }
+      return persistInventoryTransaction({
+        supabaseClient: supabase,
+        item,
+        recipientId: transactionUser.user_id,
+        actionType,
+        amount,
+        matchedBorrowRecord,
+        record,
+      });
+    },
     person,
     requirePerson: true,
     requireRemarks: true,
@@ -159,13 +277,15 @@ function StaffInventory({
         loadError={inventoryError}
         supplySearch={supplySearch}
         onSupplySearchChange={setSupplySearch}
-        canRecord={Boolean(person)}
+        canRecord={Boolean(person && transactionUser?.user_id)}
         getMyBorrowedBalance={getMyBorrowedBalance}
         onOpenAction={openAction}
       />
 
       <StaffHistoryTable
         records={myRecords}
+        isLoading={transactionsLoading}
+        loadError={transactionsError}
         hasName={Boolean(person)}
         onViewReceipt={openReceipt}
       />
@@ -179,6 +299,7 @@ function StaffInventory({
         remarks={remarks}
         setRemarks={setRemarks}
         error={error}
+        isSubmitting={isSubmitting}
         maxQuantity={
           action
             ? action.type === "Return"

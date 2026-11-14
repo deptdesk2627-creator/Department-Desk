@@ -30,7 +30,13 @@ function getStaffRecordStatus(record) {
   };
 }
 
-function StaffHistoryTable({ records, hasName, onViewReceipt }) {
+function StaffHistoryTable({
+  records,
+  hasName,
+  isLoading = false,
+  loadError = "",
+  onViewReceipt,
+}) {
   return (
     <section
       className="card panel module-list-panel"
@@ -44,6 +50,16 @@ function StaffHistoryTable({ records, hasName, onViewReceipt }) {
           <p>Only your own borrow, use, and return records are shown.</p>
         </div>
       </div>
+      {isLoading && (
+        <p className="empty-state" role="status">
+          Loading your transactions...
+        </p>
+      )}
+      {loadError && (
+        <p className="empty-state" role="alert">
+          {loadError}
+        </p>
+      )}
       {records.length ? (
         <div className="table-scroll module-table-scroll">
           <table className="request-table inventory-record-table">
@@ -100,11 +116,14 @@ function StaffHistoryTable({ records, hasName, onViewReceipt }) {
           </table>
         </div>
       ) : (
-        <p className="empty-state">
-          {hasName
-            ? "You have no transactions yet."
-            : "Enter your name above to see your transactions."}
-        </p>
+        !isLoading &&
+        !loadError && (
+          <p className="empty-state">
+            {hasName
+              ? "You have no transactions yet."
+              : "Sign in with your linked account to view your transactions."}
+          </p>
+        )
       )}
     </section>
   );

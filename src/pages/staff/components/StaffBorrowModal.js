@@ -15,6 +15,7 @@ function StaffBorrowModal({
   remarks,
   setRemarks,
   error,
+  isSubmitting = false,
   maxQuantity,
   onSubmit,
   onClose,
@@ -83,11 +84,18 @@ function StaffBorrowModal({
             className="secondary-button"
             type="button"
             onClick={onClose}
+            disabled={isSubmitting}
           >
             Cancel
           </button>
-          <button className="primary-button" type="submit">
-            Record {action.type.toLowerCase()} &amp; view receipt
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? "Saving transaction..."
+              : `Record ${action.type.toLowerCase()} & view receipt`}
           </button>
         </div>
       </form>

@@ -29,7 +29,7 @@ function StaffSupplyList({
           <p>
             {canRecord
               ? "Choose an action for the item you need."
-              : "Enter your name above to borrow, use, or return items."}
+              : "Sign in with an account linked to the staff directory to record an action."}
           </p>
         </div>
         <label className="inventory-search-box staff-supply-search">
