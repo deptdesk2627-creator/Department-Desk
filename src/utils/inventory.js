@@ -47,8 +47,32 @@ export async function persistInventoryTransaction({
     .maybeSingle();
   if (stockError) throw stockError;
   if (!updatedItem) {
+    const { data: currentItem, error: currentItemError } = await supabaseClient
+      .from("items_masterlist")
+      .select("stock_onhand, archived_at")
+      .eq("item_id", itemId)
+      .maybeSingle();
+    if (currentItemError) throw currentItemError;
+    if (!currentItem) {
+      throw new Error(
+        "This inventory item is not visible in Supabase. Check its item_id and the authenticated SELECT policy for items_masterlist.",
+      );
+    }
+    if (currentItem.archived_at) {
+      throw new Error(
+        "This inventory item has been archived and cannot be changed.",
+      );
+    }
+
+    const latestQuantity = Number(currentItem.stock_onhand);
+    if (latestQuantity !== currentQuantity) {
+      throw new Error(
+        `Stock changed in Supabase from ${currentQuantity} to ${latestQuantity}. Reload the page and try again.`,
+      );
+    }
+
     throw new Error(
-      "Supabase did not update this item's stock. Refresh the masterlist; if stock is unchanged, check the authenticated UPDATE and SELECT policies for items_masterlist.",
+      "Supabase did not update this item's stock. Check the authenticated UPDATE policy for items_masterlist.",
     );
   }
 

@@ -132,6 +132,27 @@ test("requires a real Supabase session before loading the secretary masterlist",
   expect(supabase.from).not.toHaveBeenCalled();
 });
 
+test("disables inventory actions while Supabase data is loading", () => {
+  supabase.auth.getUser.mockReturnValue(new Promise(() => {}));
+
+  render(
+    <InventoryWithState
+      inventory={[
+        { ...SAMPLE_INVENTORY[0], classification: "Borrowable" },
+      ]}
+      records={SAMPLE_RECORDS}
+    />,
+  );
+
+  expect(screen.getByRole("button", { name: /^borrow$/i })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /^use$/i })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /delete folders/i })).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /open item details for folders/i }),
+  ).toBeDisabled();
+  expect(screen.getByRole("button", { name: /add product/i })).toBeDisabled();
+});
+
 test("renders bento metrics and switches between Master list and Transaction folder tabs", async () => {
   await act(async () => {
     render(

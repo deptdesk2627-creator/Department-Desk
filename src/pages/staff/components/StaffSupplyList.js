@@ -29,7 +29,11 @@ function StaffSupplyList({
           <p>
             {canRecord
               ? "Choose an action for the item you need."
-              : "Sign in with an account linked to the staff directory to record an action."}
+              : isLoading
+                ? "Loading inventory and transaction history..."
+                : loadError
+                  ? "Actions are unavailable until inventory access and history load successfully."
+                  : "Sign in with an account linked to the staff directory to record an action."}
           </p>
         </div>
         <label className="inventory-search-box staff-supply-search">

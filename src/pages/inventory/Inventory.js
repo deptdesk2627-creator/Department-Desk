@@ -259,6 +259,9 @@ function Inventory({
                 className="primary-button inventory-add-btn"
                 aria-haspopup="dialog"
                 aria-expanded={isFormOpen}
+                disabled={
+                  inventoryLoading || Boolean(inventoryLoadError)
+                }
                 onClick={() => setIsFormOpen(true)}
               >
                 ＋ Add product
@@ -374,6 +377,14 @@ function Inventory({
             items={visibleItems}
             totalItems={inventoryItems.length}
             isLoading={inventoryLoading}
+            actionsDisabled={
+              inventoryLoading || Boolean(inventoryLoadError)
+            }
+            recordingDisabled={
+              transactionsLoading ||
+              Boolean(transactionsLoadError) ||
+              transactionUsers.length === 0
+            }
             loadError={inventoryLoadError || inventoryError}
             onOpenAction={stockActions.openAction}
             getBorrowedBalance={stockActions.getBorrowedBalance}

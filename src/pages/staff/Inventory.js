@@ -285,11 +285,18 @@ function StaffInventory({
       <StaffSupplyList
         items={visibleItems}
         totalItems={inventoryItems.length}
-        isLoading={inventoryLoading}
-        loadError={inventoryError}
+        isLoading={inventoryLoading || transactionsLoading}
+        loadError={inventoryError || transactionsError}
         supplySearch={supplySearch}
         onSupplySearchChange={setSupplySearch}
-        canRecord={Boolean(person && transactionUser?.user_id)}
+        canRecord={Boolean(
+          person &&
+            transactionUser?.user_id &&
+            !inventoryLoading &&
+            !transactionsLoading &&
+            !inventoryError &&
+            !transactionsError,
+        )}
         getMyBorrowedBalance={getMyBorrowedBalance}
         onOpenAction={openAction}
       />

@@ -10,6 +10,8 @@ function InventoryTable({
   items,
   totalItems,
   isLoading = false,
+  actionsDisabled = false,
+  recordingDisabled = false,
   loadError = "",
   onOpenAction,
   getBorrowedBalance,
@@ -137,6 +139,7 @@ function InventoryTable({
                             type="button"
                             className="stock-adjust-button details-button"
                             onClick={() => onViewDetails?.(item)}
+                            disabled={actionsDisabled}
                             aria-label={`Open item details for ${item.name}`}
                           >
                             Details
@@ -146,7 +149,11 @@ function InventoryTable({
                               type="button"
                               className="stock-adjust-button borrow-button"
                               onClick={() => onOpenAction(item, "Borrow")}
-                              disabled={Number(item.quantity) <= 0}
+                              disabled={
+                                actionsDisabled ||
+                                recordingDisabled ||
+                                Number(item.quantity) <= 0
+                              }
                             >
                               Borrow
                             </button>
@@ -156,7 +163,11 @@ function InventoryTable({
                               type="button"
                               className="stock-adjust-button use-button"
                               onClick={() => onOpenAction(item, "Use")}
-                              disabled={Number(item.quantity) <= 0}
+                              disabled={
+                                actionsDisabled ||
+                                recordingDisabled ||
+                                Number(item.quantity) <= 0
+                              }
                             >
                               Use
                             </button>
@@ -166,7 +177,11 @@ function InventoryTable({
                               type="button"
                               className="stock-adjust-button return-button"
                               onClick={() => onOpenAction(item, "Return")}
-                              disabled={getBorrowedBalance(item) <= 0}
+                              disabled={
+                                actionsDisabled ||
+                                recordingDisabled ||
+                                getBorrowedBalance(item) <= 0
+                              }
                             >
                               Return
                             </button>
@@ -175,6 +190,7 @@ function InventoryTable({
                             className="delete-button"
                             type="button"
                             onClick={() => onDelete(item.id)}
+                            disabled={actionsDisabled}
                             aria-label={`Delete ${item.name}`}
                           >
                             ×

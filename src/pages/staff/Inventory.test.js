@@ -147,6 +147,27 @@ test("does not mistake an unauthenticated demo session for database access", asy
   expect(supabase.from).not.toHaveBeenCalled();
 });
 
+test("disables supply actions until Supabase inventory and history finish loading", () => {
+  supabase.auth.getUser.mockReturnValue(new Promise(() => {}));
+
+  render(
+    <StaffInventoryWithState
+      inventory={[
+        {
+          ...MASTERLIST_ITEM,
+          id: MASTERLIST_ITEM.item_id,
+          name: MASTERLIST_ITEM.item_name,
+          quantity: MASTERLIST_ITEM.stock_onhand,
+          lowStockAt: MASTERLIST_ITEM.min_stock,
+        },
+      ]}
+      records={[]}
+    />,
+  );
+
+  expect(screen.getByRole("button", { name: /^borrow$/i })).toBeDisabled();
+});
+
 test("loads active items and the linked user's transactions from Supabase", async () => {
   tableResponses.inventory_transactions = {
     data: [
