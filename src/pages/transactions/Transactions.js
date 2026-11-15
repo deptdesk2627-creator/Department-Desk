@@ -13,8 +13,14 @@ function Transactions({
   },
   search = "",
   readOnly = false,
+  defaultView = "table",
 }) {
-  const manager = useTransactionManager({ requests, setRequests, search });
+  const manager = useTransactionManager({
+    requests,
+    setRequests,
+    search,
+    defaultView,
+  });
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   function openNewModal() {

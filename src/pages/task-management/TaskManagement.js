@@ -13,6 +13,7 @@ function TaskManagement({
     throw new Error("TaskManagement requires a setTasks callback.");
   },
   search = "",
+  defaultView = "table",
 }) {
   const {
     addTask,
@@ -43,7 +44,7 @@ function TaskManagement({
     totalTasks,
     updateTask,
     view,
-  } = useTaskManager({ tasks, setTasks, search });
+  } = useTaskManager({ tasks, setTasks, search, defaultView });
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 

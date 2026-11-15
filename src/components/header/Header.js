@@ -13,6 +13,7 @@ function Header({
   requests = [],
   tasks = [],
   inventory = [],
+  settings,
   search = "",
   onSearchChange,
   onNavigate,
@@ -160,6 +161,7 @@ function Header({
             requests={requests}
             tasks={tasks}
             inventory={inventory}
+            settings={settings}
             isOpen={areNotificationsOpen}
             onClose={closeNotifications}
             onToggle={toggleNotifications}

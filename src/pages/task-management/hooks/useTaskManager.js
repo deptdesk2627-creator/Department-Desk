@@ -14,8 +14,15 @@ function createInitialForm() {
   };
 }
 
-export function useTaskManager({ tasks = [], setTasks, search = "" }) {
-  const [view, setView] = useState("table");
+export function useTaskManager({
+  tasks = [],
+  setTasks,
+  search = "",
+  defaultView = "table",
+}) {
+  const [view, setView] = useState(() =>
+    defaultView === "status" ? "status" : "table",
+  );
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
   const [form, setForm] = useState(createInitialForm);
   const [taskSearch, setTaskSearch] = useState("");

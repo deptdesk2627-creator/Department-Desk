@@ -5,42 +5,52 @@ import {
 import { isLowStock } from "./inventory";
 import { matchesQuery, normalizeQuery } from "./search";
 
-export function getNotifications(requests, tasks, inventory) {
-  const waitingRequests = (Array.isArray(requests) ? requests : [])
-    .filter((request) => request && isRequestWaiting(request.status))
-    .map((request) => ({
-      id: `request:${request.id}`,
-      title: "Request waiting",
-      message: `${request.student || "A request"}${request.document ? ` · ${request.document}` : ""} is waiting for action.`,
-      page: "transactions",
-    }));
+export function getNotifications(requests, tasks, inventory, settings = {}) {
+  const showRequests = settings?.notifyRequests !== false;
+  const showLowStock = settings?.notifyLowStock !== false;
+  const showOverdueTasks = settings?.notifyOverdueTasks !== false;
 
-  const lowStockItems = (Array.isArray(inventory) ? inventory : [])
-    .filter(isLowStock)
-    .map((item) => ({
-      id: `inventory:${item.id}:${item.quantity}`,
-      title: "Low stock",
-      message: `${item.name}: ${item.quantity} ${item.unit} remaining.`,
-      page: "inventory",
-    }));
+  const waitingRequests = showRequests
+    ? (Array.isArray(requests) ? requests : [])
+        .filter((request) => request && isRequestWaiting(request.status))
+        .map((request) => ({
+          id: `request:${request.id}`,
+          title: "Request waiting",
+          message: `${request.student || "A request"}${request.document ? ` · ${request.document}` : ""} is waiting for action.`,
+          page: "transactions",
+        }))
+    : [];
+
+  const lowStockItems = showLowStock
+    ? (Array.isArray(inventory) ? inventory : [])
+        .filter(isLowStock)
+        .map((item) => ({
+          id: `inventory:${item.id}:${item.quantity}`,
+          title: "Low stock",
+          message: `${item.name}: ${item.quantity} ${item.unit} remaining.`,
+          page: "inventory",
+        }))
+    : [];
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const overdueTasks = (Array.isArray(tasks) ? tasks : [])
-    .filter(
-      (task) =>
-        task &&
-        !task.done &&
-        task.due &&
-        !Number.isNaN(new Date(`${task.due}T00:00:00`).getTime()) &&
-        new Date(`${task.due}T00:00:00`) < today,
-    )
-    .map((task) => ({
-      id: `task:${task.id}:${task.due}`,
-      title: "Overdue task",
-      message: `${task.title} was due ${task.due}.`,
-      page: "tasks",
-    }));
+  const overdueTasks = showOverdueTasks
+    ? (Array.isArray(tasks) ? tasks : [])
+        .filter(
+          (task) =>
+            task &&
+            !task.done &&
+            task.due &&
+            !Number.isNaN(new Date(`${task.due}T00:00:00`).getTime()) &&
+            new Date(`${task.due}T00:00:00`) < today,
+        )
+        .map((task) => ({
+          id: `task:${task.id}:${task.due}`,
+          title: "Overdue task",
+          message: `${task.title} was due ${task.due}.`,
+          page: "tasks",
+        }))
+    : [];
 
   return [...waitingRequests, ...lowStockItems, ...overdueTasks];
 }

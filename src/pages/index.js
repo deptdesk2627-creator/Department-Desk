@@ -25,6 +25,8 @@ export function getRolePages({
         role={role}
         profile={profile}
         onSave={onSaveProfile}
+        data={data}
+        onNavigate={navigate}
       />
     ),
     settings: (
@@ -42,6 +44,7 @@ export function getRolePages({
         role={role}
         settings={settings}
         search={search}
+        onNavigate={navigate}
       />
     ),
   };
@@ -84,6 +87,7 @@ export function getRolePages({
         setRequests={data.setRequests}
         search={search}
         readOnly={!canEditDocuments}
+        defaultView={settings?.defaultRequestView}
       />
     ),
     tasks: (
@@ -91,6 +95,7 @@ export function getRolePages({
         tasks={data.tasks}
         setTasks={data.setTasks}
         search={search}
+        defaultView={settings?.defaultTaskView}
       />
     ),
     inventory: (

@@ -313,6 +313,24 @@
   color: var(--ink-secondary);
 }
 
+:root[data-density="compact"] .request-tracker-table th,
+:root[data-density="compact"] .request-table th,
+:root[data-density="compact"] .deptdesk-table th,
+:root[data-density="compact"] .inventory-master-table th,
+:root[data-density="compact"] .inventory-transactions-table th {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+:root[data-density="compact"] .request-tracker-table td,
+:root[data-density="compact"] .request-table td,
+:root[data-density="compact"] .deptdesk-table td,
+:root[data-density="compact"] .inventory-master-table td,
+:root[data-density="compact"] .inventory-transactions-table td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
 * {
   box-sizing: border-box;
 }

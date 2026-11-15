@@ -1,13 +1,19 @@
 import { useMemo, useState } from "react";
 import { PageHeader } from "../../components/ui";
 import { DEFAULT_SETTINGS } from "../../constants/system";
-import { getFaqForRole } from "./helpContent";
+import {
+  getFaqForRole,
+  KEYBOARD_SHORTCUTS,
+  WORKFLOW_GUIDES,
+} from "./helpContent";
 import "./HelpPage.css";
 
-function HelpPage({ role, settings, search = "" }) {
+function HelpPage({ role, settings, search = "", onNavigate }) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [expandAll, setExpandAll] = useState(false);
 
+  const isStaff = role?.id === "staff";
   const sections = useMemo(() => getFaqForRole(role?.id), [role?.id]);
   const combinedQuery = (
     query.trim() || String(search || "").trim()
@@ -51,14 +57,24 @@ function HelpPage({ role, settings, search = "" }) {
       />
 
       <section className="card panel system-help-toolbar">
-        <input
-          className="system-search"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search frequently asked questions…"
-          aria-label="Search frequently asked questions"
-        />
+        <div className="system-help-toolbar__top">
+          <input
+            className="system-search"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search frequently asked questions…"
+            aria-label="Search frequently asked questions"
+          />
+          <button
+            type="button"
+            className="secondary-button system-expand-btn"
+            aria-pressed={expandAll}
+            onClick={() => setExpandAll((open) => !open)}
+          >
+            {expandAll ? "Collapse all" : "Expand all"}
+          </button>
+        </div>
         <div
           className="system-filter-pills"
           role="tablist"
@@ -97,21 +113,109 @@ function HelpPage({ role, settings, search = "" }) {
                 </span>
               </div>
               <div className="system-faq-list">
-                {section.items.map((item) => (
-                  <details
-                    key={item.q}
-                    className="system-faq-item"
-                    open={Boolean(combinedQuery) || undefined}
-                  >
-                    <summary>{item.q}</summary>
-                    <p>{item.a}</p>
-                  </details>
-                ))}
+                {section.items.map((item) => {
+                  const targetPage =
+                    isStaff && (item.staffPage || section.staffPage)
+                      ? item.staffPage || section.staffPage
+                      : item.page || section.page;
+                  const actionLabel = item.actionLabel || section.actionLabel;
+                  return (
+                    <details
+                      key={item.q}
+                      className="system-faq-item"
+                      open={Boolean(combinedQuery) || expandAll || undefined}
+                    >
+                      <summary>{item.q}</summary>
+                      <div className="system-faq-answer">
+                        <p>{item.a}</p>
+                        {onNavigate && targetPage && actionLabel && (
+                          <button
+                            type="button"
+                            className="text-button system-faq-link"
+                            onClick={() => onNavigate(targetPage)}
+                          >
+                            {actionLabel} →
+                          </button>
+                        )}
+                      </div>
+                    </details>
+                  );
+                })}
               </div>
             </section>
           ))}
         </div>
       )}
+
+      <div
+        className={`system-guide-grid${isStaff ? " system-guide-grid--single" : ""}`}
+      >
+        {!isStaff && (
+          <section className="card panel">
+            <div className="panel-heading">
+              <div>
+                <h2>Document workflow &amp; cabinet guide</h2>
+                <p>
+                  Quick reference for outgoing requests, incoming signatures,
+                  and filing cabinets.
+                </p>
+              </div>
+              {onNavigate && (
+                <button
+                  type="button"
+                  className="text-button system-faq-link"
+                  onClick={() => onNavigate("transactions")}
+                >
+                  Open Request Tracker →
+                </button>
+              )}
+            </div>
+            <div className="system-guide-list">
+              {WORKFLOW_GUIDES.map((guide) => (
+                <div key={guide.id} className="system-guide-block">
+                  <strong>{guide.title}</strong>
+                  <p>{guide.description}</p>
+                  {guide.steps && (
+                    <ol className="system-workflow-steps">
+                      {guide.steps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ol>
+                  )}
+                  {guide.cabinets && (
+                    <ul className="system-cabinet-badges">
+                      {guide.cabinets.map((cabinet) => (
+                        <li key={cabinet}>{cabinet}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="card panel system-shortcuts-card">
+          <div className="panel-heading">
+            <div>
+              <h2>Keyboard shortcuts &amp; quick tips</h2>
+              <p>Navigate DeptDesk faster using your keyboard.</p>
+            </div>
+          </div>
+          <ul className="system-shortcuts-list">
+            {KEYBOARD_SHORTCUTS.map((shortcut) => (
+              <li key={shortcut.keys}>
+                <kbd>{shortcut.keys}</kbd>
+                <span>{shortcut.label}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="system-shortcuts-tip">
+            Tip: You can also use the top search bar from any page to jump
+            directly to a request ID, task title, or supply item.
+          </p>
+        </section>
+      </div>
 
       <section className="card panel system-contact-banner">
         <div className="system-contact-banner__head">

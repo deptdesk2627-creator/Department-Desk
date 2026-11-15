@@ -1,19 +1,23 @@
 /* Profile page layout and cards */
 
 .system-page__grid {
-  align-items: start;
+  align-items: stretch;
   display: grid;
   gap: 20px;
-  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-columns: 380px minmax(0, 1fr);
 }
 
 .system-page__sidebar {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
   min-width: 0;
 }
 
 .system-page__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   min-width: 0;
 }
 
@@ -116,12 +120,17 @@
   text-align: right;
 }
 
+.module-form.system-form,
 .system-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .system-form__full {
   grid-column: 1 / -1;
+}
+
+.system-permissions {
+  flex: 1;
 }
 
 .system-permissions ul {
@@ -185,6 +194,66 @@
 .system-notice--success { background: var(--green-soft); color: var(--green); }
 .system-notice--error { background: var(--red-soft); color: var(--red); }
 
+.system-profile-note {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink-secondary);
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+}
+
+.system-workload-list {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  margin-top: 14px;
+}
+
+.system-workload-item {
+  align-items: flex-start;
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  font-size: 12px;
+  gap: 3px;
+  min-width: 0;
+  padding: 11px 10px;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+button.system-workload-item {
+  cursor: pointer;
+}
+
+button.system-workload-item:hover {
+  background: var(--purple-soft);
+  border-color: var(--purple);
+}
+
+.system-workload-item strong {
+  color: var(--ink);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.system-security-card {
+  flex: 1;
+}
+
+.system-security-card .system-notice,
+.system-page__main .system-notice {
+  margin-top: 14px;
+}
+
 @media (max-width: 1024px) {
   .system-page__grid {
     grid-template-columns: 1fr;
@@ -192,6 +261,7 @@
 }
 
 @media (max-width: 600px) {
+  .module-form.system-form,
   .system-form {
     grid-template-columns: 1fr;
   }

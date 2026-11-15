@@ -19,6 +19,19 @@ import { getRolePages } from "./pages";
 import Login from "./pages/auth/Login";
 import { supabase } from "./supabase/supabaseClient";
 
+function extractMetadataProfilePatch(user) {
+  const meta = user?.user_metadata || {};
+  const patch = {};
+  if (meta.full_name) patch.name = meta.full_name;
+  if (user?.email) patch.email = user.email;
+  if (typeof meta.title === "string") patch.title = meta.title;
+  if (typeof meta.phone === "string") patch.phone = meta.phone;
+  if (typeof meta.office === "string") patch.office = meta.office;
+  if (typeof meta.status === "string") patch.status = meta.status;
+  if (typeof meta.statusNote === "string") patch.statusNote = meta.statusNote;
+  return patch;
+}
+
 const EMPTY_PROFILES = {};
 const storedObjectOptions = { validate: isPlainObject };
 
@@ -69,6 +82,15 @@ function App() {
   }, [activeTheme]);
 
   useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute(
+        "data-density",
+        settings?.tableDensity === "compact" ? "compact" : "comfortable",
+      );
+    }
+  }, [settings?.tableDensity]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     try {
@@ -82,15 +104,13 @@ function App() {
     let isMounted = true;
 
     function syncSessionProfile(user, sessionRole) {
-      const name = user?.user_metadata?.full_name;
-      const email = user?.email;
-      if (name || email) {
+      const patch = extractMetadataProfilePatch(user);
+      if (Object.keys(patch).length) {
         setProfiles((current) => ({
           ...(isPlainObject(current) ? current : {}),
           [sessionRole]: {
             ...getProfile(getRole(sessionRole), current?.[sessionRole]),
-            ...(name ? { name } : {}),
-            ...(email ? { email } : {}),
+            ...patch,
           },
         }));
       }
@@ -167,6 +187,20 @@ function App() {
       ...(isPlainObject(current) ? current : {}),
       [role.id]: nextProfile,
     }));
+    if (typeof supabase?.auth?.updateUser === "function") {
+      Promise.resolve(
+        supabase.auth.updateUser({
+          data: {
+            full_name: nextProfile.name,
+            title: nextProfile.title,
+            phone: nextProfile.phone,
+            office: nextProfile.office,
+            status: nextProfile.status,
+            statusNote: nextProfile.statusNote,
+          },
+        }),
+      ).catch(() => {});
+    }
   }
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -179,14 +213,13 @@ function App() {
     }
 
     setRoleId(resolvedRole);
-    const name = user.user_metadata?.full_name;
-    if (name || user.email) {
+    const patch = extractMetadataProfilePatch(user);
+    if (Object.keys(patch).length) {
       setProfiles((current) => ({
         ...(isPlainObject(current) ? current : {}),
         [resolvedRole]: {
           ...getProfile(getRole(resolvedRole), current?.[resolvedRole]),
-          ...(name ? { name } : {}),
-          ...(user.email ? { email: user.email } : {}),
+          ...patch,
         },
       }));
     }
@@ -245,6 +278,7 @@ function App() {
       requests={data.requests}
       tasks={data.tasks}
       inventory={data.inventory}
+      settings={settings}
       search={safeSearch}
       onSearchChange={setSearch}
       onNavigate={navigate}

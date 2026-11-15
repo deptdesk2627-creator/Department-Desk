@@ -6,6 +6,7 @@ function HeaderNotifications({
   requests,
   tasks,
   inventory,
+  settings,
   isOpen,
   onClose,
   onToggle,
@@ -19,10 +20,10 @@ function HeaderNotifications({
   );
   const notifications = useMemo(
     () =>
-      getNotifications(requests, tasks, inventory).filter(
+      getNotifications(requests, tasks, inventory, settings).filter(
         (notification) => !dismissedNotificationIds.has(notification.id),
       ),
-    [requests, tasks, inventory, dismissedNotificationIds],
+    [requests, tasks, inventory, settings, dismissedNotificationIds],
   );
   const unreadCount = notifications.filter(
     (notification) => !readNotificationIds.has(notification.id),

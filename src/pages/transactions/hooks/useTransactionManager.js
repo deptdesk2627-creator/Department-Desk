@@ -28,7 +28,12 @@ import {
   buildRequestTrail,
 } from "../utils/transactionHelpers";
 
-export function useTransactionManager({ requests, setRequests, search }) {
+export function useTransactionManager({
+  requests,
+  setRequests,
+  search,
+  defaultView = "table",
+}) {
   const [activeTab, setActiveTabState] = useState(() => {
     try {
       if (typeof window !== "undefined") {
@@ -52,7 +57,9 @@ export function useTransactionManager({ requests, setRequests, search }) {
   const [cabinetFilter, setCabinetFilter] = useState("All Cabinets");
   const [requestSearch, setRequestSearch] = useState("");
   const [formError, setFormError] = useState("");
-  const [view, setView] = useState("table");
+  const [view, setView] = useState(() =>
+    ["table", "board", "cabinets"].includes(defaultView) ? defaultView : "table",
+  );
   const [form, setForm] = useState(() => emptyForm("outgoing"));
 
   const statuses =

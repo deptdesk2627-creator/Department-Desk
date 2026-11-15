@@ -1,10 +1,51 @@
+import { getRequestStatus } from "../../../constants/requestStatus";
 import {
   AVAILABILITY_OPTIONS,
   PERMISSION_LABELS,
   getInitials,
 } from "../../../constants/system";
+import { isLowStock } from "../../../utils/inventory";
 
-function ProfileSummaryCard({ role, draft }) {
+function buildWorkloadItems(role, draft, data) {
+  if (role?.id === "staff") {
+    const availableCount = (Array.isArray(data?.inventory) ? data.inventory : []).filter(
+      (item) => Number(item?.quantity) > 0,
+    ).length;
+    const staffName = String(draft?.name || "").trim().toLowerCase();
+    const myLogsCount = (
+      Array.isArray(data?.inventoryRecords) ? data.inventoryRecords : []
+    ).filter(
+      (rec) =>
+        rec &&
+        (!staffName || String(rec.person || "").trim().toLowerCase() === staffName),
+    ).length;
+
+    return [
+      { label: "Available supplies", value: availableCount, page: "staff-inventory" },
+      { label: "My supply logs", value: myLogsCount, page: "staff-inventory" },
+    ];
+  }
+
+  const activeRequests = (Array.isArray(data?.requests) ? data.requests : []).filter(
+    (req) =>
+      req &&
+      !["Approved", "Archived", "Sent Out"].includes(getRequestStatus(req.status)),
+  ).length;
+  const openTasks = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
+    (task) => task && !task.done && task.status !== "Done",
+  ).length;
+  const lowStockCount = (Array.isArray(data?.inventory) ? data.inventory : []).filter(
+    isLowStock,
+  ).length;
+
+  return [
+    { label: "Active requests", value: activeRequests, page: "transactions" },
+    { label: "Open tasks", value: openTasks, page: "tasks" },
+    { label: "Low-stock items", value: lowStockCount, page: "inventory" },
+  ];
+}
+
+function ProfileSummaryCard({ role, draft, data, onNavigate }) {
   const permissions = Object.entries(role?.can || {});
   const availabilityLabel =
     AVAILABILITY_OPTIONS.find((opt) => opt.value === draft.status)?.label ||
@@ -16,6 +57,8 @@ function ProfileSummaryCard({ role, draft }) {
     ["Phone / local", draft.phone],
     ["Office / room", draft.office],
   ].filter(([, value]) => value);
+
+  const workloadItems = buildWorkloadItems(role, draft, data);
 
   return (
     <div className="system-page__sidebar">
@@ -34,6 +77,10 @@ function ProfileSummaryCard({ role, draft }) {
           </div>
         </div>
 
+        {draft.statusNote && (
+          <p className="system-profile-note">{draft.statusNote}</p>
+        )}
+
         <dl className="system-meta-list">
           {metaRows.map(([label, value]) => (
             <div key={label}>
@@ -42,6 +89,35 @@ function ProfileSummaryCard({ role, draft }) {
             </div>
           ))}
         </dl>
+      </section>
+
+      <section className="card panel system-workload-card">
+        <div className="panel-heading">
+          <div>
+            <h2>Workspace snapshot</h2>
+            <p>Live summary for your current role.</p>
+          </div>
+        </div>
+        <div className="system-workload-list">
+          {workloadItems.map((item) =>
+            onNavigate ? (
+              <button
+                key={item.label}
+                type="button"
+                className="system-workload-item"
+                onClick={() => onNavigate(item.page)}
+              >
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </button>
+            ) : (
+              <div key={item.label} className="system-workload-item">
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </div>
+            ),
+          )}
+        </div>
       </section>
 
       <section className="card panel system-permissions">

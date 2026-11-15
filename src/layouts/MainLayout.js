@@ -9,6 +9,7 @@ function MainLayout({
   requests = [],
   tasks = [],
   inventory = [],
+  settings,
   search = "",
   onNavigate,
   onSearchChange,
@@ -45,6 +46,7 @@ function MainLayout({
           requests={requests}
           tasks={tasks}
           inventory={inventory}
+          settings={settings}
           search={search}
           onNavigate={onNavigate}
           onSearchChange={onSearchChange}

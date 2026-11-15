@@ -1,5 +1,18 @@
 import { useRef, useState } from "react";
 import { DEFAULT_SETTINGS, isPlainObject } from "../../../constants/system";
+import { csvValue } from "../../transactions/utils/transactionHelpers";
+
+function triggerDownload(filename, content, mimeType) {
+  const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+  const link = Object.assign(document.createElement("a"), {
+    href: url,
+    download: filename,
+  });
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 
 function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
   const [pendingImport, setPendingImport] = useState(null);
@@ -24,19 +37,97 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
       inventoryRecords: data.inventoryRecords,
       settings,
     };
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }),
+    const filename = `deptdesk-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    triggerDownload(
+      filename,
+      JSON.stringify(backup, null, 2),
+      "application/json",
     );
-    const link = Object.assign(document.createElement("a"), {
-      href: url,
-      download: `deptdesk-backup-${new Date().toISOString().slice(0, 10)}.json`,
-    });
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
     onNotice?.({ type: "success", text: "Backup downloaded." });
   }
+
+  function downloadCsv(baseName, headers, rows) {
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const filename = `${baseName}-${dateStamp}.csv`;
+    const csvLines = [headers, ...rows].map((row) =>
+      row.map(csvValue).join(","),
+    );
+    triggerDownload(filename, csvLines.join("\r\n"), "text/csv;charset=utf-8");
+    onNotice?.({ type: "success", text: `Downloaded ${filename}.` });
+  }
+
+  const csvReports = [
+    {
+      label: "Export Requests CSV",
+      onClick: () =>
+        downloadCsv(
+          "deptdesk-requests",
+          [
+            "ID",
+            "Direction",
+            "Document",
+            "Requester / Sender",
+            "Office",
+            "Category",
+            "Cabinet / Drawer",
+            "Status",
+            "Date",
+          ],
+          (data?.requests || []).map((req) => [
+            req?.id,
+            req?.direction || "outgoing",
+            req?.document || req?.description,
+            req?.student,
+            req?.office || req?.location,
+            req?.category || req?.type,
+            req?.fileLocation,
+            req?.status,
+            req?.dateTime,
+          ]),
+        ),
+    },
+    {
+      label: "Export Tasks CSV",
+      onClick: () =>
+        downloadCsv(
+          "deptdesk-tasks",
+          ["ID", "Title", "Priority", "Status", "Due Date", "Completed"],
+          (data?.tasks || []).map((task) => [
+            task?.id,
+            task?.title,
+            task?.priority,
+            task?.status,
+            task?.due,
+            task?.done ? "Yes" : "No",
+          ]),
+        ),
+    },
+    {
+      label: "Export Inventory CSV",
+      onClick: () =>
+        downloadCsv(
+          "deptdesk-inventory",
+          [
+            "ID",
+            "Item Name",
+            "Quantity",
+            "Unit",
+            "Low Stock At",
+            "Category",
+            "Usage Type",
+          ],
+          (data?.inventory || []).map((item) => [
+            item?.item_id ?? item?.productId ?? item?.id,
+            item?.name,
+            item?.quantity,
+            item?.unit,
+            item?.lowStockAt,
+            item?.category,
+            item?.usageType,
+          ]),
+        ),
+    },
+  ];
 
   async function handleImportFile(event) {
     const file = event.target.files?.[0];
@@ -158,6 +249,27 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
             >
               Clear data
             </button>
+          </div>
+        </div>
+
+        <div className="system-csv-bar">
+          <div>
+            <strong>Export CSV reports (Excel / Sheets)</strong>
+            <span>
+              Download spreadsheet-ready tables for requests, tasks, or supplies.
+            </span>
+          </div>
+          <div className="system-csv-bar__actions">
+            {csvReports.map((report) => (
+              <button
+                key={report.label}
+                type="button"
+                className="secondary-button"
+                onClick={report.onClick}
+              >
+                {report.label}
+              </button>
+            ))}
           </div>
         </div>
 

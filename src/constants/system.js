@@ -21,6 +21,12 @@ export const PERMISSION_LABELS = {
 
 export const DEFAULT_SETTINGS = Object.freeze({
   sidebarDefault: "expanded",
+  tableDensity: "comfortable",
+  defaultRequestView: "table",
+  defaultTaskView: "table",
+  notifyRequests: true,
+  notifyLowStock: true,
+  notifyOverdueTasks: true,
   department: "",
   officeLocation: "",
   officeHours: "Mon–Fri, 8:00 AM – 5:00 PM",
@@ -59,6 +65,7 @@ export function getDefaultProfile(role) {
     office: "",
     phone: "",
     status: "available",
+    statusNote: "",
   };
 }
 
