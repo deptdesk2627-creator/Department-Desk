@@ -73,7 +73,7 @@ function StaffInventory({
       }
 
       const authUserId = authResult.data.user.id;
-      const [itemsResult, userResult, transactionsResult] = await Promise.all([
+      const [itemsResult, userResult] = await Promise.all([
         supabase
           .from("items_masterlist")
           .select(MASTERLIST_COLUMNS)
@@ -84,10 +84,6 @@ function StaffInventory({
           .select("user_id, username, auth_user_id")
           .eq("auth_user_id", authUserId)
           .maybeSingle(),
-        supabase
-          .from("inventory_transactions")
-          .select(INVENTORY_TRANSACTION_COLUMNS)
-          .order("created_at", { ascending: false }),
       ]);
       if (!isMounted) return;
 
@@ -115,47 +111,52 @@ function StaffInventory({
           userResult.error || new Error("No linked public.users row found."),
         );
         setTransactionUser(null);
+        setRecords([]);
         setTransactionsError(
           userResult.error
             ? `Could not read your public.users row: ${userResult.error.message}`
             : "Your account is not linked in public.users. Contact the administrator.",
         );
+        setTransactionsLoading(false);
       } else {
         setTransactionUser(linkedUser);
-        setTransactionsError("");
-      }
 
-      if (transactionsResult.error) {
-        console.error(
-          "Could not load the staff inventory transactions.",
-          transactionsResult.error,
-        );
-        setTransactionsError(
-          `Could not load your inventory transactions: ${transactionsResult.error.message}`,
-        );
-      } else {
-        const inventoryById = new Map(
-          (Array.isArray(itemsResult.data) ? itemsResult.data : [])
-            .map(mapMasterlistItem)
-            .map((item) => [Number(item.item_id), item]),
-        );
-        const usersById = new Map(
-          linkedUser
-            ? [[Number(linkedUser.user_id), linkedUser]]
-            : [],
-        );
-        const myTransactions = mapInventoryTransactions(
-          transactionsResult.data,
-          inventoryById,
-          usersById,
-        ).filter(
-          (record) =>
-            linkedUser &&
-            Number(record.personUserId) === Number(linkedUser.user_id),
-        );
-        setRecords(myTransactions);
+        const transactionsResult = await supabase
+          .from("inventory_transactions")
+          .select(INVENTORY_TRANSACTION_COLUMNS)
+          .eq("is_issued_to", linkedUser.user_id)
+          .order("created_at", { ascending: false });
+        if (!isMounted) return;
+
+        if (transactionsResult.error) {
+          console.error(
+            "Could not load the staff inventory transactions.",
+            transactionsResult.error,
+          );
+          setRecords([]);
+          setTransactionsError(
+            `Could not load your inventory transactions: ${transactionsResult.error.message}`,
+          );
+        } else {
+          const inventoryById = new Map(
+            (Array.isArray(itemsResult.data) ? itemsResult.data : [])
+              .map(mapMasterlistItem)
+              .map((item) => [Number(item.item_id), item]),
+          );
+          const usersById = new Map([
+            [Number(linkedUser.user_id), linkedUser],
+          ]);
+          setRecords(
+            mapInventoryTransactions(
+              transactionsResult.data,
+              inventoryById,
+              usersById,
+            ),
+          );
+          setTransactionsError("");
+        }
+        setTransactionsLoading(false);
       }
-      setTransactionsLoading(false);
     }
 
     loadInventoryAndTransactions().catch((error) => {
@@ -189,13 +190,8 @@ function StaffInventory({
             (record) =>
               Number(record.personUserId) === Number(transactionUser.user_id),
           )
-        : person
-        ? recordItems.filter(
-            (record) =>
-              String(record.person || "").toLowerCase() === person.toLowerCase(),
-          )
         : [],
-    [recordItems, person, transactionUser],
+    [recordItems, transactionUser],
   );
   const visibleItems = useMemo(
     () =>

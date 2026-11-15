@@ -219,7 +219,42 @@ test("loads active items and the linked user's transactions from Supabase", asyn
     "auth_user_id",
     STAFF_USER.auth_user_id,
   );
+  expect(tableQueries.inventory_transactions.eq).toHaveBeenCalledWith(
+    "is_issued_to",
+    STAFF_USER.user_id,
+  );
   expect(supabase.from).toHaveBeenCalledWith("inventory_transactions");
+});
+
+test("does not display locally stored transactions until the staff account is linked", async () => {
+  tableResponses.users = { data: null, error: null };
+  const staleRecord = {
+    id: 8,
+    dateTime: "2026-10-12T10:00:00",
+    person: "Prof. Maria Clara",
+    productName: "Folders",
+    quantity: 2,
+    unit: "Boxes",
+    status: "Borrowed",
+    remarks: "Old local record",
+  };
+
+  await act(async () => {
+    render(
+      <StaffInventoryWithState
+        inventory={[]}
+        records={[staleRecord]}
+        profile={{ name: "Prof. Maria Clara" }}
+      />,
+    );
+  });
+
+  expect(
+    screen.getAllByText(
+      "Your account is not linked in public.users. Contact the administrator.",
+    ),
+  ).toHaveLength(2);
+  expect(screen.queryByText("Old local record")).not.toBeInTheDocument();
 });
 
 test("persists a staff borrow with the linked public user ID", async () => {
