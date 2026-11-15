@@ -19,6 +19,10 @@ export function useTaskManager({
   setTasks,
   search = "",
   defaultView = "table",
+  onTaskAdd,
+  onTaskUpdate,
+  onTaskDelete,
+  onTaskError,
 }) {
   const [view, setView] = useState(() =>
     defaultView === "status" ? "status" : "table",
@@ -128,6 +132,11 @@ export function useTaskManager({
         task?.id === id ? { ...task, ...changes } : task,
       ),
     );
+    if (onTaskUpdate) {
+      Promise.resolve(onTaskUpdate(id, changes)).catch((error) =>
+        onTaskError?.(error),
+      );
+    }
   }
 
   function toggleDone(task) {
@@ -138,7 +147,7 @@ export function useTaskManager({
     });
   }
 
-  function addTask(event) {
+  async function addTask(event) {
     event.preventDefault();
     if (!form.title.trim()) return false;
     const newTask = {
@@ -146,8 +155,17 @@ export function useTaskManager({
       id: `task-${Date.now()}`,
       done: form.status === "Done",
     };
+    let taskToAdd = newTask;
+    if (onTaskAdd) {
+      try {
+        taskToAdd = await onTaskAdd(newTask);
+      } catch (error) {
+        onTaskError?.(error);
+        return false;
+      }
+    }
     setTasks((current) => [
-      newTask,
+      taskToAdd,
       ...(Array.isArray(current) ? current : []),
     ]);
     setForm(createInitialForm());
@@ -159,6 +177,11 @@ export function useTaskManager({
       (Array.isArray(current) ? current : []).filter((task) => task?.id !== id),
     );
     setSelectedTaskIds((current) => current.filter((taskId) => taskId !== id));
+    if (onTaskDelete) {
+      Promise.resolve(onTaskDelete(id)).catch((error) =>
+        onTaskError?.(error),
+      );
+    }
   }
 
   function selectAll(event) {
@@ -183,6 +206,13 @@ export function useTaskManager({
           : task,
       ),
     );
+    if (onTaskUpdate) {
+      selectedTaskIds.forEach((id) =>
+        Promise.resolve(onTaskUpdate(id, { status: "Done", done: true })).catch(
+          (error) => onTaskError?.(error),
+        ),
+      );
+    }
     setSelectedTaskIds([]);
   }
 
@@ -192,6 +222,13 @@ export function useTaskManager({
         (task) => !selectedTaskIds.includes(task?.id),
       ),
     );
+    if (onTaskDelete) {
+      selectedTaskIds.forEach((id) =>
+        Promise.resolve(onTaskDelete(id)).catch((error) =>
+          onTaskError?.(error),
+        ),
+      );
+    }
     setSelectedTaskIds([]);
   }
 

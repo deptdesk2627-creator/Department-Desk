@@ -6,6 +6,7 @@ import TaskStatusView from "./components/TaskStatusView";
 import TaskTabBar from "./components/TaskTabBar";
 import TaskTableView from "./components/TaskTableView";
 import { useTaskManager } from "./hooks/useTaskManager";
+import { useSupabaseTasks } from "./hooks/useSupabaseTasks";
 
 function TaskManagement({
   tasks = [],
@@ -15,6 +16,7 @@ function TaskManagement({
   search = "",
   defaultView = "table",
 }) {
+  const taskPersistence = useSupabaseTasks({ tasks, setTasks });
   const {
     addTask,
     bulkComplete,
@@ -44,18 +46,57 @@ function TaskManagement({
     totalTasks,
     updateTask,
     view,
-  } = useTaskManager({ tasks, setTasks, search, defaultView });
+  } = useTaskManager({
+    tasks,
+    setTasks,
+    search,
+    defaultView,
+    onTaskAdd: taskPersistence.persistTaskAdd,
+    onTaskUpdate: taskPersistence.persistTaskUpdate,
+    onTaskDelete: taskPersistence.persistTaskDelete,
+    onTaskError: taskPersistence.reportAddError,
+  });
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
-  function handleAddTask(event) {
-    if (addTask(event)) {
+  async function handleAddTask(event) {
+    if (await addTask(event)) {
       setIsTaskModalOpen(false);
     }
   }
 
+  if (taskPersistence.isLoading) {
+    return (
+      <p className="empty-state" role="status">
+        Loading tasks...
+      </p>
+    );
+  }
+
+  if (!taskPersistence.isReady) {
+    return (
+      <div className="deptdesk-task-container">
+        <p className="empty-state" role="alert">
+          {taskPersistence.error || "Tasks are unavailable."}
+        </p>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={taskPersistence.reload}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="deptdesk-task-container">
+      {taskPersistence.error && (
+        <p className="empty-state" role="alert">
+          {taskPersistence.error}
+        </p>
+      )}
       <TaskTabBar
         view={view}
         setView={setView}

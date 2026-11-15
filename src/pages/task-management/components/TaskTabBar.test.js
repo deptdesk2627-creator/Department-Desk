@@ -2,6 +2,19 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import TaskManagement from "../TaskManagement";
 import TaskTabBar from "./TaskTabBar";
 
+jest.mock("../hooks/useSupabaseTasks", () => ({
+  useSupabaseTasks: () => ({
+    error: "",
+    isLoading: false,
+    isReady: true,
+    persistTaskAdd: jest.fn(),
+    persistTaskDelete: jest.fn(),
+    persistTaskUpdate: jest.fn(),
+    reload: jest.fn(),
+    reportAddError: jest.fn(),
+  }),
+}));
+
 test("switches views and triggers add task modal without list tabs", () => {
   const setView = jest.fn();
   const onOpenAddTask = jest.fn();
