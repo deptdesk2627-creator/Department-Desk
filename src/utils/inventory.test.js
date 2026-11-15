@@ -1,4 +1,26 @@
-import { persistInventoryTransaction } from "./inventory";
+import {
+  canBorrowItem,
+  canUseItem,
+  getItemUsageType,
+  mapMasterlistItem,
+  persistInventoryTransaction,
+} from "./inventory";
+
+test("usable masterlist metadata takes precedence over borrowable metadata", () => {
+  const item = mapMasterlistItem({
+    item_id: 17,
+    item_name: "Folders",
+    category: "Borrowable",
+    classification: " usable ",
+    stock_onhand: 32,
+    unit: "Boxes",
+    min_stock: 2,
+  });
+
+  expect(getItemUsageType(item)).toBe("Usable");
+  expect(canUseItem(item)).toBe(true);
+  expect(canBorrowItem(item)).toBe(false);
+});
 
 function createQuery(response) {
   const query = {};

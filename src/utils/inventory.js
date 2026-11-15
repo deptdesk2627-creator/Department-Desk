@@ -142,9 +142,7 @@ export async function persistInventoryTransaction({
 }
 
 export function mapMasterlistItem(item) {
-  const usageType = [item.category, item.classification].find(
-    (value) => value === "Usable" || value === "Borrowable",
-  );
+  const usageType = getItemUsageType(item);
   return {
     ...item,
     id: item.item_id,
@@ -152,7 +150,7 @@ export function mapMasterlistItem(item) {
     name: item.item_name,
     quantity: item.stock_onhand,
     lowStockAt: item.min_stock,
-    ...(usageType ? { usageType } : {}),
+    ...(usageType !== "Both" ? { usageType } : {}),
   };
 }
 
@@ -277,10 +275,11 @@ export function mapInventoryTransactions(rows, inventoryById, usersById) {
 }
 
 export function getItemUsageType(item) {
-  const raw = String(item?.usageType || "").trim();
-  if (raw === "Usable" || raw === "Borrowable") {
-    return raw;
-  }
+  const values = [item?.usageType, item?.category, item?.classification].map(
+    (value) => String(value || "").trim().toLowerCase(),
+  );
+  if (values.includes("usable")) return "Usable";
+  if (values.includes("borrowable")) return "Borrowable";
   return "Both";
 }
 

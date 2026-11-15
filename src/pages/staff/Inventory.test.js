@@ -298,6 +298,10 @@ test("persists a staff use action and deducts masterlist stock", async () => {
     render(<StaffInventoryWithState inventory={[]} records={[]} />);
   });
 
+  expect(screen.getByRole("button", { name: /^use$/i })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^borrow$/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^return$/i })).not.toBeInTheDocument();
+
   fireEvent.click(screen.getByRole("button", { name: /^use$/i }));
   fireEvent.change(screen.getByLabelText(/remark \/ purpose of use/i), {
     target: { value: "Printer refill" },
