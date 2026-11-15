@@ -30,7 +30,11 @@ function TransactionTable({
 
   return (
     <div className="request-table-wrap">
-      <table className="request-tracker-table">
+      <table
+        className={`request-tracker-table${
+          isIncoming ? " request-tracker-table--incoming" : ""
+        }`}
+      >
         <thead>
           {isIncoming ? (
             <tr>

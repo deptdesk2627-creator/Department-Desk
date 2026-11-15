@@ -106,19 +106,6 @@ function TransactionList({
           </div>
         </div>
         <div className="request-controls">
-          <div className="request-filter-list" role="group" aria-label="Filter requests">
-            {filters.map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                className={`request-filter${activeFilter === filter ? " is-active" : ""}`}
-                aria-pressed={activeFilter === filter}
-                onClick={() => setActiveFilter(filter)}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
           <div className="request-display-controls">
             <label className="request-search">
               <span className="request-search-icon" aria-hidden="true">⌕</span>
@@ -195,6 +182,19 @@ function TransactionList({
                 </button>
               )}
             </div>
+          </div>
+          <div className="request-filter-list" role="group" aria-label="Filter requests">
+            {filters.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                className={`request-filter${activeFilter === filter ? " is-active" : ""}`}
+                aria-pressed={activeFilter === filter}
+                onClick={() => setActiveFilter(filter)}
+              >
+                {filter}
+              </button>
+            ))}
           </div>
         </div>
       </div>

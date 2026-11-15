@@ -70,29 +70,29 @@
 }
 
 .request-controls {
-  align-items: center;
+  align-items: stretch;
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 14px;
   min-width: 0;
 }
 
 .request-display-controls {
   align-items: center;
   display: flex;
-  flex: 1 1 360px;
-  flex-wrap: wrap;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
   gap: 10px;
-  justify-content: flex-end;
+  justify-content: space-between;
   min-width: 0;
+  width: 100%;
 }
 
 .request-filter-dropdowns {
   align-items: center;
   display: flex;
-  flex: 0 1 auto;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   gap: 8px;
   min-width: 0;
 }
@@ -112,14 +112,18 @@
   border-radius: 9px;
   color: var(--request-ink);
   cursor: pointer;
+  flex: 0 1 auto;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  max-width: 100%;
+  max-width: 195px;
   min-height: 38px;
   outline: none;
+  overflow: hidden;
   padding: 6px 32px 6px 12px;
+  text-overflow: ellipsis;
   transition: border-color 160ms ease, box-shadow 160ms ease;
+  white-space: nowrap;
 }
 
 .request-filter-select:focus {
@@ -194,7 +198,7 @@
   border-radius: 9px;
   color: #64748b;
   display: flex;
-  flex: 1 1 200px;
+  flex: 1 1 220px;
   gap: 8px;
   min-height: 38px;
   min-width: 160px;
@@ -236,20 +240,24 @@
   text-align: center;
 }
 
-@media (max-width: 1280px) {
-  .request-controls {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
+@media (max-width: 960px) {
   .request-display-controls {
-    flex: 1 1 auto;
-    justify-content: space-between;
-    width: 100%;
+    flex-wrap: wrap;
   }
 
   .request-search {
-    flex: 1 1 auto;
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .request-filter-dropdowns {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .request-filter-select {
+    flex: 1 1 150px;
     max-width: none;
   }
 }
@@ -276,6 +284,7 @@
 
   .request-filter-select {
     flex: 1 1 140px;
+    max-width: none;
   }
 
   .request-filter-list {
