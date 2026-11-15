@@ -33,6 +33,19 @@ test("validates and adds a request with a collision-free ID and initial history"
   expect(addRequest([request])[0].id).toBe(`${request.id}-1`);
 });
 
+test("uses a database office as the form default when the saved default is unavailable", () => {
+  const { result } = renderHook(() =>
+    useTransactionManager({
+      requests: [],
+      setRequests: jest.fn(),
+      search: "",
+      officeOptions: ["Finance Office", "Secretary's Office"],
+    }),
+  );
+
+  expect(result.current.form.office).toBe("Finance Office");
+});
+
 test("filters requests by status, office, category, search, and resets filters", () => {
   const requests = [
     {

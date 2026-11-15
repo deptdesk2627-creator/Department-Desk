@@ -68,6 +68,19 @@ export function useTransactionManager({
   );
   const [form, setForm] = useState(() => emptyForm("outgoing"));
 
+  useEffect(() => {
+    if (!officeOptions.length) return;
+    setForm((current) =>
+      officeOptions.some(
+        (office) =>
+          String(office).trim().toLowerCase() ===
+          String(current.office).trim().toLowerCase(),
+      )
+        ? current
+        : { ...current, office: officeOptions[0] },
+    );
+  }, [form.office, officeOptions]);
+
   const statuses =
     activeTab === "incoming" ? incomingStatuses : outgoingStatuses;
   const filters = useMemo(() => ["All Requests", ...statuses], [statuses]);
