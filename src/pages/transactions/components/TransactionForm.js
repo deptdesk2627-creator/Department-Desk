@@ -6,6 +6,7 @@ function TransactionForm({
   form,
   setForm,
   formError,
+  isSubmitting = false,
   onSubmit,
   onCancel,
   offices = [],
@@ -234,12 +235,17 @@ function TransactionForm({
               className="secondary-button"
               type="button"
               onClick={onCancel}
+              disabled={isSubmitting}
             >
               Cancel
             </button>
           )}
-          <button className="primary-button" type="submit">
-            {isIncoming ? "＋ Log incoming" : "＋ Add request"}
+          <button className="primary-button" type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? "Saving transaction..."
+              : isIncoming
+                ? "＋ Log incoming"
+                : "＋ Add request"}
           </button>
         </div>
       </form>

@@ -5,6 +5,7 @@ import TransactionDrawer from "./components/TransactionDrawer";
 import TransactionForm from "./components/TransactionForm";
 import TransactionList from "./components/TransactionList";
 import { useTransactionManager } from "./hooks/useTransactionManager";
+import { useSupabaseTransactions } from "./hooks/useSupabaseTransactions";
 
 function Transactions({
   requests = [],
@@ -15,13 +16,21 @@ function Transactions({
   readOnly = false,
   defaultView = "table",
 }) {
+  const persistence = useSupabaseTransactions({ setRequests });
   const manager = useTransactionManager({
     requests,
     setRequests,
     search,
     defaultView,
+    officeOptions: persistence.officeNames,
+    forwardedOptions: persistence.forwardedOptions,
+    onRequestAdd: persistence.persistAdd,
+    onRequestUpdate: persistence.persistUpdate,
+    onRequestDelete: persistence.persistDelete,
+    onRequestError: persistence.reportPersistenceError,
   });
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   function openNewModal() {
     manager.setForm((current) => ({
@@ -39,17 +48,57 @@ function Transactions({
     setIsFormOpen(true);
   }
 
-  function handleFormSubmit(event) {
+  async function handleFormSubmit(event) {
     const targetDirection =
       manager.form.direction === "incoming" ? "incoming" : "outgoing";
-    if (manager.addRequest(event)) {
-      manager.setActiveTab(targetDirection);
-      setIsFormOpen(false);
+    setIsSaving(true);
+    try {
+      if (await manager.addRequest(event)) {
+        manager.setActiveTab(targetDirection);
+        setIsFormOpen(false);
+      }
+    } finally {
+      setIsSaving(false);
     }
+  }
+
+  if (persistence.isLoading || !persistence.isReady) {
+    return (
+      <div className="dashboard module-page transactions-page">
+        <PageHeader
+          eyebrow="OFFICE WORKSPACE · REQUESTS"
+          title="Request tracker"
+          subtitle="Transactions are loaded from the office database."
+        />
+        {persistence.isLoading ? (
+          <p className="empty-state" role="status">
+            Loading transactions...
+          </p>
+        ) : (
+          <>
+            <p className="empty-state" role="alert">
+              {persistence.error || "Transactions are unavailable."}
+            </p>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={persistence.reload}
+            >
+              Retry
+            </button>
+          </>
+        )}
+      </div>
+    );
   }
 
   return (
     <div className="dashboard module-page transactions-page">
+      {persistence.error && (
+        <p className="empty-state" role="alert">
+          {persistence.error}
+        </p>
+      )}
       <PageHeader
         eyebrow="OFFICE WORKSPACE · REQUESTS"
         title="Request tracker"
@@ -82,6 +131,7 @@ function Transactions({
           form={manager.form}
           setForm={manager.setForm}
           formError={manager.formError}
+          isSubmitting={isSaving}
           onSubmit={handleFormSubmit}
           onCancel={() => setIsFormOpen(false)}
           offices={manager.offices}

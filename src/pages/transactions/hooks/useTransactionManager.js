@@ -5,10 +5,10 @@ import { matchesQuery } from "../../../utils/search";
 import {
   outgoingStatuses,
   incomingStatuses,
-  offices,
+  offices as defaultOffices,
   categories,
   signatureOptions,
-  forwardedDestinations,
+  forwardedDestinations as defaultForwardedDestinations,
   cabinetGroups,
   cabinetLocations,
   UNFILED_LOCATION,
@@ -33,6 +33,12 @@ export function useTransactionManager({
   setRequests,
   search,
   defaultView = "table",
+  officeOptions = defaultOffices,
+  forwardedOptions = defaultForwardedDestinations,
+  onRequestAdd,
+  onRequestUpdate,
+  onRequestDelete,
+  onRequestError,
 }) {
   const [activeTab, setActiveTabState] = useState(() => {
     try {
@@ -191,6 +197,50 @@ export function useTransactionManager({
     setRequestSearch("");
   }
 
+  function appendRequest(request) {
+    setRequests((current) => {
+      const currentRequests = Array.isArray(current) ? current : [];
+      const baseId = request.id;
+      let id = baseId;
+      let suffix = 1;
+      const existingIds = new Set(
+        currentRequests
+          .filter(
+            (item) => requestDirection(item) === requestDirection(request),
+          )
+          .map((item) => item?.id),
+      );
+      while (existingIds.has(id)) {
+        id = `${baseId}-${suffix}`;
+        suffix += 1;
+      }
+      return [{ ...request, id }, ...currentRequests];
+    });
+  }
+
+  function persistUpdatedRequest(previous, updated) {
+    if (!onRequestUpdate) return;
+    Promise.resolve()
+      .then(() => onRequestUpdate(previous, updated))
+      .catch((error) => {
+        setRequests((current) =>
+          (Array.isArray(current) ? current : []).map((request) =>
+            request?.id === previous.id &&
+            requestDirection(request) === requestDirection(previous)
+              ? previous
+              : request,
+          ),
+        );
+        setSelectedTransaction((current) =>
+          current?.id === previous.id &&
+          requestDirection(current) === requestDirection(previous)
+            ? previous
+            : current,
+        );
+        onRequestError?.("update", error);
+      });
+  }
+
   function addRequest(event) {
     event.preventDefault();
     if (!form.student.trim() || !form.document.trim()) {
@@ -250,66 +300,122 @@ export function useTransactionManager({
       notes: form.description,
       history: initialHistory,
     };
-    setRequests((current) => {
-      const currentRequests = Array.isArray(current) ? current : [];
-      const baseId = request.id;
-      let id = baseId;
-      let suffix = 1;
-      const existingIds = new Set(currentRequests.map((item) => item?.id));
-      while (existingIds.has(id)) {
-        id = `${baseId}-${suffix}`;
-        suffix += 1;
-      }
-      return [{ ...request, id }, ...currentRequests];
-    });
-    setForm(emptyForm(isIncoming ? "incoming" : "outgoing"));
-    return true;
+    if (!onRequestAdd) {
+      appendRequest(request);
+      setForm(emptyForm(isIncoming ? "incoming" : "outgoing"));
+      return true;
+    }
+
+    return Promise.resolve(onRequestAdd(request))
+      .then((savedRequest) => {
+        appendRequest(savedRequest);
+        setForm(emptyForm(isIncoming ? "incoming" : "outgoing"));
+        return true;
+      })
+      .catch((error) => {
+        setFormError(error.message || "Could not save this transaction.");
+        onRequestError?.("create", error);
+        return false;
+      });
   }
 
   function updateStatus(id, status) {
+    const request = allRequestItems.find(
+      (item) => item.id === id && requestDirection(item) === activeTab,
+    );
+    if (!request) return;
+    const updatedRequest = updateRequestStatus(request, status);
     setRequests((current) =>
       (Array.isArray(current) ? current : []).map((request) =>
-        request?.id === id ? updateRequestStatus(request, status) : request,
-      ),
-    );
-    setSelectedTransaction((current) =>
-      current?.id === id ? updateRequestStatus(current, status) : current,
-    );
-  }
-
-  function updateIncomingRequest(id, changes) {
-    setRequests((current) =>
-      (Array.isArray(current) ? current : []).map((request) =>
-        request?.id === id ? applyIncomingChanges(request, changes) : request,
-      ),
-    );
-    setSelectedTransaction((current) =>
-      current?.id === id ? applyIncomingChanges(current, changes) : current,
-    );
-  }
-
-  function updateFileLocation(id, fileLocation) {
-    setRequests((current) =>
-      (Array.isArray(current) ? current : []).map((request) =>
-        request?.id === id
-          ? updateRequestFileLocation(request, fileLocation)
+        request?.id === id && requestDirection(request) === activeTab
+          ? updatedRequest
           : request,
       ),
     );
     setSelectedTransaction((current) =>
-      current?.id === id
-        ? updateRequestFileLocation(current, fileLocation)
+      current?.id === id && requestDirection(current) === activeTab
+        ? updatedRequest
         : current,
     );
+    persistUpdatedRequest(request, updatedRequest);
+  }
+
+  function updateIncomingRequest(id, changes) {
+    const request = allRequestItems.find(
+      (item) => item.id === id && requestDirection(item) === "incoming",
+    );
+    if (!request) return;
+    const updatedRequest = applyIncomingChanges(request, changes);
+    setRequests((current) =>
+      (Array.isArray(current) ? current : []).map((request) =>
+        request?.id === id && requestDirection(request) === "incoming"
+          ? updatedRequest
+          : request,
+      ),
+    );
+    setSelectedTransaction((current) =>
+      current?.id === id && requestDirection(current) === "incoming"
+        ? updatedRequest
+        : current,
+    );
+    persistUpdatedRequest(request, updatedRequest);
+  }
+
+  function updateFileLocation(id, fileLocation) {
+    const request = allRequestItems.find(
+      (item) => item.id === id && requestDirection(item) === activeTab,
+    );
+    if (!request) return;
+    const updatedRequest = updateRequestFileLocation(request, fileLocation);
+    setRequests((current) =>
+      (Array.isArray(current) ? current : []).map((request) =>
+        request?.id === id && requestDirection(request) === activeTab
+          ? updatedRequest
+          : request,
+      ),
+    );
+    setSelectedTransaction((current) =>
+      current?.id === id && requestDirection(current) === activeTab
+        ? updatedRequest
+        : current,
+    );
+    persistUpdatedRequest(request, updatedRequest);
   }
 
   function deleteRequest(id) {
+    const request = allRequestItems.find(
+      (item) => item.id === id && requestDirection(item) === activeTab,
+    );
+    if (!request) return;
     setRequests((current) =>
       (Array.isArray(current) ? current : []).filter(
-        (request) => request?.id !== id,
+        (item) => item?.id !== id || requestDirection(item) !== activeTab,
       ),
     );
-    if (selectedTransaction?.id === id) setSelectedTransaction(null);
+    if (
+      selectedTransaction?.id === id &&
+      requestDirection(selectedTransaction) === activeTab
+    ) {
+      setSelectedTransaction(null);
+    }
+    if (onRequestDelete) {
+      Promise.resolve()
+        .then(() => onRequestDelete(request))
+        .catch((error) => {
+          setRequests((current) => {
+            const currentRequests = Array.isArray(current) ? current : [];
+            const alreadyPresent = currentRequests.some(
+              (item) =>
+                item?.id === request.id &&
+                requestDirection(item) === requestDirection(request),
+            );
+            return alreadyPresent
+              ? currentRequests
+              : [request, ...currentRequests];
+          });
+          onRequestError?.("delete", error);
+        });
+    }
   }
 
   const requestTrail = buildRequestTrail(selectedTransaction);
@@ -328,12 +434,12 @@ export function useTransactionManager({
     filters,
     form,
     formError,
-    forwardedDestinations,
+    forwardedDestinations: forwardedOptions,
     hasActiveFilters,
     incomingCount: incomingRequests.length,
     incomingStatuses,
     officeFilter,
-    offices,
+    offices: officeOptions,
     outgoingCount: outgoingRequests.length,
     outgoingStatuses,
     requestCategory,
