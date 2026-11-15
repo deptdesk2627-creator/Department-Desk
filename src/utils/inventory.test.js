@@ -6,14 +6,30 @@ import {
   persistInventoryTransaction,
 } from "./inventory";
 
-test("usable masterlist metadata takes precedence over borrowable metadata", () => {
+test("the masterlist category determines usage when type fields conflict", () => {
   const item = mapMasterlistItem({
     item_id: 17,
     item_name: "Folders",
     category: "Borrowable",
-    classification: " usable ",
+    classification: "usable",
     stock_onhand: 32,
     unit: "Boxes",
+    min_stock: 2,
+  });
+
+  expect(getItemUsageType(item)).toBe("Borrowable");
+  expect(canUseItem(item)).toBe(false);
+  expect(canBorrowItem(item)).toBe(true);
+});
+
+test("recognizes usable classification when category is not a usage type", () => {
+  const item = mapMasterlistItem({
+    item_id: 18,
+    item_name: "Paper",
+    category: "Office supplies",
+    classification: " usable ",
+    stock_onhand: 32,
+    unit: "Reams",
     min_stock: 2,
   });
 

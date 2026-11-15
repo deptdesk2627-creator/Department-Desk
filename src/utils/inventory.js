@@ -275,11 +275,19 @@ export function mapInventoryTransactions(rows, inventoryById, usersById) {
 }
 
 export function getItemUsageType(item) {
-  const values = [item?.usageType, item?.category, item?.classification].map(
-    (value) => String(value || "").trim().toLowerCase(),
-  );
-  if (values.includes("usable")) return "Usable";
-  if (values.includes("borrowable")) return "Borrowable";
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+  const usageType = normalize(item?.usageType);
+  if (usageType === "usable") return "Usable";
+  if (usageType === "borrowable") return "Borrowable";
+
+  const category = normalize(item?.category);
+  if (category === "usable") return "Usable";
+  if (category === "borrowable") return "Borrowable";
+
+  const classification = normalize(item?.classification);
+  if (classification === "usable") return "Usable";
+  if (classification === "borrowable") return "Borrowable";
+
   return "Both";
 }
 

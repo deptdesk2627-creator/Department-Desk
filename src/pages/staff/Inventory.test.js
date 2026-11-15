@@ -262,6 +262,10 @@ test("persists a staff borrow with the linked public user ID", async () => {
     render(<StaffInventoryWithState inventory={[]} records={[]} />);
   });
 
+  expect(screen.getByRole("button", { name: /^borrow$/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^return$/i })).toBeDisabled();
+  expect(screen.queryByRole("button", { name: /^use$/i })).not.toBeInTheDocument();
+
   fireEvent.click(screen.getByRole("button", { name: /^borrow$/i }));
   fireEvent.change(screen.getByLabelText(/remark \/ reason for borrowing/i), {
     target: { value: "Class activity" },
