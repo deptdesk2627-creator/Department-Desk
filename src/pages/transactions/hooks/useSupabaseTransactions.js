@@ -300,7 +300,7 @@ export function useSupabaseTransactions({ setRequests, isDemo = false }) {
     return () => {
       isMounted = false;
     };
-  }, [reloadToken, setRequests]);
+  }, [isDemo, reloadToken, setRequests]);
 
   const officeNames = useMemo(
     () => officeRows.map((office) => office.name).filter(Boolean),

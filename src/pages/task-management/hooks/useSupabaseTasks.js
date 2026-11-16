@@ -139,7 +139,7 @@ export function useSupabaseTasks({ tasks = [], setTasks, isDemo = false }) {
     return () => {
       isMounted = false;
     };
-  }, [fetchTasks, reloadToken, setTasks]);
+  }, [fetchTasks, isDemo, reloadToken, setTasks]);
 
   const persistTaskAdd = useCallback(
     async (task) => {
