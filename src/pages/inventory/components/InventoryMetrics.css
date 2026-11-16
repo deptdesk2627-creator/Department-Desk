@@ -81,53 +81,137 @@
   margin: 0;
 }
 
-/* Consumable & borrowed pie tall right card */
+/* Consumable & borrowed usage tall right card */
 .inventory-usage-card {
   display: flex;
   flex-direction: column;
+  gap: 16px;
   grid-column: 3;
   grid-row: 1 / 3;
-  justify-content: center;
+  justify-content: space-between;
   position: relative;
 }
 
-.inventory-usage-card__corner-icon {
-  color: #94a3b8;
-  height: 18px;
-  position: absolute;
-  right: 20px;
-  top: 18px;
-  width: 18px;
+.inventory-usage-card__top {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line-subtle, #f1f5f9);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding-bottom: 12px;
 }
 
-.inventory-usage-card__corner-icon svg {
-  display: block;
-  height: 100%;
-  width: 100%;
+.inventory-usage-card__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Segmented Pie / Bar Toggle */
+.inventory-chart-toggle {
+  align-items: center;
+  background: var(--surface-subtle, #f1f5f9);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 3px;
+}
+
+.inventory-chart-toggle__btn {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 5px;
+  padding: 5px 10px;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.inventory-chart-toggle__btn svg {
+  height: 14px;
+  width: 14px;
+}
+
+.inventory-chart-toggle__btn:hover:not(.is-active) {
+  color: var(--ink);
+}
+
+.inventory-chart-toggle__btn.is-active {
+  background: var(--surface, #ffffff);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  color: var(--purple, #ea580c);
+}
+
+:root[data-theme="dark"] .inventory-chart-toggle {
+  background: #0f172a;
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .inventory-chart-toggle__btn.is-active {
+  background: var(--surface);
+  color: var(--purple);
 }
 
 .inventory-usage-card__body {
   align-items: center;
   display: flex;
-  gap: 18px;
+  flex: 1 1 auto;
+  gap: 20px;
   justify-content: space-between;
   width: 100%;
 }
 
 .inventory-usage-chart {
   align-items: center;
+  background: linear-gradient(
+    145deg,
+    var(--surface-subtle, #f8fafc) 0%,
+    rgba(255, 247, 237, 0.55) 100%
+  );
+  border: 1px solid var(--line-subtle, #f1f5f9);
+  border-radius: 16px;
   display: flex;
-  flex: 0 0 185px;
+  flex: 0 0 192px;
   justify-content: center;
+  min-height: 152px;
+  padding: 8px;
 }
 
-.inventory-usage-pie {
+:root[data-theme="dark"] .inventory-usage-chart {
+  background: linear-gradient(
+    145deg,
+    rgba(15, 23, 42, 0.7) 0%,
+    rgba(249, 115, 22, 0.07) 100%
+  );
+  border-color: var(--line);
+}
+
+.inventory-usage-pie,
+.inventory-usage-bar {
   color: var(--muted);
   display: block;
-  filter: drop-shadow(0 6px 14px rgb(234 88 12 / 14%));
+  filter: drop-shadow(0 6px 14px rgb(234 88 12 / 12%));
   height: auto;
   max-width: 196px;
   width: 100%;
+}
+
+.inventory-usage-bar__axis-label {
+  fill: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
 }
 
 .inventory-usage-pie__slices {
@@ -171,16 +255,48 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
+  justify-content: center;
   min-width: 0;
 }
 
 .inventory-usage-info__label {
-  color: var(--muted);
-  font-size: 11.5px;
+  color: var(--ink);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.01em;
   line-height: 1.3;
+}
+
+.inventory-usage-info__label--sub {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.inventory-usage-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inventory-usage-empty__badge {
+  align-self: flex-start;
+  background: var(--surface-subtle, #f1f5f9);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 9999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 9px;
+  text-transform: uppercase;
+}
+
+:root[data-theme="dark"] .inventory-usage-empty__badge {
+  background: #0f172a;
+  border-color: var(--line);
 }
 
 .inventory-top-item-row {
@@ -188,12 +304,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px 10px;
-  margin: 6px 0 12px;
+  margin: 0 0 12px;
 }
 
 .inventory-usage-info .inventory-top-item {
   font-size: 24px;
   font-weight: 800;
+  letter-spacing: -0.6px;
   line-height: 1.2;
   margin: 0;
   max-width: 100%;

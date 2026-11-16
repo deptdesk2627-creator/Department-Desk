@@ -139,6 +139,15 @@ test("disables inventory actions while Supabase data is loading", () => {
     <InventoryWithState
       inventory={[
         { ...SAMPLE_INVENTORY[0], classification: "Borrowable" },
+        {
+          id: 2,
+          productId: "PRD-0002",
+          name: "Bond Paper",
+          quantity: 10,
+          unit: "Reams",
+          lowStockAt: 2,
+          classification: "Usable",
+        },
       ]}
       records={SAMPLE_RECORDS}
     />,
@@ -174,6 +183,14 @@ test("renders bento metrics and switches between Master list and Transaction fol
   expect(screen.getByText(/tracked products/i)).toBeInTheDocument();
   expect(screen.getByText(/transaction records/i)).toBeInTheDocument();
   expect(screen.getByText(/recorded usage value/i)).toBeInTheDocument();
+
+  // Switch between Pie chart and Bar graph on the Recorded usage value card
+  const barChartBtn = screen.getByRole("button", { name: /^bar$/i });
+  fireEvent.click(barChartBtn);
+  expect(barChartBtn).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByText(/consumable & borrowed bar graph/i),
+  ).toBeInTheDocument();
 
   // Master list tab is active by default
   const masterTab = screen.getByRole("tab", { name: /master list/i });

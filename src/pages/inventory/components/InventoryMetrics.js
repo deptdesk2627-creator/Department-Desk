@@ -1,5 +1,9 @@
+import { useState } from "react";
 import { MetricCard } from "../../../components/ui";
-import InventoryUsagePie, { buildPieSlices } from "./InventoryUsagePie";
+import InventoryUsagePie, {
+  buildPieSlices,
+  InventoryUsageBar,
+} from "./InventoryUsagePie";
 import "./InventoryMetrics.css";
 
 const RECORD_ICON = (
@@ -17,12 +21,27 @@ const RECORD_ICON = (
   </svg>
 );
 
-const CHART_BADGE_ICON = (
+const PIE_ICON = (
   <svg
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="1.8"
+    strokeWidth="1.85"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M11 4.2a8 8 0 1 0 8.8 8.8H11V4.2Z" />
+    <path d="M14.5 3.5A8 8 0 0 1 20.5 9.5h-6v-6Z" />
+  </svg>
+);
+
+const BAR_ICON = (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.85"
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden="true"
@@ -51,6 +70,7 @@ function InventoryMetrics({
   usageBreakdown = [],
   recordCount,
 }) {
+  const [chartType, setChartType] = useState("pie");
   const slices = buildPieSlices(usageBreakdown);
   const topItem = slices[0] || null;
 
@@ -85,20 +105,54 @@ function InventoryMetrics({
         <span className="metric-icon">{RECORD_ICON}</span>
       </article>
       <article className="card metric-card inventory-usage-card">
-        <span className="inventory-usage-card__corner-icon" aria-hidden="true">
-          {CHART_BADGE_ICON}
-        </span>
-        <div className="inventory-usage-card__body">
-          <div className="inventory-usage-chart">
-            <InventoryUsagePie slices={slices} />
-          </div>
-          <div className="inventory-usage-info">
+        <div className="inventory-usage-card__top">
+          <div className="inventory-usage-card__titles">
             <span className="inventory-usage-info__label">
               Recorded usage value
             </span>
             <span className="inventory-usage-info__label inventory-usage-info__label--sub">
-              Consumable &amp; borrowed pie
+              {chartType === "bar"
+                ? "Consumable & borrowed bar graph"
+                : "Consumable & borrowed pie"}
             </span>
+          </div>
+          <div
+            className="inventory-chart-toggle"
+            role="group"
+            aria-label="Usage chart view"
+          >
+            <button
+              type="button"
+              className={`inventory-chart-toggle__btn ${chartType === "pie" ? "is-active" : ""}`}
+              aria-pressed={chartType === "pie"}
+              onClick={() => setChartType("pie")}
+              title="Pie chart view"
+            >
+              {PIE_ICON}
+              <span>Pie</span>
+            </button>
+            <button
+              type="button"
+              className={`inventory-chart-toggle__btn ${chartType === "bar" ? "is-active" : ""}`}
+              aria-pressed={chartType === "bar"}
+              onClick={() => setChartType("bar")}
+              title="Bar graph view"
+            >
+              {BAR_ICON}
+              <span>Bar</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="inventory-usage-card__body">
+          <div className="inventory-usage-chart">
+            {chartType === "bar" ? (
+              <InventoryUsageBar slices={slices} />
+            ) : (
+              <InventoryUsagePie slices={slices} />
+            )}
+          </div>
+          <div className="inventory-usage-info">
             {topItem ? (
               <>
                 <div className="inventory-top-item-row">
@@ -148,12 +202,14 @@ function InventoryMetrics({
                 </ul>
               </>
             ) : (
-              <>
+              <div className="inventory-usage-empty">
+                <span className="inventory-usage-empty__badge">0 records</span>
                 <p className="metric-value inventory-top-item">No activity</p>
                 <p className="metric-foot">
-                  Most frequently used or borrowed items appear here
+                  Most frequently used or borrowed items appear here once
+                  recorded.
                 </p>
-              </>
+              </div>
             )}
           </div>
         </div>

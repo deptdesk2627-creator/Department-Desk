@@ -246,4 +246,168 @@ function InventoryUsagePie({ slices = [] }) {
   );
 }
 
+const DEFAULT_BAR_CHART = (
+  <svg
+    className="inventory-usage-bar"
+    viewBox="0 0 210 156"
+    aria-hidden="true"
+  >
+    {/* Subtle horizontal reference gridlines */}
+    <g
+      stroke="currentColor"
+      strokeOpacity="0.12"
+      strokeWidth="1"
+      strokeDasharray="3 3"
+    >
+      <line x1="28" y1="30" x2="188" y2="30" />
+      <line x1="28" y1="64" x2="188" y2="64" />
+      <line x1="28" y1="98" x2="188" y2="98" />
+    </g>
+    <line
+      x1="24"
+      y1="128"
+      x2="190"
+      y2="128"
+      stroke="currentColor"
+      strokeOpacity="0.22"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    {/* Placeholder bars */}
+    <g className="inventory-usage-bar__bars">
+      <rect x="38" y="54" width="24" height="74" rx="6" fill="#f97316" fillOpacity="0.85" />
+      <rect x="74" y="76" width="24" height="52" rx="6" fill="#fb923c" fillOpacity="0.85" />
+      <rect x="110" y="42" width="24" height="86" rx="6" fill="#ea580c" />
+      <rect x="146" y="88" width="24" height="40" rx="6" fill="#fdba74" fillOpacity="0.9" />
+    </g>
+    <g className="inventory-usage-bar__empty-pill">
+      <rect
+        x="79"
+        y="12"
+        width="52"
+        height="20"
+        rx="10"
+        className="inventory-usage-pie__hole"
+        stroke="currentColor"
+        strokeOpacity="0.15"
+      />
+      <text
+        x="105"
+        y="25.5"
+        textAnchor="middle"
+        className="inventory-usage-pie__center-sub"
+      >
+        0%
+      </text>
+    </g>
+  </svg>
+);
+
+export function InventoryUsageBar({ slices = [] }) {
+  if (!slices.length) return DEFAULT_BAR_CHART;
+
+  const visibleSlices = slices.slice(0, 4);
+  const maxShare = Math.max(
+    ...visibleSlices.map((s) => Number(s.sharePercent) || 0),
+    10,
+  );
+  const chartBottom = 124;
+  const maxBarHeight = 78;
+  const barWidth = 26;
+  const gap = 14;
+  const totalWidth =
+    visibleSlices.length * barWidth + (visibleSlices.length - 1) * gap;
+  const startX = Math.round((210 - totalWidth) / 2);
+
+  return (
+    <svg
+      className="inventory-usage-bar"
+      viewBox="0 0 210 156"
+      role="img"
+      aria-label="Most used and borrowed products bar graph"
+    >
+      {/* Gridlines */}
+      <g
+        stroke="currentColor"
+        strokeOpacity="0.12"
+        strokeWidth="1"
+        strokeDasharray="3 3"
+      >
+        <line x1="22" y1="36" x2="190" y2="36" />
+        <line x1="22" y1="66" x2="190" y2="66" />
+        <line x1="22" y1="96" x2="190" y2="96" />
+      </g>
+      <line
+        x1="20"
+        y1={chartBottom}
+        x2="192"
+        y2={chartBottom}
+        stroke="currentColor"
+        strokeOpacity="0.24"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+
+      {visibleSlices.map((slice, index) => {
+        const sharePct = Number(slice.sharePercent) || 0;
+        const barHeight = Math.max(
+          10,
+          Math.round((sharePct / maxShare) * maxBarHeight),
+        );
+        const x = startX + index * (barWidth + gap);
+        const y = chartBottom - barHeight;
+        const centerX = x + barWidth / 2;
+        const shortLabel =
+          String(slice.name || "").length > 6
+            ? `${String(slice.name).slice(0, 5)}…`
+            : String(slice.name || "");
+
+        return (
+          <g key={`bar-${slice.key}`}>
+            {/* Track background */}
+            <rect
+              x={x}
+              y={chartBottom - maxBarHeight}
+              width={barWidth}
+              height={maxBarHeight}
+              rx="6"
+              fill="currentColor"
+              fillOpacity="0.05"
+            />
+            {/* Value bar */}
+            <rect
+              x={x}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              rx="6"
+              fill={slice.color}
+            >
+              <title>{`${slice.name}: ${slice.totalQuantity} ${slice.unit} (${slice.sharePercent}%)`}</title>
+            </rect>
+            {/* Share % above bar */}
+            <text
+              x={centerX}
+              y={y - 6}
+              textAnchor="middle"
+              className="inventory-usage-pie__callout-label"
+            >
+              {slice.sharePercent}%
+            </text>
+            {/* Product label below baseline */}
+            <text
+              x={centerX}
+              y={chartBottom + 15}
+              textAnchor="middle"
+              className="inventory-usage-bar__axis-label"
+            >
+              {shortLabel}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 export default InventoryUsagePie;

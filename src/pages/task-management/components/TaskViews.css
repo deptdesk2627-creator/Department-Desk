@@ -35,31 +35,42 @@
 /* Inline Editable Inputs */
 .inline-text-edit {
   border: 1px solid transparent;
+  border-bottom-color: var(--line-subtle);
   background: transparent;
   width: 100%;
-  font-size: 14px;
-  color: #0f172a;
-  border-radius: 4px;
-  padding: 4px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 5px 8px;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .inline-text-edit:hover,
 .inline-text-edit:focus {
-  border-color: #cbd5e1;
-  background: #ffffff;
+  border-color: var(--purple);
+  background: var(--surface, #ffffff);
+  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 10%);
+  outline: none;
 }
 
 .inline-date-edit {
   border: 1px solid transparent;
+  border-bottom-color: var(--line-subtle);
   background: transparent;
   font-size: 13px;
-  color: #475569;
-  padding: 4px;
-  border-radius: 4px;
+  color: var(--ink-secondary);
+  padding: 5px 8px;
+  border-radius: 6px;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
-.inline-date-edit:hover {
-  border-color: #cbd5e1;
+.inline-date-edit:hover,
+.inline-date-edit:focus {
+  border-color: var(--purple);
+  background: var(--surface, #ffffff);
+  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 10%);
+  outline: none;
 }
 
 .deptdesk-checkbox {
@@ -97,20 +108,30 @@
 }
 
 .count-pill {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--surface-subtle, #f1f5f9);
+  color: var(--muted);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 12px;
 }
 
 .btn-icon-delete {
+  align-items: center;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
   color: #94a3b8;
   cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+  width: 32px;
 }
 
 .btn-icon-delete:hover {
-  color: #ef4444;
+  background: var(--red-soft, #fef2f2);
+  border-color: #fecaca;
+  color: var(--red, #dc2626);
 }

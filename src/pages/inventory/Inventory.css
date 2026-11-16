@@ -30,7 +30,7 @@
 
 .inventory-folder-tab {
   align-items: center;
-  background: #efe6dc;
+  background: #f1f5f9;
   border: 1px solid var(--line);
   border-bottom: 0;
   border-radius: 16px 16px 0 0;
@@ -52,7 +52,7 @@
 }
 
 .inventory-folder-tab:hover:not(.is-active) {
-  background: #e6d9cb;
+  background: #e2e8f0;
   color: var(--ink);
 }
 

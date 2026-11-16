@@ -12,15 +12,15 @@
   --ink: #0f172a;
   --ink-secondary: #334155;
   --muted: #64748b;
-  --line: #f1e2d4;
-  --line-subtle: #f8eee5;
-  --canvas: #fffaf5;
-  --canvas-dot: rgba(194, 65, 12, 0.09);
-  --canvas-glow-1: rgba(234, 88, 12, 0.075);
-  --canvas-glow-2: rgba(251, 146, 60, 0.06);
+  --line: #e2e8f0;
+  --line-subtle: #f1f5f9;
+  --canvas: #f8fafc;
+  --canvas-dot: rgba(100, 116, 139, 0.08);
+  --canvas-glow-1: rgba(148, 163, 184, 0.05);
+  --canvas-glow-2: rgba(234, 88, 12, 0.025);
   --surface: #ffffff;
-  --surface-subtle: #f8fafc;
-  --sidebar: #7c2d12;
+  --surface-subtle: #f1f5f9;
+  --sidebar: #ffffff;
 
   --font-sans:
     Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,

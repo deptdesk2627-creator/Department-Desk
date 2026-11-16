@@ -1,11 +1,15 @@
 .workspace-sidebar__footer {
-  border-top: 1px solid rgb(255 237 213 / 14%);
+  border-top: 1px solid #f1f5f9;
   margin-top: auto;
   padding-top: 14px;
 }
 
+:root[data-theme="dark"] .workspace-sidebar__footer {
+  border-top-color: #1e293b;
+}
+
 .workspace-sidebar__logout-link {
-  color: #fed7aa;
+  color: #64748b;
   transition:
     background-color 200ms ease,
     color 200ms ease,
@@ -13,20 +17,40 @@
 }
 
 .workspace-sidebar__logout-link .workspace-sidebar__icon {
-  color: #fed7aa;
+  color: #64748b;
   transition: color 200ms ease, transform 200ms ease;
 }
 
 .workspace-sidebar__logout-link:hover,
 .workspace-sidebar__logout-link:focus-visible {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 237, 213, 0.2);
-  color: #ffffff;
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
 }
 
 .workspace-sidebar__logout-link:hover .workspace-sidebar__icon,
 .workspace-sidebar__logout-link:focus-visible .workspace-sidebar__icon {
-  color: #ffffff;
+  color: #dc2626;
   transform: translateX(2px);
+}
+
+:root[data-theme="dark"] .workspace-sidebar__logout-link {
+  color: #94a3b8;
+}
+
+:root[data-theme="dark"] .workspace-sidebar__logout-link .workspace-sidebar__icon {
+  color: #94a3b8;
+}
+
+:root[data-theme="dark"] .workspace-sidebar__logout-link:hover,
+:root[data-theme="dark"] .workspace-sidebar__logout-link:focus-visible {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #f87171;
+}
+
+:root[data-theme="dark"] .workspace-sidebar__logout-link:hover .workspace-sidebar__icon,
+:root[data-theme="dark"] .workspace-sidebar__logout-link:focus-visible .workspace-sidebar__icon {
+  color: #f87171;
 }
 

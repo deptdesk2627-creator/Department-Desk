@@ -33,6 +33,7 @@ function TaskTabBar({ view, setView, onOpenAddTask }) {
   return (
     <div className="deptdesk-header">
       <div>
+        <p className="eyebrow">OFFICE WORKSPACE · TASKS</p>
         <h2>Task Management</h2>
         <p className="subtitle">
           Track and organize tasks by status and priority.
