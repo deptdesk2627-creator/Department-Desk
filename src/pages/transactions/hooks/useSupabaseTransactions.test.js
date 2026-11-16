@@ -89,9 +89,9 @@ test("creates outgoing and incoming records with their database lookups and hist
   });
 
   expect(queries.file_location.insert).toHaveBeenCalledWith({
-    cabinet: "CICT Cabinet 3",
-    drawer: 1,
-    section: "College Staff",
+    cabinet: "CICT Cabinet 3 (College Staff)",
+    drawer: "Cab3 D1",
+    section: null,
   });
   expect(queries.transactions_ongoing.insert).toHaveBeenCalledWith(
     expect.objectContaining({
