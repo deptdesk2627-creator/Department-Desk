@@ -145,6 +145,27 @@ test("shows matching live-search previews and navigates directly to the selected
   expect(screen.queryByRole("list", { name: "Search results" })).not.toBeInTheDocument();
 });
 
+test("Dean search and notifications do not expose tasks", () => {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const due = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+
+  render(
+    <Header
+      role={{ id: "dean", pages: ["dashboard"] }}
+      tasks={[{ id: "task-1", title: "Confidential task", due }]}
+      search="Confidential task"
+    />,
+  );
+
+  fireEvent.focus(screen.getByRole("searchbox"));
+  expect(screen.queryByText("Confidential task")).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
+  expect(screen.queryByText("Overdue task")).not.toBeInTheDocument();
+  expect(screen.queryByText(/Confidential task was due/)).not.toBeInTheDocument();
+});
+
 test("closes live-search previews when clicking outside", () => {
   render(
     <Header

@@ -28,7 +28,7 @@ function DashboardWelcome({
         </h1>
         <p>
           {isDean
-            ? "Monitor departmental requests, approval turnarounds, tasks, and supply thresholds."
+            ? "Monitor departmental requests, approval turnarounds, and supply thresholds."
             : "Here’s what’s happening in your department today."}
         </p>
       </div>

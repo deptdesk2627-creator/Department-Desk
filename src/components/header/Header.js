@@ -37,6 +37,7 @@ function Header({
   }, [resolvedTheme]);
 
   const isStaff = role?.id === "staff";
+  const isDean = role?.id === "dean";
   const {
     areNotificationsOpen,
     closeNotifications,
@@ -56,7 +57,7 @@ function Header({
   // Faculty & Staff must not see documents, requests, or tasks in search.
   const searchResults = getSearchResults(
     isStaff ? [] : requests,
-    isStaff ? [] : tasks,
+    isStaff || isDean ? [] : tasks,
     inventory,
     search,
   );
@@ -159,7 +160,7 @@ function Header({
         {!isStaff && (
           <HeaderNotifications
             requests={requests}
-            tasks={tasks}
+            tasks={isDean ? [] : tasks}
             inventory={inventory}
             settings={settings}
             isOpen={areNotificationsOpen}

@@ -24,12 +24,12 @@ export const ROLES = {
     name: "Ma'am Beth",
     initials: "MB",
     description: "Supervisor",
-    pages: ["dashboard", "transactions", "tasks", "inventory"],
+    pages: ["dashboard", "transactions", "inventory"],
     can: {
       editDocuments: false, // monitor only; cannot modify document histories
       createRequests: false,
-      createTasks: true,
-      editTasks: true,
+      createTasks: false,
+      editTasks: false,
       manageInventory: false, // review statistics only
       recordInventory: false,
     },
