@@ -157,12 +157,12 @@ function makeHistoryRows(request, entries, changedBy) {
   }));
 }
 
-export function useSupabaseTransactions({ setRequests }) {
+export function useSupabaseTransactions({ setRequests, isDemo = false }) {
   const [officeRows, setOfficeRows] = useState([]);
   const [locationRows, setLocationRows] = useState([]);
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isReady, setIsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(!isDemo);
+  const [isReady, setIsReady] = useState(isDemo);
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -171,6 +171,13 @@ export function useSupabaseTransactions({ setRequests }) {
   }, []);
 
   useEffect(() => {
+    if (isDemo) {
+      setIsLoading(false);
+      setIsReady(true);
+      setError("");
+      return undefined;
+    }
+
     let isMounted = true;
 
     async function loadTransactions() {

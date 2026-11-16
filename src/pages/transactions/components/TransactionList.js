@@ -198,53 +198,51 @@ function TransactionList({
           </div>
         </div>
       </div>
-      {requests.length ? (
-        view === "table" ? (
-          <TransactionTable
-            activeTab={activeTab}
-            requests={requests}
-            statuses={statuses}
-            signatureOptions={signatureOptions}
-            forwardedDestinations={forwardedDestinations}
-            statusClass={statusClass}
-            getRequestStatus={getRequestStatus}
-            requestName={requestName}
-            requestOffice={requestOffice}
-            requestCategory={requestCategory}
-            formatDate={formatDate}
-            onUpdateStatus={onUpdateStatus}
-            onUpdateIncoming={onUpdateIncoming}
-            onUpdateFileLocation={onUpdateFileLocation}
-            onSelect={onSelect}
-            onExport={onExport}
-            onDelete={onDelete}
-            readOnly={readOnly}
-          />
-        ) : view === "cabinets" ? (
-          <TransactionCabinets
-            requests={requests}
-            statusClass={statusClass}
-            getRequestStatus={getRequestStatus}
-            requestName={requestName}
-            requestOffice={requestOffice}
-            formatDate={formatDate}
-            onUpdateFileLocation={onUpdateFileLocation}
-            onSelect={onSelect}
-            readOnly={readOnly}
-          />
-        ) : (
-          <TransactionKanban
-            activeTab={activeTab}
-            requests={requests}
-            statuses={statuses}
-            statusClass={statusClass}
-            getRequestStatus={getRequestStatus}
-            requestName={requestName}
-            requestOffice={requestOffice}
-            formatDate={formatDate}
-            onSelect={onSelect}
-          />
-        )
+      {view === "cabinets" ? (
+        <TransactionCabinets
+          requests={requests}
+          statusClass={statusClass}
+          getRequestStatus={getRequestStatus}
+          requestName={requestName}
+          requestOffice={requestOffice}
+          formatDate={formatDate}
+          onUpdateFileLocation={onUpdateFileLocation}
+          onSelect={onSelect}
+          readOnly={readOnly}
+        />
+      ) : view === "board" ? (
+        <TransactionKanban
+          activeTab={activeTab}
+          requests={requests}
+          statuses={statuses}
+          statusClass={statusClass}
+          getRequestStatus={getRequestStatus}
+          requestName={requestName}
+          requestOffice={requestOffice}
+          formatDate={formatDate}
+          onSelect={onSelect}
+        />
+      ) : requests.length ? (
+        <TransactionTable
+          activeTab={activeTab}
+          requests={requests}
+          statuses={statuses}
+          signatureOptions={signatureOptions}
+          forwardedDestinations={forwardedDestinations}
+          statusClass={statusClass}
+          getRequestStatus={getRequestStatus}
+          requestName={requestName}
+          requestOffice={requestOffice}
+          requestCategory={requestCategory}
+          formatDate={formatDate}
+          onUpdateStatus={onUpdateStatus}
+          onUpdateIncoming={onUpdateIncoming}
+          onUpdateFileLocation={onUpdateFileLocation}
+          onSelect={onSelect}
+          onExport={onExport}
+          onDelete={onDelete}
+          readOnly={readOnly}
+        />
       ) : (
         <p className="request-empty-state">
           {totalRequests

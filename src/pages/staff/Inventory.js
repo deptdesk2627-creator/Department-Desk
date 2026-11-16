@@ -32,11 +32,12 @@ function StaffInventory({
   search = "",
   profile,
   role,
+  isDemo = false,
 }) {
   const [supplySearch, setSupplySearch] = useState("");
-  const [inventoryLoading, setInventoryLoading] = useState(true);
+  const [inventoryLoading, setInventoryLoading] = useState(!isDemo);
   const [inventoryError, setInventoryError] = useState("");
-  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionsLoading, setTransactionsLoading] = useState(!isDemo);
   const [transactionsError, setTransactionsError] = useState("");
   const [transactionUser, setTransactionUser] = useState(null);
   const person = String(
@@ -48,6 +49,18 @@ function StaffInventory({
   ).trim();
 
   useEffect(() => {
+    if (isDemo) {
+      setInventoryLoading(false);
+      setTransactionsLoading(false);
+      setInventoryError("");
+      setTransactionsError("");
+      setTransactionUser({
+        user_id: 1,
+        username: profile?.name || role?.name || "Prof. Juan Dela Cruz",
+      });
+      return undefined;
+    }
+
     let isMounted = true;
 
     async function loadInventoryAndTransactions() {
@@ -173,7 +186,7 @@ function StaffInventory({
     return () => {
       isMounted = false;
     };
-  }, [setInventory, setRecords]);
+  }, [isDemo, profile?.name, role?.name, setInventory, setRecords]);
 
   const inventoryItems = useMemo(
     () => (Array.isArray(inventory) ? inventory.filter(Boolean) : []),
@@ -188,10 +201,13 @@ function StaffInventory({
       transactionUser
         ? recordItems.filter(
             (record) =>
-              Number(record.personUserId) === Number(transactionUser.user_id),
+              Number(record.personUserId) === Number(transactionUser.user_id) ||
+              (isDemo &&
+                String(record.person || "").toLowerCase() ===
+                  String(person || "").toLowerCase()),
           )
         : [],
-    [recordItems, transactionUser],
+    [isDemo, person, recordItems, transactionUser],
   );
   const visibleItems = useMemo(
     () =>
@@ -242,28 +258,30 @@ function StaffInventory({
     balanceRecords: myRecords,
     setInventory,
     setRecords,
-    persistAction: async ({
-      actionType,
-      amount,
-      item,
-      matchedBorrowRecord,
-      record,
-    }) => {
-      if (!transactionUser?.user_id) {
-        throw new Error(
-          "Your account is not linked in public.users. Contact the administrator.",
-        );
-      }
-      return persistInventoryTransaction({
-        supabaseClient: supabase,
-        item,
-        recipientId: transactionUser.user_id,
-        actionType,
-        amount,
-        matchedBorrowRecord,
-        record,
-      });
-    },
+    persistAction: isDemo
+      ? undefined
+      : async ({
+          actionType,
+          amount,
+          item,
+          matchedBorrowRecord,
+          record,
+        }) => {
+          if (!transactionUser?.user_id) {
+            throw new Error(
+              "Your account is not linked in public.users. Contact the administrator.",
+            );
+          }
+          return persistInventoryTransaction({
+            supabaseClient: supabase,
+            item,
+            recipientId: transactionUser.user_id,
+            actionType,
+            amount,
+            matchedBorrowRecord,
+            record,
+          });
+        },
     person,
     requirePerson: true,
     requireRemarks: true,

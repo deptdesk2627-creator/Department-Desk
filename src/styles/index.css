@@ -314,21 +314,49 @@
 }
 
 :root[data-density="compact"] .request-tracker-table th,
+:root[data-density="compact"] .request-tracker-table--incoming th,
 :root[data-density="compact"] .request-table th,
 :root[data-density="compact"] .deptdesk-table th,
 :root[data-density="compact"] .inventory-master-table th,
-:root[data-density="compact"] .inventory-transactions-table th {
-  padding-top: 9px;
-  padding-bottom: 9px;
+:root[data-density="compact"] .inventory-transactions-table th,
+:root[data-density="compact"] .system-density-preview__table th {
+  font-size: 11px !important;
+  padding-top: 7px !important;
+  padding-bottom: 7px !important;
 }
 
 :root[data-density="compact"] .request-tracker-table td,
+:root[data-density="compact"] .request-tracker-table--incoming td,
 :root[data-density="compact"] .request-table td,
 :root[data-density="compact"] .deptdesk-table td,
 :root[data-density="compact"] .inventory-master-table td,
-:root[data-density="compact"] .inventory-transactions-table td {
-  padding-top: 8px;
-  padding-bottom: 8px;
+:root[data-density="compact"] .inventory-transactions-table td,
+:root[data-density="compact"] .system-density-preview__table td {
+  font-size: 12.5px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+:root[data-density="compact"] .inventory-product-id-pill,
+:root[data-density="compact"] .request-id-badge,
+:root[data-density="compact"] .request-category,
+:root[data-density="compact"] .status-pill,
+:root[data-density="compact"] .request-status-select,
+:root[data-density="compact"] .request-status-badge,
+:root[data-density="compact"] .deptdesk-badge,
+:root[data-density="compact"] .stock-adjust-button {
+  font-size: 11.5px !important;
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+}
+
+:root[data-density="compact"] .stock-quantity-cell {
+  gap: 3px !important;
+}
+
+:root[data-density="compact"] .request-icon-button {
+  height: 26px !important;
+  width: 26px !important;
 }
 
 * {

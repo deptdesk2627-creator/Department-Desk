@@ -33,6 +33,9 @@ function SettingsPage({
   theme,
   onThemeChange,
   data,
+  onNavigate,
+  isSidebarOpen,
+  onSidebarOpenChange,
 }) {
   const canManageData = Boolean(
     role?.can?.editDocuments && role?.can?.manageInventory,
@@ -40,9 +43,18 @@ function SettingsPage({
   const showAdminPrefs = role?.id !== "staff";
   const [notice, setNotice] = useState(null);
   const safeSettings = { ...DEFAULT_SETTINGS, ...settings };
+  const activeSidebarChoice =
+    typeof isSidebarOpen === "boolean"
+      ? isSidebarOpen
+        ? "expanded"
+        : "collapsed"
+      : safeSettings.sidebarDefault;
 
-  function updateSettings(patch) {
+  function updateSettings(patch, feedbackText) {
     onSettingsChange?.({ ...safeSettings, ...patch });
+    if (feedbackText) {
+      setNotice({ type: "success", text: feedbackText });
+    }
   }
 
   return (
@@ -65,23 +77,57 @@ function SettingsPage({
       <div className="system-settings-grid">
         <SettingsAppearanceTab
           theme={theme}
-          onThemeChange={onThemeChange}
-          sidebarDefault={safeSettings.sidebarDefault}
-          onSidebarDefaultChange={(sidebarDefault) =>
-            updateSettings({ sidebarDefault })
-          }
+          onThemeChange={(nextTheme) => {
+            onThemeChange?.(nextTheme);
+            setNotice({
+              type: "success",
+              text: `Theme switched to ${nextTheme === "dark" ? "Dark" : "Light"} mode.`,
+            });
+          }}
+          sidebarDefault={activeSidebarChoice}
+          onSidebarDefaultChange={(sidebarDefault) => {
+            const shouldOpen = sidebarDefault !== "collapsed";
+            onSidebarOpenChange?.(shouldOpen);
+            updateSettings(
+              { sidebarDefault },
+              shouldOpen
+                ? "Sidebar expanded — showing icons and labels."
+                : "Sidebar collapsed — showing icons only.",
+            );
+          }}
           tableDensity={safeSettings.tableDensity}
           onTableDensityChange={(tableDensity) =>
-            updateSettings({ tableDensity })
+            updateSettings(
+              { tableDensity },
+              tableDensity === "compact"
+                ? "Table row density set to Compact — fitting more rows on screen."
+                : "Table row density set to Comfortable — standard row padding.",
+            )
           }
           defaultRequestView={safeSettings.defaultRequestView}
-          onDefaultRequestViewChange={(defaultRequestView) =>
-            updateSettings({ defaultRequestView })
-          }
+          onDefaultRequestViewChange={(defaultRequestView) => {
+            const viewNames = {
+              table: "Table View",
+              board: "Kanban View",
+              cabinets: "Cabinet Locator",
+            };
+            updateSettings(
+              { defaultRequestView },
+              `Default Request Tracker view set to ${viewNames[defaultRequestView] || "Table View"}.`,
+            );
+          }}
           defaultTaskView={safeSettings.defaultTaskView}
-          onDefaultTaskViewChange={(defaultTaskView) =>
-            updateSettings({ defaultTaskView })
-          }
+          onDefaultTaskViewChange={(defaultTaskView) => {
+            const viewNames = {
+              table: "Table View",
+              status: "By Status",
+            };
+            updateSettings(
+              { defaultTaskView },
+              `Default Task Management view set to ${viewNames[defaultTaskView] || "Table View"}.`,
+            );
+          }}
+          onNavigate={onNavigate}
           showAdminViews={showAdminPrefs}
         />
 

@@ -51,12 +51,12 @@ function toTaskUpdate(changes) {
   return update;
 }
 
-export function useSupabaseTasks({ tasks = [], setTasks }) {
+export function useSupabaseTasks({ tasks = [], setTasks, isDemo = false }) {
   const initialTasks = useRef(Array.isArray(tasks) ? tasks : []);
   const writeQueue = useRef(Promise.resolve());
   const loadRequest = useRef(null);
-  const [tasksUserId, setTasksUserId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [tasksUserId, setTasksUserId] = useState(isDemo ? "demo" : null);
+  const [isLoading, setIsLoading] = useState(!isDemo);
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -105,6 +105,13 @@ export function useSupabaseTasks({ tasks = [], setTasks }) {
   }, []);
 
   useEffect(() => {
+    if (isDemo) {
+      setTasksUserId("demo");
+      setIsLoading(false);
+      setError("");
+      return undefined;
+    }
+
     let isMounted = true;
     setIsLoading(true);
     setError("");
