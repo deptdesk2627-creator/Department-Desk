@@ -1,5 +1,5 @@
 const THEME_OPTIONS = [
-  { value: "light", label: "Light", hint: "Bright, warm canvas" },
+  { value: "light", label: "Light", hint: "Clean, soft neutral canvas" },
   { value: "dark", label: "Dark", hint: "Easier on the eyes at night" },
 ];
 
@@ -24,7 +24,7 @@ const TASK_VIEW_OPTIONS = [
   { value: "status", label: "By Status", hint: "Grouped columns by progress" },
 ];
 
-function ChoiceGroup({ label, name, value, options, onChange }) {
+function ChoiceGroup({ label, name, value, options, onChange, footer }) {
   return (
     <fieldset className="system-choice-group">
       <legend className="system-section-label">{label}</legend>
@@ -38,19 +38,25 @@ function ChoiceGroup({ label, name, value, options, onChange }) {
             key={option.value}
             className="system-choice"
             data-checked={value === option.value ? "true" : "false"}
+            onClick={(event) => {
+              if (event.target.tagName !== "INPUT") {
+                onChange?.(option.value);
+              }
+            }}
           >
             <input
               type="radio"
               name={name}
               value={option.value}
               checked={value === option.value}
-              onChange={() => onChange(option.value)}
+              onChange={() => onChange?.(option.value)}
             />
             <strong>{option.label}</strong>
             <span>{option.hint}</span>
           </label>
         ))}
       </div>
+      {footer}
     </fieldset>
   );
 }
@@ -66,8 +72,16 @@ function SettingsAppearanceTab({
   onDefaultRequestViewChange,
   defaultTaskView = "table",
   onDefaultTaskViewChange,
+  onNavigate,
   showAdminViews = true,
 }) {
+  const activeRequestOption =
+    REQUEST_VIEW_OPTIONS.find((item) => item.value === defaultRequestView) ||
+    REQUEST_VIEW_OPTIONS[0];
+  const activeTaskOption =
+    TASK_VIEW_OPTIONS.find((item) => item.value === defaultTaskView) ||
+    TASK_VIEW_OPTIONS[0];
+
   return (
     <section className="card panel">
       <div className="panel-heading">
@@ -100,6 +114,44 @@ function SettingsAppearanceTab({
           value={tableDensity}
           onChange={onTableDensityChange}
           options={DENSITY_OPTIONS}
+          footer={
+            <div
+              className="system-density-preview"
+              aria-label="Table row density preview"
+            >
+              <table className="request-table system-density-preview__table">
+                <thead>
+                  <tr>
+                    <th>Sample ID</th>
+                    <th>Document</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <span className="inventory-product-id-pill">REQ-01</span>
+                    </td>
+                    <td>Curriculum Revision Endorsement</td>
+                    <td>
+                      <span className="status-pill status-done">Approved</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <span className="inventory-product-id-pill">REQ-02</span>
+                    </td>
+                    <td>Faculty Load Assignment</td>
+                    <td>
+                      <span className="status-pill status-waiting">
+                        Under Review
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          }
         />
         {showAdminViews && (
           <>
@@ -109,6 +161,23 @@ function SettingsAppearanceTab({
               value={defaultRequestView}
               onChange={onDefaultRequestViewChange}
               options={REQUEST_VIEW_OPTIONS}
+              footer={
+                onNavigate && (
+                  <div className="system-choice-action-bar">
+                    <span>
+                      Active default:{" "}
+                      <strong>{activeRequestOption.label}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      className="secondary-button system-choice-action-btn"
+                      onClick={() => onNavigate("transactions")}
+                    >
+                      Open Request Tracker in {activeRequestOption.label} →
+                    </button>
+                  </div>
+                )
+              }
             />
             <ChoiceGroup
               label="Default Task Management view"
@@ -116,6 +185,22 @@ function SettingsAppearanceTab({
               value={defaultTaskView}
               onChange={onDefaultTaskViewChange}
               options={TASK_VIEW_OPTIONS}
+              footer={
+                onNavigate && (
+                  <div className="system-choice-action-bar">
+                    <span>
+                      Active default: <strong>{activeTaskOption.label}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      className="secondary-button system-choice-action-btn"
+                      onClick={() => onNavigate("tasks")}
+                    >
+                      Open Task Management in {activeTaskOption.label} →
+                    </button>
+                  </div>
+                )
+              }
             />
           </>
         )}

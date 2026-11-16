@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { isRecordCleared } from "../../../constants/system";
 import {
   cabinetGroups,
   forwardedDestinations as defaultForwardedDestinations,
@@ -157,12 +158,12 @@ function makeHistoryRows(request, entries, changedBy) {
   }));
 }
 
-export function useSupabaseTransactions({ setRequests }) {
+export function useSupabaseTransactions({ setRequests, isDemo = false }) {
   const [officeRows, setOfficeRows] = useState([]);
   const [locationRows, setLocationRows] = useState([]);
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isReady, setIsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(!isDemo);
+  const [isReady, setIsReady] = useState(isDemo);
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -171,6 +172,13 @@ export function useSupabaseTransactions({ setRequests }) {
   }, []);
 
   useEffect(() => {
+    if (isDemo) {
+      setIsLoading(false);
+      setIsReady(true);
+      setError("");
+      return undefined;
+    }
+
     let isMounted = true;
 
     async function loadTransactions() {
@@ -250,28 +258,32 @@ export function useSupabaseTransactions({ setRequests }) {
           historyByTransaction.set(key, history);
         }
         const requests = [
-          ...(outgoingResult.data || []).map((row) =>
-            mapTransactionRow(
-              row,
-              "outgoing",
-              officeMap,
-              locationMap,
-              historyByTransaction.get(
-                `${TABLE_BY_DIRECTION.outgoing}:${row.request_id}`,
-              ) || [],
+          ...(outgoingResult.data || [])
+            .filter((row) => !isRecordCleared(row.created_at))
+            .map((row) =>
+              mapTransactionRow(
+                row,
+                "outgoing",
+                officeMap,
+                locationMap,
+                historyByTransaction.get(
+                  `${TABLE_BY_DIRECTION.outgoing}:${row.request_id}`,
+                ) || [],
+              ),
             ),
-          ),
-          ...(incomingResult.data || []).map((row) =>
-            mapTransactionRow(
-              row,
-              "incoming",
-              officeMap,
-              locationMap,
-              historyByTransaction.get(
-                `${TABLE_BY_DIRECTION.incoming}:${row.request_id}`,
-              ) || [],
+          ...(incomingResult.data || [])
+            .filter((row) => !isRecordCleared(row.created_at))
+            .map((row) =>
+              mapTransactionRow(
+                row,
+                "incoming",
+                officeMap,
+                locationMap,
+                historyByTransaction.get(
+                  `${TABLE_BY_DIRECTION.incoming}:${row.request_id}`,
+                ) || [],
+              ),
             ),
-          ),
         ];
 
         if (!isMounted) return;
@@ -293,7 +305,7 @@ export function useSupabaseTransactions({ setRequests }) {
     return () => {
       isMounted = false;
     };
-  }, [reloadToken, setRequests]);
+  }, [isDemo, reloadToken, setRequests]);
 
   const officeNames = useMemo(
     () => officeRows.map((office) => office.name).filter(Boolean),

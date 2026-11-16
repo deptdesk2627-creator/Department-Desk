@@ -1,5 +1,12 @@
 import { useRef, useState } from "react";
-import { DEFAULT_SETTINGS, isPlainObject } from "../../../constants/system";
+import {
+  CLEARED_AT_KEY,
+  CLEARED_ITEMS_KEY,
+  DATA_KEYS,
+  DEFAULT_SETTINGS,
+  isPlainObject,
+} from "../../../constants/system";
+import { supabase } from "../../../supabase/supabaseClient";
 import { csvValue } from "../../transactions/utils/transactionHelpers";
 
 function triggerDownload(filename, content, mimeType) {
@@ -17,7 +24,14 @@ function triggerDownload(filename, content, mimeType) {
 function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
   const [pendingImport, setPendingImport] = useState(null);
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const [localNotice, setLocalNotice] = useState(null);
   const fileInputRef = useRef(null);
+
+  function showNotice(nextNotice) {
+    setLocalNotice(nextNotice);
+    onNotice?.(nextNotice);
+  }
 
   const counts = [
     ["Requests & docs", data?.requests?.length || 0],
@@ -156,6 +170,14 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
 
   function confirmImport() {
     const { backup } = pendingImport;
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(CLEARED_AT_KEY);
+        window.localStorage.removeItem(CLEARED_ITEMS_KEY);
+      }
+    } catch {
+      // Ignore storage errors
+    }
     data.setRequests(backup.requests);
     data.setTasks(backup.tasks);
     data.setInventory(backup.inventory);
@@ -164,16 +186,87 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
       onSettingsChange?.({ ...DEFAULT_SETTINGS, ...backup.settings });
     }
     setPendingImport(null);
-    onNotice?.({ type: "success", text: "Backup restored." });
+    showNotice({ type: "success", text: "Backup restored." });
   }
 
-  function confirmClear() {
+  async function confirmClear() {
+    setIsClearing(true);
+    const today = new Date().toISOString().slice(0, 10);
+    const clearedAt = new Date().toISOString();
+    const existingItemIds = (data?.inventory || [])
+      .map((item) => Number(item?.item_id ?? item?.id))
+      .filter(Number.isFinite);
+
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(CLEARED_AT_KEY, clearedAt);
+        window.localStorage.setItem(
+          CLEARED_ITEMS_KEY,
+          JSON.stringify(existingItemIds),
+        );
+      }
+    } catch {
+      // Ignore storage errors
+    }
+
+    if (typeof supabase?.from === "function") {
+      try {
+        const itemsRes = await supabase
+          .from("items_masterlist")
+          .select("item_id")
+          .is("archived_at", null);
+        if (Array.isArray(itemsRes?.data)) {
+          itemsRes.data.forEach((row) => {
+            const id = Number(row?.item_id);
+            if (Number.isFinite(id) && !existingItemIds.includes(id)) {
+              existingItemIds.push(id);
+            }
+          });
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(
+              CLEARED_ITEMS_KEY,
+              JSON.stringify(existingItemIds),
+            );
+          }
+        }
+      } catch {
+        // Ignore query error
+      }
+
+      await Promise.allSettled([
+        supabase.from("transaction_history").delete().gte("record_id", 0),
+        supabase.from("transactions_ongoing").delete().gte("request_id", 0),
+        supabase.from("transactions_incoming").delete().gte("request_id", 0),
+        supabase.from("tasks").delete().gte("task_id", 0),
+        supabase
+          .from("inventory_transactions")
+          .delete()
+          .gte("transaction_id", 0),
+        supabase
+          .from("items_masterlist")
+          .update({ archived_at: today })
+          .is("archived_at", null),
+      ]);
+    }
+
     data.setRequests([]);
     data.setTasks([]);
     data.setInventory([]);
     data.setInventoryRecords([]);
+
+    try {
+      if (typeof window !== "undefined") {
+        Object.values(DATA_KEYS).forEach((key) => {
+          window.localStorage.setItem(key, "[]");
+        });
+      }
+    } catch {
+      // Ignore storage errors
+    }
+
+    setIsClearing(false);
     setIsConfirmingClear(false);
-    onNotice?.({ type: "success", text: "All office data was cleared." });
+    showNotice({ type: "success", text: "All office data was cleared." });
   }
 
   return (
@@ -244,6 +337,7 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
               className="system-danger-button"
               onClick={() => {
                 setPendingImport(null);
+                setLocalNotice(null);
                 setIsConfirmingClear(true);
               }}
             >
@@ -251,6 +345,44 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
             </button>
           </div>
         </div>
+
+        {localNotice && (
+          <p
+            className={`system-notice system-notice--${localNotice.type}`}
+            style={{ marginTop: "14px" }}
+            role={localNotice.type === "error" ? "alert" : "status"}
+          >
+            {localNotice.text}
+          </p>
+        )}
+
+        {isConfirmingClear && (
+          <div className="system-confirm system-confirm--danger" role="alert">
+            <p>
+              This cannot be undone. Download a backup first if you might need
+              this data again.
+            </p>
+            <div className="system-actions">
+              <span className="system-actions__spacer" />
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={isClearing}
+                onClick={() => setIsConfirmingClear(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="system-danger-button"
+                disabled={isClearing}
+                onClick={confirmClear}
+              >
+                {isClearing ? "Clearing..." : "Yes, clear everything"}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="system-csv-bar">
           <div>
@@ -296,32 +428,6 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
                 onClick={confirmImport}
               >
                 Restore backup
-              </button>
-            </div>
-          </div>
-        )}
-
-        {isConfirmingClear && (
-          <div className="system-confirm system-confirm--danger" role="alert">
-            <p>
-              This cannot be undone. Download a backup first if you might need
-              this data again.
-            </p>
-            <div className="system-actions">
-              <span className="system-actions__spacer" />
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setIsConfirmingClear(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="system-danger-button"
-                onClick={confirmClear}
-              >
-                Yes, clear everything
               </button>
             </div>
           </div>

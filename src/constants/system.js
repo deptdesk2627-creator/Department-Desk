@@ -42,6 +42,39 @@ export const DATA_KEYS = {
   inventoryRecords: "officeflow.inventory-records.v5",
 };
 
+export const CLEARED_AT_KEY = "officeflow.cleared-at";
+export const CLEARED_ITEMS_KEY = "officeflow.cleared-item-ids";
+
+export function isRecordCleared(createdAt) {
+  if (!createdAt || typeof window === "undefined") return false;
+  try {
+    const clearedAt = window.localStorage.getItem(CLEARED_AT_KEY);
+    if (!clearedAt) return false;
+    const clearedTime = new Date(clearedAt).getTime();
+    const recordTime = new Date(createdAt).getTime();
+    if (!Number.isFinite(clearedTime) || !Number.isFinite(recordTime)) {
+      return false;
+    }
+    return recordTime <= clearedTime;
+  } catch {
+    return false;
+  }
+}
+
+export function isItemCleared(itemId) {
+  if (itemId === undefined || itemId === null || typeof window === "undefined") {
+    return false;
+  }
+  try {
+    const raw = window.localStorage.getItem(CLEARED_ITEMS_KEY);
+    if (!raw) return false;
+    const ids = JSON.parse(raw);
+    return Array.isArray(ids) && ids.includes(Number(itemId));
+  } catch {
+    return false;
+  }
+}
+
 export function isPlainObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

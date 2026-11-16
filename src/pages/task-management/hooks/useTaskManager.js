@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { matchesQuery } from "../../../utils/search";
 
 function getTodayStr() {
@@ -27,6 +27,10 @@ export function useTaskManager({
   const [view, setView] = useState(() =>
     defaultView === "status" ? "status" : "table",
   );
+
+  useEffect(() => {
+    setView(defaultView === "status" ? "status" : "table");
+  }, [defaultView]);
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
   const [form, setForm] = useState(createInitialForm);
   const [taskSearch, setTaskSearch] = useState("");

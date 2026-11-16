@@ -69,6 +69,12 @@ export function useTransactionManager({
   const [form, setForm] = useState(() => emptyForm("outgoing"));
 
   useEffect(() => {
+    if (["table", "board", "cabinets"].includes(defaultView)) {
+      setView(defaultView);
+    }
+  }, [defaultView]);
+
+  useEffect(() => {
     if (!officeOptions.length) return;
     setForm((current) =>
       officeOptions.some(

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DEFAULT_SETTINGS,
   getInitials,
@@ -37,6 +37,8 @@ const storedObjectOptions = { validate: isPlainObject };
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isDemoSession, setIsDemoSession] = useState(false);
+  const isDemoRef = useRef(false);
   const [roleId, setRoleId] = useStoredState("officeflow.role", "secretary");
   const [theme, setTheme] = useStoredState("officeflow.theme", "light", {
     raw: true,
@@ -58,6 +60,11 @@ function App() {
   );
   const data = useOfficeData();
   const safeSearch = typeof search === "string" ? search : "";
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth <= 768) return;
+    setIsSidebarOpen(settings?.sidebarDefault !== "collapsed");
+  }, [settings?.sidebarDefault]);
 
   // Saved profile edits for the signed-in role, merged over role defaults.
   const storedProfile = profiles?.[role.id];
@@ -126,12 +133,16 @@ function App() {
         !session ||
         !Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
       ) {
-        setIsAuthenticated(false);
+        if (!isDemoRef.current) {
+          setIsAuthenticated(false);
+        }
         return;
       }
 
+      isDemoRef.current = false;
       setRoleId(sessionRole);
       syncSessionProfile(session.user, sessionRole);
+      setIsDemoSession(false);
       setIsAuthenticated(true);
     });
 
@@ -143,7 +154,9 @@ function App() {
 
         const session = data.session;
         if (!session) {
-          setIsAuthenticated(false);
+          if (!isDemoRef.current) {
+            setIsAuthenticated(false);
+          }
           return;
         }
 
@@ -153,10 +166,12 @@ function App() {
 
         const sessionRole = claimsData?.claims?.app_metadata?.role;
         if (Object.prototype.hasOwnProperty.call(ROLES, sessionRole)) {
+          isDemoRef.current = false;
           setRoleId(sessionRole);
           syncSessionProfile(session.user, sessionRole);
+          setIsDemoSession(false);
           setIsAuthenticated(true);
-        } else {
+        } else if (!isDemoRef.current) {
           setIsAuthenticated(false);
         }
       })
@@ -223,8 +238,12 @@ function App() {
         },
       }));
     }
+    const isDemo =
+      !user?.id && String(user?.email || "").endsWith("@deptdesk.edu");
+    isDemoRef.current = isDemo;
     setSearch("");
     setPage(getHomePage(resolvedRole));
+    setIsDemoSession(isDemo);
     setIsAuthenticated(true);
   }
 
@@ -235,6 +254,8 @@ function App() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setTimeout(() => {
+        isDemoRef.current = false;
+        setIsDemoSession(false);
         setIsAuthenticated(false);
         setIsLoggingOut(false);
       }, 220);
@@ -268,6 +289,9 @@ function App() {
     onSettingsChange: setSettings,
     theme: activeTheme,
     onThemeChange: setTheme,
+    isSidebarOpen,
+    onSidebarOpenChange: setIsSidebarOpen,
+    isDemo: isDemoSession,
   });
 
   return (

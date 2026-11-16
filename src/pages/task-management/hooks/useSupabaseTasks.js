@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isRecordCleared } from "../../../constants/system";
 import { supabase } from "../../../supabase/supabaseClient";
 
 const TASK_COLUMNS =
@@ -51,12 +52,12 @@ function toTaskUpdate(changes) {
   return update;
 }
 
-export function useSupabaseTasks({ tasks = [], setTasks }) {
+export function useSupabaseTasks({ tasks = [], setTasks, isDemo = false }) {
   const initialTasks = useRef(Array.isArray(tasks) ? tasks : []);
   const writeQueue = useRef(Promise.resolve());
   const loadRequest = useRef(null);
-  const [tasksUserId, setTasksUserId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [tasksUserId, setTasksUserId] = useState(isDemo ? "demo" : null);
+  const [isLoading, setIsLoading] = useState(!isDemo);
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -86,7 +87,9 @@ export function useSupabaseTasks({ tasks = [], setTasks }) {
       .order("created_at", { ascending: false });
     if (tasksResult.error) throw tasksResult.error;
 
-    let rows = Array.isArray(tasksResult.data) ? tasksResult.data : [];
+    let rows = (Array.isArray(tasksResult.data) ? tasksResult.data : []).filter(
+      (row) => !isRecordCleared(row.created_at),
+    );
     if (!rows.length && initialTasks.current.length) {
       const legacyRows = initialTasks.current
         .filter((task) => String(task?.title || "").trim())
@@ -105,6 +108,13 @@ export function useSupabaseTasks({ tasks = [], setTasks }) {
   }, []);
 
   useEffect(() => {
+    if (isDemo) {
+      setTasksUserId("demo");
+      setIsLoading(false);
+      setError("");
+      return undefined;
+    }
+
     let isMounted = true;
     setIsLoading(true);
     setError("");
@@ -132,7 +142,7 @@ export function useSupabaseTasks({ tasks = [], setTasks }) {
     return () => {
       isMounted = false;
     };
-  }, [fetchTasks, reloadToken, setTasks]);
+  }, [fetchTasks, isDemo, reloadToken, setTasks]);
 
   const persistTaskAdd = useCallback(
     async (task) => {

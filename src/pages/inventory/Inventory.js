@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./Inventory.css";
 import { PageHeader } from "../../components/ui";
+import { isItemCleared, isRecordCleared } from "../../constants/system";
 import { supabase } from "../../supabase/supabaseClient";
 import InventoryForm from "./components/InventoryForm";
 import InventoryMetrics from "./components/InventoryMetrics";
@@ -44,6 +45,7 @@ function Inventory({
   },
   search = "",
   readOnly = false,
+  isDemo = false,
 }) {
   const {
     form,
@@ -76,18 +78,31 @@ function Inventory({
     records,
     setRecords,
     search,
-    persistAction: persistInventoryAction,
+    persistAction: isDemo ? undefined : persistInventoryAction,
   });
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
-  const [inventoryLoading, setInventoryLoading] = useState(true);
+  const [inventoryLoading, setInventoryLoading] = useState(!isDemo);
   const [inventoryLoadError, setInventoryLoadError] = useState("");
-  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionsLoading, setTransactionsLoading] = useState(!isDemo);
   const [transactionsLoadError, setTransactionsLoadError] = useState("");
   const [transactionUsers, setTransactionUsers] = useState([]);
 
   useEffect(() => {
+    if (isDemo) {
+      setInventoryLoading(false);
+      setTransactionsLoading(false);
+      setInventoryLoadError("");
+      setTransactionsLoadError("");
+      setTransactionUsers([
+        { user_id: 1, username: "Prof. Juan Dela Cruz" },
+        { user_id: 2, username: "Prof. Maria Clara" },
+        { user_id: 3, username: "Dean's Office" },
+      ]);
+      return undefined;
+    }
+
     let isMounted = true;
 
     async function loadInventoryData() {
@@ -139,6 +154,7 @@ function Inventory({
         );
       } else {
         const items = (Array.isArray(itemsResult.data) ? itemsResult.data : [])
+          .filter((item) => !isItemCleared(item.item_id))
           .map(mapMasterlistItem);
         setInventory(items);
         setInventoryLoadError("");
@@ -175,9 +191,12 @@ function Inventory({
         const usersById = new Map(
           users.map((user) => [Number(user.user_id), user]),
         );
+        const activeTransactions = (
+          Array.isArray(transactionsResult.data) ? transactionsResult.data : []
+        ).filter((row) => !isRecordCleared(row.created_at));
         setRecords(
           mapInventoryTransactions(
-            transactionsResult.data,
+            activeTransactions,
             inventoryById,
             usersById,
           ),
@@ -204,7 +223,7 @@ function Inventory({
     return () => {
       isMounted = false;
     };
-  }, [setInventory, setRecords]);
+  }, [isDemo, setInventory, setRecords]);
 
   async function persistInventoryAction({
     actionType,
