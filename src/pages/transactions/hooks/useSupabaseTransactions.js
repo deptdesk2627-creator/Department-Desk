@@ -16,6 +16,11 @@ const TABLE_BY_DIRECTION = {
   outgoing: "transactions_ongoing",
   incoming: "transactions_incoming",
 };
+const DATABASE_CABINETS = {
+  "cabinet-3-staff": "CICT Cabinet 3 (College Staff)",
+  "cabinet-4-sec": "CICT Cabinet 4 (College Sec)",
+  "cabinet-dean": "College Dean Cabinet",
+};
 
 function normalized(value) {
   return String(value || "").trim().toLowerCase();
@@ -52,38 +57,45 @@ function getDrawerParts(location) {
 
   if (group.id === "cabinet-dean") {
     return {
-      cabinet: group.title,
-      drawer: drawerIndex + 1,
-      section: drawer.id.slice("College Dean - ".length),
+      cabinet: DATABASE_CABINETS[group.id],
+      drawer: drawer.id.slice("College Dean - ".length),
+      section: null,
     };
   }
 
-  const number = Number(drawer.id.match(/- D(\d+)$/)?.[1]);
-  if (!Number.isInteger(number)) {
+  const cabinetNumber = group.id === "cabinet-4-sec" ? 4 : 3;
+  const drawerNumber = drawer.id.match(/- D(\d+)$/)?.[1];
+  if (!drawerNumber) {
     throw new Error(`Could not determine the drawer number for ${location}.`);
   }
   return {
-    cabinet: group.title,
-    drawer: number,
-    section: group.owner,
+    cabinet: DATABASE_CABINETS[group.id],
+    drawer: `Cab${cabinetNumber} D${drawerNumber}`,
+    section: null,
   };
 }
 
 function getLocationLabel(row) {
   const cabinet = normalized(row.cabinet);
   const group = cabinetGroups.find(
-    (candidate) => normalized(candidate.title) === cabinet,
+    (candidate) =>
+      normalized(DATABASE_CABINETS[candidate.id]) === cabinet ||
+      normalized(candidate.title) === cabinet,
   );
   if (!group) return UNFILED_LOCATION;
 
-  let drawerIndex = Number(row.drawer) - 1;
   if (group.id === "cabinet-dean") {
-    const section = normalized(row.section);
-    const sectionIndex = group.drawers.findIndex((drawer) =>
-      normalized(drawer.id.slice("College Dean - ".length)) === section,
+    const drawerLabel = normalized(row.drawer || row.section);
+    return (
+      group.drawers.find(
+        (drawer) =>
+          normalized(drawer.id.slice("College Dean - ".length)) === drawerLabel,
+      )?.id || UNFILED_LOCATION
     );
-    if (sectionIndex >= 0) drawerIndex = sectionIndex;
   }
+
+  const drawerNumber = normalized(row.drawer).match(/^cab[34]\s+d([1-4])$/)?.[1];
+  const drawerIndex = Number(drawerNumber) - 1;
   return group.drawers[drawerIndex]?.id || UNFILED_LOCATION;
 }
 
@@ -341,15 +353,11 @@ export function useSupabaseTransactions({ setRequests, isDemo = false }) {
       const matchingRow = locationRows.find((row) => {
         if (
           normalized(row.cabinet) !== normalized(parts.cabinet) ||
-          Number(row.drawer) !== parts.drawer
+          normalized(row.drawer) !== normalized(parts.drawer)
         ) {
           return false;
         }
-        return (
-          !parts.section ||
-          !row.section ||
-          normalized(row.section) === normalized(parts.section)
-        );
+        return true;
       });
       if (matchingRow) return Number(matchingRow.location_id);
 
