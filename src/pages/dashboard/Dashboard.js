@@ -44,6 +44,7 @@ function Dashboard({
       <div className="dashboard-overview">
         <DashboardWelcome
           greeting={greeting}
+          userName={userName}
           dateTime={dateTime}
           formattedDate={formattedDate}
           role={role}

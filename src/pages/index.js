@@ -91,7 +91,7 @@ export function getRolePages({
     dashboard: (
       <Dashboard
         role={role}
-        userName={role?.name}
+        userName={profile?.name || role?.name}
         requests={data.requests}
         tasks={data.tasks}
         inventory={data.inventory}

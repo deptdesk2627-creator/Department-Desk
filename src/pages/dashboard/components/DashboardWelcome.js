@@ -1,10 +1,12 @@
 function DashboardWelcome({
   greeting,
+  userName = "",
   dateTime,
   formattedDate,
   role,
 }) {
   const isDean = role?.id === "dean";
+  const displayName = String(userName || "").trim();
 
   return (
     <section className="dashboard-welcome" aria-label="Dashboard welcome">
@@ -15,7 +17,7 @@ function DashboardWelcome({
           </p>
         )}
         <h1>
-          {greeting}
+          {displayName ? `${greeting}, ${displayName}` : greeting}
           {" "}
           <svg
             className="welcome-sparkle"
