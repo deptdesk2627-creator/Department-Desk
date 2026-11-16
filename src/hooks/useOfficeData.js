@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStoredState } from "./useStoredState";
 
 const EMPTY_ARRAY = [];
@@ -9,7 +9,7 @@ export function useOfficeData() {
     "officeflow.requests.v2",
     EMPTY_ARRAY,
   );
-  const [tasks, setTasks] = useStoredState("officeflow.tasks.v2", EMPTY_ARRAY);
+  const [tasks, setTasks] = useState(EMPTY_ARRAY);
   const [inventory, setInventory] = useStoredState(
     "officeflow.inventory.v5",
     EMPTY_ARRAY,

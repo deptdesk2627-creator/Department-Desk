@@ -55,8 +55,19 @@ export function getRolePages({
     ),
   };
 
+  const taskPage = (
+    <TaskManagement
+      tasks={data.tasks}
+      setTasks={data.setTasks}
+      search={search}
+      defaultView={settings?.defaultTaskView}
+      isDemo={isDemo}
+    />
+  );
+
   if (role?.id === "staff") {
     return {
+      tasks: taskPage,
       "staff-inventory": (
         <StaffInventory
           inventory={data.inventory}
@@ -98,15 +109,7 @@ export function getRolePages({
         isDemo={isDemo}
       />
     ),
-    tasks: (
-      <TaskManagement
-        tasks={data.tasks}
-        setTasks={data.setTasks}
-        search={search}
-        defaultView={settings?.defaultTaskView}
-        isDemo={isDemo}
-      />
-    ),
+    tasks: taskPage,
     inventory: (
       <Inventory
         inventory={data.inventory}
