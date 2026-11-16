@@ -185,4 +185,14 @@ test("applies sidebar, table density, and default view buttons in Settings immed
   expect(
     await screen.findByRole("button", { name: /by status/i }),
   ).toHaveClass("active");
+
+  // Return to Settings and test Clear all office data
+  fireEvent.click(screen.getByRole("button", { name: /^settings$/i }));
+  fireEvent.click(screen.getByRole("button", { name: /^clear data$/i }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /yes, clear everything/i }),
+  );
+  expect(
+    await screen.findAllByText(/all office data was cleared/i),
+  ).not.toHaveLength(0);
 });

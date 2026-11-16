@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "../inventory/Inventory.css";
 import "./InventoryStaff.css";
 import { PageHeader } from "../../components/ui";
+import { isItemCleared, isRecordCleared } from "../../constants/system";
 import {
   getProductId,
   useInventoryActions,
@@ -111,6 +112,7 @@ function StaffInventory({
         setInventory([]);
       } else {
         const items = (Array.isArray(itemsResult.data) ? itemsResult.data : [])
+          .filter((item) => !isItemCleared(item.item_id))
           .map(mapMasterlistItem);
         setInventory(items);
         setInventoryError("");
@@ -159,9 +161,14 @@ function StaffInventory({
           const usersById = new Map([
             [Number(linkedUser.user_id), linkedUser],
           ]);
+          const activeTransactions = (
+            Array.isArray(transactionsResult.data)
+              ? transactionsResult.data
+              : []
+          ).filter((row) => !isRecordCleared(row.created_at));
           setRecords(
             mapInventoryTransactions(
-              transactionsResult.data,
+              activeTransactions,
               inventoryById,
               usersById,
             ),

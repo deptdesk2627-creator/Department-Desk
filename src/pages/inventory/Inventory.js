@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./Inventory.css";
 import { PageHeader } from "../../components/ui";
+import { isItemCleared, isRecordCleared } from "../../constants/system";
 import { supabase } from "../../supabase/supabaseClient";
 import InventoryForm from "./components/InventoryForm";
 import InventoryMetrics from "./components/InventoryMetrics";
@@ -153,6 +154,7 @@ function Inventory({
         );
       } else {
         const items = (Array.isArray(itemsResult.data) ? itemsResult.data : [])
+          .filter((item) => !isItemCleared(item.item_id))
           .map(mapMasterlistItem);
         setInventory(items);
         setInventoryLoadError("");
@@ -189,9 +191,12 @@ function Inventory({
         const usersById = new Map(
           users.map((user) => [Number(user.user_id), user]),
         );
+        const activeTransactions = (
+          Array.isArray(transactionsResult.data) ? transactionsResult.data : []
+        ).filter((row) => !isRecordCleared(row.created_at));
         setRecords(
           mapInventoryTransactions(
-            transactionsResult.data,
+            activeTransactions,
             inventoryById,
             usersById,
           ),

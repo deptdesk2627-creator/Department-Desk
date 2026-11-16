@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isRecordCleared } from "../../../constants/system";
 import { supabase } from "../../../supabase/supabaseClient";
 
 const TASK_COLUMNS =
@@ -86,7 +87,9 @@ export function useSupabaseTasks({ tasks = [], setTasks, isDemo = false }) {
       .order("created_at", { ascending: false });
     if (tasksResult.error) throw tasksResult.error;
 
-    let rows = Array.isArray(tasksResult.data) ? tasksResult.data : [];
+    let rows = (Array.isArray(tasksResult.data) ? tasksResult.data : []).filter(
+      (row) => !isRecordCleared(row.created_at),
+    );
     if (!rows.length && initialTasks.current.length) {
       const legacyRows = initialTasks.current
         .filter((task) => String(task?.title || "").trim())

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { isRecordCleared } from "../../../constants/system";
 import {
   cabinetGroups,
   forwardedDestinations as defaultForwardedDestinations,
@@ -257,28 +258,32 @@ export function useSupabaseTransactions({ setRequests, isDemo = false }) {
           historyByTransaction.set(key, history);
         }
         const requests = [
-          ...(outgoingResult.data || []).map((row) =>
-            mapTransactionRow(
-              row,
-              "outgoing",
-              officeMap,
-              locationMap,
-              historyByTransaction.get(
-                `${TABLE_BY_DIRECTION.outgoing}:${row.request_id}`,
-              ) || [],
+          ...(outgoingResult.data || [])
+            .filter((row) => !isRecordCleared(row.created_at))
+            .map((row) =>
+              mapTransactionRow(
+                row,
+                "outgoing",
+                officeMap,
+                locationMap,
+                historyByTransaction.get(
+                  `${TABLE_BY_DIRECTION.outgoing}:${row.request_id}`,
+                ) || [],
+              ),
             ),
-          ),
-          ...(incomingResult.data || []).map((row) =>
-            mapTransactionRow(
-              row,
-              "incoming",
-              officeMap,
-              locationMap,
-              historyByTransaction.get(
-                `${TABLE_BY_DIRECTION.incoming}:${row.request_id}`,
-              ) || [],
+          ...(incomingResult.data || [])
+            .filter((row) => !isRecordCleared(row.created_at))
+            .map((row) =>
+              mapTransactionRow(
+                row,
+                "incoming",
+                officeMap,
+                locationMap,
+                historyByTransaction.get(
+                  `${TABLE_BY_DIRECTION.incoming}:${row.request_id}`,
+                ) || [],
+              ),
             ),
-          ),
         ];
 
         if (!isMounted) return;
