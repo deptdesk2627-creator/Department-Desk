@@ -1,6 +1,6 @@
 import { MetricCard } from "../../../components/ui";
 
-function DashboardMetrics({ metrics }) {
+function DashboardMetrics({ metrics, showTasks = true }) {
   return (
     <section className="metrics-grid" aria-label="Office summary">
       <MetricCard
@@ -16,13 +16,15 @@ function DashboardMetrics({ metrics }) {
         value={metrics.waitingRequests}
         footer="Awaiting review or action"
       />
-      <MetricCard
-        label="Open tasks"
-        icon="✓"
-        iconVariant="green"
-        value={metrics.openTasks}
-        footer="Assigned to your workspace"
-      />
+      {showTasks && (
+        <MetricCard
+          label="Open tasks"
+          icon="✓"
+          iconVariant="green"
+          value={metrics.openTasks}
+          footer="Assigned to your workspace"
+        />
+      )}
       <MetricCard
         label="Low-stock supplies"
         icon="!"

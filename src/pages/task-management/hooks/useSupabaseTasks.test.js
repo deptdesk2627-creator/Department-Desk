@@ -83,6 +83,7 @@ test("loads tasks and persists create, update, and delete operations", async () 
   ]);
   expect(supabase.from).toHaveBeenCalledWith("users");
   expect(supabase.from).toHaveBeenCalledWith("tasks");
+  expect(taskQueries[0].eq).toHaveBeenCalledWith("tasks_user_id", 7);
 
   let createdTask;
   await act(async () => {

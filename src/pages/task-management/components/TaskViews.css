@@ -66,11 +66,17 @@
 }
 
 .inline-date-edit:hover,
-.inline-date-edit:focus {
-  border-color: var(--purple);
-  background: var(--surface, #ffffff);
-  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 10%);
-  outline: none;
+.inline-date-edit:focus-visible {
+  border-color: #cbd5e1;
+}
+
+.inline-text-edit:focus-visible,
+.inline-date-edit:focus-visible,
+.deptdesk-checkbox:focus-visible,
+.deptdesk-badge:focus-visible,
+.btn-icon-delete:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
 }
 
 .deptdesk-checkbox {
@@ -131,7 +137,26 @@
 }
 
 .btn-icon-delete:hover {
-  background: var(--red-soft, #fef2f2);
-  border-color: #fecaca;
-  color: var(--red, #dc2626);
+  color: #ef4444;
+}
+
+:root[data-theme="dark"] .deptdesk-table tr.row-completed {
+  background: rgba(15, 23, 42, 0.55);
+}
+
+:root[data-theme="dark"] .row-overdue {
+  background: rgba(220, 38, 38, 0.12);
+}
+
+:root[data-theme="dark"] .overdue-tag {
+  background: rgba(248, 113, 113, 0.2);
+  color: #fca5a5;
+}
+
+:root[data-theme="dark"] .inline-text-edit:hover,
+:root[data-theme="dark"] .inline-text-edit:focus,
+:root[data-theme="dark"] .inline-date-edit:hover,
+:root[data-theme="dark"] .inline-date-edit:focus-visible {
+  background: #0f172a;
+  border-color: var(--line);
 }

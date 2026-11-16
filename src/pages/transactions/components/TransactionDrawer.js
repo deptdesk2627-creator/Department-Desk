@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import "./TransactionDrawer.css";
 import { formatDateTime } from "../../../utils/formatters";
 import { UNFILED_LOCATION } from "../constants";
@@ -12,6 +13,35 @@ function TransactionDrawer({
   statusClass,
   onClose,
 }) {
+  const drawerRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
+  useEffect(() => {
+    if (!request) return undefined;
+
+    previousFocusRef.current = document.activeElement;
+    drawerRef.current?.focus();
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        onClose?.();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      const previousFocus = previousFocusRef.current;
+      if (
+        previousFocus &&
+        typeof previousFocus.focus === "function" &&
+        document.contains(previousFocus)
+      ) {
+        previousFocus.focus();
+      }
+    };
+  }, [request, onClose]);
+
   if (!request) return null;
   const isIncoming = request.direction === "incoming";
 
@@ -24,6 +54,7 @@ function TransactionDrawer({
         onClick={onClose}
       />
       <aside
+        ref={drawerRef}
         className="request-drawer"
         role="dialog"
         aria-modal="true"

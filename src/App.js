@@ -39,6 +39,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isDemoSession, setIsDemoSession] = useState(false);
   const isDemoRef = useRef(false);
+  const taskOwnerAuthId = useRef(null);
   const [roleId, setRoleId] = useStoredState("officeflow.role", "secretary");
   const [theme, setTheme] = useStoredState("officeflow.theme", "light", {
     raw: true,
@@ -59,6 +60,7 @@ function App() {
       : true,
   );
   const data = useOfficeData();
+  const setTasks = data.setTasks;
   const safeSearch = typeof search === "string" ? search : "";
 
   useEffect(() => {
@@ -134,11 +136,18 @@ function App() {
         !Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
       ) {
         if (!isDemoRef.current) {
+          taskOwnerAuthId.current = null;
+          setTasks([]);
           setIsAuthenticated(false);
         }
         return;
       }
 
+      const sessionUserId = session.user.id || null;
+      if (taskOwnerAuthId.current !== sessionUserId) {
+        taskOwnerAuthId.current = sessionUserId;
+        setTasks([]);
+      }
       isDemoRef.current = false;
       setRoleId(sessionRole);
       syncSessionProfile(session.user, sessionRole);
@@ -155,6 +164,8 @@ function App() {
         const session = data.session;
         if (!session) {
           if (!isDemoRef.current) {
+            taskOwnerAuthId.current = null;
+            setTasks([]);
             setIsAuthenticated(false);
           }
           return;
@@ -166,6 +177,11 @@ function App() {
 
         const sessionRole = claimsData?.claims?.app_metadata?.role;
         if (Object.prototype.hasOwnProperty.call(ROLES, sessionRole)) {
+          const sessionUserId = session.user.id || null;
+          if (taskOwnerAuthId.current !== sessionUserId) {
+            taskOwnerAuthId.current = sessionUserId;
+            setTasks([]);
+          }
           isDemoRef.current = false;
           setRoleId(sessionRole);
           syncSessionProfile(session.user, sessionRole);
@@ -183,7 +199,7 @@ function App() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setProfiles, setRoleId]);
+  }, [setProfiles, setRoleId, setTasks]);
 
   // Never show a page the current role is not allowed to open.
   const activePage = canAccessPage(role.id, page) ? page : getHomePage(role.id);
@@ -227,6 +243,11 @@ function App() {
       return;
     }
 
+    const authUserId = user?.id || null;
+    if (taskOwnerAuthId.current !== authUserId) {
+      taskOwnerAuthId.current = authUserId;
+      setTasks([]);
+    }
     setRoleId(resolvedRole);
     const patch = extractMetadataProfilePatch(user);
     if (Object.keys(patch).length) {
@@ -255,6 +276,8 @@ function App() {
       if (error) throw error;
       setTimeout(() => {
         isDemoRef.current = false;
+        taskOwnerAuthId.current = null;
+        setTasks([]);
         setIsDemoSession(false);
         setIsAuthenticated(false);
         setIsLoggingOut(false);

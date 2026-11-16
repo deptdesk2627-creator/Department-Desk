@@ -77,13 +77,6 @@ const DEAN_QUICK_ACTIONS = [
     iconClass: "quick-action-inventory",
     svg: ACTION_ICONS.inventory,
   },
-  {
-    label: "Add To-Do List",
-    description: "Manage executive tasks and office deadlines",
-    targetPage: "tasks",
-    iconClass: "quick-action-task",
-    svg: ACTION_ICONS.task,
-  },
 ];
 
 function QuickActionsPanel({ onNavigate, role }) {

@@ -52,8 +52,7 @@ function toTaskUpdate(changes) {
   return update;
 }
 
-export function useSupabaseTasks({ tasks = [], setTasks, isDemo = false }) {
-  const initialTasks = useRef(Array.isArray(tasks) ? tasks : []);
+export function useSupabaseTasks({ setTasks, isDemo = false }) {
   const writeQueue = useRef(Promise.resolve());
   const loadRequest = useRef(null);
   const [tasksUserId, setTasksUserId] = useState(isDemo ? "demo" : null);
@@ -84,26 +83,13 @@ export function useSupabaseTasks({ tasks = [], setTasks, isDemo = false }) {
     const tasksResult = await supabase
       .from("tasks")
       .select(TASK_COLUMNS)
+      .eq("tasks_user_id", userResult.data.user_id)
       .order("created_at", { ascending: false });
     if (tasksResult.error) throw tasksResult.error;
 
-    let rows = (Array.isArray(tasksResult.data) ? tasksResult.data : []).filter(
+    const rows = (Array.isArray(tasksResult.data) ? tasksResult.data : []).filter(
       (row) => !isRecordCleared(row.created_at),
     );
-    if (!rows.length && initialTasks.current.length) {
-      const legacyRows = initialTasks.current
-        .filter((task) => String(task?.title || "").trim())
-        .map((task) => toTaskRow(task, userResult.data.user_id));
-      if (legacyRows.length) {
-        const importResult = await supabase
-          .from("tasks")
-          .insert(legacyRows)
-          .select(TASK_COLUMNS);
-        if (importResult.error) throw importResult.error;
-        rows = Array.isArray(importResult.data) ? importResult.data : [];
-      }
-    }
-
     return { rows, userId: userResult.data.user_id };
   }, []);
 

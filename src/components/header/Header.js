@@ -37,6 +37,7 @@ function Header({
   }, [resolvedTheme]);
 
   const isStaff = role?.id === "staff";
+  const isDean = role?.id === "dean";
   const {
     areNotificationsOpen,
     closeNotifications,
@@ -56,7 +57,7 @@ function Header({
   // Faculty & Staff must not see documents, requests, or tasks in search.
   const searchResults = getSearchResults(
     isStaff ? [] : requests,
-    isStaff ? [] : tasks,
+    isStaff || isDean ? [] : tasks,
     inventory,
     search,
   );
@@ -84,10 +85,11 @@ function Header({
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span
+        <button
+          type="button"
           className="app-header__brand-mobile"
           onClick={() => onNavigate?.(role?.pages?.[0] || "dashboard")}
-          aria-hidden="true"
+          aria-label="Go to home"
         >
           <span className="app-header__brand-mark">
             <img
@@ -96,7 +98,7 @@ function Header({
               className="app-header__brand-img"
             />
           </span>
-        </span>
+        </button>
       </div>
 
       <HeaderSearch
@@ -159,7 +161,7 @@ function Header({
         {!isStaff && (
           <HeaderNotifications
             requests={requests}
-            tasks={tasks}
+            tasks={isDean ? [] : tasks}
             inventory={inventory}
             settings={settings}
             isOpen={areNotificationsOpen}

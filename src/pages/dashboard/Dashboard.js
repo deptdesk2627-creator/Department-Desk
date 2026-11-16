@@ -18,6 +18,7 @@ function Dashboard({
     throw new Error("Dashboard requires an onNavigate callback.");
   },
 }) {
+  const canViewTasks = role?.id !== "dean";
   const {
     query,
     greeting,
@@ -28,7 +29,12 @@ function Dashboard({
     recentIncoming,
     recentInventory,
     recentTasks,
-  } = useDashboardData({ requests, tasks, inventory, search });
+  } = useDashboardData({
+    requests,
+    tasks: canViewTasks ? tasks : [],
+    inventory,
+    search,
+  });
   const hasQuery = Boolean(query);
   const canCreateRequests = role ? Boolean(role.can?.createRequests) : true;
   const canManageInventory = role ? Boolean(role.can?.manageInventory) : true;
@@ -42,7 +48,7 @@ function Dashboard({
           formattedDate={formattedDate}
           role={role}
         />
-        <DashboardMetrics metrics={metrics} />
+        <DashboardMetrics metrics={metrics} showTasks={canViewTasks} />
       </div>
 
       <div className="dashboard-columns">
@@ -87,11 +93,13 @@ function Dashboard({
             readOnly={!canManageInventory}
           />
 
-          <DashboardTasksPanel
-            tasks={recentTasks}
-            hasQuery={hasQuery}
-            onNavigate={onNavigate}
-          />
+          {canViewTasks && (
+            <DashboardTasksPanel
+              tasks={recentTasks}
+              hasQuery={hasQuery}
+              onNavigate={onNavigate}
+            />
+          )}
         </div>
 
         <div className="dashboard-side-column">

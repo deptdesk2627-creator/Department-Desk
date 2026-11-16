@@ -1,5 +1,4 @@
-// Front-end only role rules. When a backend is added later, the server
-// should enforce these same rules — this file only controls what the UI shows.
+// Front-end role rules; Supabase policies must enforce data access independently.
 
 export const ROLES = {
   secretary: {
@@ -40,12 +39,12 @@ export const ROLES = {
     name: "Faculty / Staff",
     initials: "FS",
     description: "Inventory Portal",
-    pages: ["staff-inventory"],
+    pages: ["staff-inventory", "tasks"],
     can: {
       editDocuments: false,
       createRequests: false,
-      createTasks: false,
-      editTasks: false,
+      createTasks: true,
+      editTasks: true,
       manageInventory: false,
       recordInventory: true,
     },
