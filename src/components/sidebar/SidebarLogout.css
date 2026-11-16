@@ -1,15 +1,15 @@
 .workspace-sidebar__footer {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid rgba(194, 65, 12, 0.15);
   margin-top: auto;
   padding-top: 14px;
 }
 
 :root[data-theme="dark"] .workspace-sidebar__footer {
-  border-top-color: #1e293b;
+  border-top-color: rgba(251, 146, 60, 0.16);
 }
 
 .workspace-sidebar__logout-link {
-  color: #64748b;
+  color: #9a3412;
   transition:
     background-color 200ms ease,
     color 200ms ease,
@@ -17,14 +17,14 @@
 }
 
 .workspace-sidebar__logout-link .workspace-sidebar__icon {
-  color: #64748b;
+  color: #c2410c;
   transition: color 200ms ease, transform 200ms ease;
 }
 
 .workspace-sidebar__logout-link:hover,
 .workspace-sidebar__logout-link:focus-visible {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: rgba(255, 255, 255, 0.78);
+  border-color: #fca5a5;
   color: #dc2626;
 }
 
@@ -35,16 +35,16 @@
 }
 
 :root[data-theme="dark"] .workspace-sidebar__logout-link {
-  color: #94a3b8;
+  color: #d6b49c;
 }
 
 :root[data-theme="dark"] .workspace-sidebar__logout-link .workspace-sidebar__icon {
-  color: #94a3b8;
+  color: #d6b49c;
 }
 
 :root[data-theme="dark"] .workspace-sidebar__logout-link:hover,
 :root[data-theme="dark"] .workspace-sidebar__logout-link:focus-visible {
-  background: rgba(239, 68, 68, 0.14);
+  background: rgba(239, 68, 68, 0.16);
   border-color: rgba(248, 113, 113, 0.35);
   color: #f87171;
 }
