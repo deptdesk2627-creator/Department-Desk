@@ -4,7 +4,7 @@ function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  eyebrow = "OFFICEFLOW SAYS",
+  eyebrow = "DEPTDESK",
   title,
   titleId = "confirm-modal-title",
   message,
