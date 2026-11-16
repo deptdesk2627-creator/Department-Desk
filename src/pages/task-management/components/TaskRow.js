@@ -14,6 +14,7 @@ function TaskRow({
 }) {
   const isDone = task.status === "Done" || task.done;
   const isOverdue = Boolean(task.due && task.due < todayStr && !isDone);
+  const taskLabel = task.title?.trim() || "untitled task";
 
   return (
     <tr
@@ -25,6 +26,7 @@ function TaskRow({
             type="checkbox"
             checked={isSelected}
             onChange={() => onSelectOne(task.id)}
+            aria-label={`Select ${taskLabel}`}
           />
         </td>
       )}
@@ -34,6 +36,7 @@ function TaskRow({
           className="deptdesk-checkbox"
           checked={isDone}
           onChange={() => onToggleDone(task)}
+          aria-label={`Mark ${taskLabel} as ${isDone ? "not done" : "done"}`}
         />
       </td>
       <td>
@@ -41,6 +44,8 @@ function TaskRow({
           type="text"
           className="inline-text-edit"
           value={task.title || ""}
+          placeholder="Task title"
+          aria-label={`Task title for ${taskLabel}`}
           onChange={(event) =>
             onUpdateTask(task.id, { title: event.target.value })
           }
@@ -50,6 +55,7 @@ function TaskRow({
         <select
           className={`deptdesk-badge priority-${(task.priority || "medium").toLowerCase()}`}
           value={task.priority || "Medium"}
+          aria-label={`Priority for ${taskLabel}`}
           onChange={(event) =>
             onUpdateTask(task.id, { priority: event.target.value })
           }
@@ -66,6 +72,7 @@ function TaskRow({
           <select
             className={`deptdesk-badge status-${(task.status || "not started").toLowerCase().replace(/\s+/g, "-")}`}
             value={task.status || "Not started"}
+            aria-label={`Status for ${taskLabel}`}
             onChange={(event) =>
               onUpdateTask(task.id, {
                 status: event.target.value,
@@ -87,6 +94,7 @@ function TaskRow({
             type="date"
             className="inline-date-edit"
             value={task.due || ""}
+            aria-label={`Due date for ${taskLabel}`}
             onChange={(event) =>
               onUpdateTask(task.id, { due: event.target.value })
             }

@@ -81,6 +81,11 @@
   box-shadow: inset 15px -4px 0px 15px #ffcf48;
 }
 
+.switch input:focus-visible + .slider {
+  outline: 2px solid var(--purple);
+  outline-offset: 3px;
+}
+
 .star {
   background-color: #fff;
   border-radius: 50%;
@@ -217,10 +222,16 @@
     align-items: center;
     background: transparent;
     border: 0;
+    border-radius: 9px;
     cursor: pointer;
     display: flex;
     gap: 8px;
     padding: 0;
+  }
+
+  .app-header__brand-mobile:focus-visible {
+    outline: 2px solid var(--purple);
+    outline-offset: 2px;
   }
 
   .app-header__brand-mark {

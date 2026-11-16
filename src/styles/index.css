@@ -335,6 +335,16 @@
   box-sizing: border-box;
 }
 
+::selection {
+  background: rgba(var(--purple-rgb), 0.18);
+  color: var(--ink);
+}
+
+input,
+textarea {
+  caret-color: var(--purple);
+}
+
 html {
   min-width: 320px;
   font-size: 16px;

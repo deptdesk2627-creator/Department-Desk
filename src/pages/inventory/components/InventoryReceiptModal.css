@@ -137,9 +137,8 @@
 }
 
 .inventory-receipt__item-highlight {
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--purple);
+  background: var(--purple-soft);
+  border: 1px solid rgba(var(--purple-rgb), 0.22);
   border-radius: 10px;
   grid-column: 1 / -1;
   padding: 12px 15px;
@@ -151,9 +150,8 @@
 }
 
 :root[data-theme="dark"] .inventory-receipt__item-highlight {
-  background: #1e293b;
-  border-color: var(--line);
-  border-left-color: var(--purple);
+  background: var(--purple-soft);
+  border-color: rgba(var(--purple-rgb), 0.32);
 }
 
 .inventory-receipt__item-main strong {

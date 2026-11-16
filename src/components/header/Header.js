@@ -84,10 +84,11 @@ function Header({
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span
+        <button
+          type="button"
           className="app-header__brand-mobile"
           onClick={() => onNavigate?.(role?.pages?.[0] || "dashboard")}
-          aria-hidden="true"
+          aria-label="Go to home"
         >
           <span className="app-header__brand-mark">
             <img
@@ -96,7 +97,7 @@ function Header({
               className="app-header__brand-img"
             />
           </span>
-        </span>
+        </button>
       </div>
 
       <HeaderSearch
