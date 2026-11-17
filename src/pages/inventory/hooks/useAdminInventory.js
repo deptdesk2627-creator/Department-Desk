@@ -85,9 +85,17 @@ export function useAdminInventory({
     [inventoryItems, search, productSearch, stockFilter],
   );
 
+  const transactionRecords = useMemo(
+    () =>
+      recordItems.filter(
+        (record) => record.status !== PENDING_RETURN_STATUS,
+      ),
+    [recordItems],
+  );
+
   const visibleRecords = useMemo(
     () =>
-      recordItems.filter((record) => {
+      transactionRecords.filter((record) => {
         const matchesFilter =
           recordFilter === "All" || record.status === recordFilter;
         const recordFields = [
@@ -105,7 +113,7 @@ export function useAdminInventory({
         const matchesLocalSearch = matchesQuery(recordSearch, ...recordFields);
         return matchesFilter && matchesGlobalSearch && matchesLocalSearch;
       }),
-    [recordItems, search, recordSearch, recordFilter],
+    [transactionRecords, search, recordSearch, recordFilter],
   );
 
   const usageBreakdown = useMemo(() => {
@@ -176,6 +184,29 @@ export function useAdminInventory({
         (record) => record.status === PENDING_RETURN_STATUS,
       ),
     [recordItems],
+  );
+
+  const visiblePendingReturns = useMemo(
+    () =>
+      pendingReturns.filter((record) => {
+        const recordFields = [
+          record.id,
+          record.person,
+          record.returnedBy,
+          record.productId,
+          record.productName,
+          record.status,
+          record.unit,
+          record.quantity,
+          record.remarks,
+          record.dateTime,
+        ];
+        return (
+          matchesQuery(search, ...recordFields) &&
+          matchesQuery(recordSearch, ...recordFields)
+        );
+      }),
+    [pendingReturns, search, recordSearch],
   );
 
   const stockActions = useInventoryActions({
@@ -442,9 +473,11 @@ export function useAdminInventory({
     setRecordFilter,
     inventoryItems,
     recordItems,
+    transactionRecords,
     visibleItems,
     visibleRecords,
     pendingReturns,
+    visiblePendingReturns,
     usageBreakdown,
     lowStockCount,
     stockActions,
