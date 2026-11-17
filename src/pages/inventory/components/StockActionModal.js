@@ -33,6 +33,7 @@ function StockActionModal({
   setRemarks,
   error,
   getBorrowedBalance,
+  lockPersonToOptions = false,
   isSubmitting = false,
   onSubmit,
   onClose,
@@ -108,6 +109,7 @@ function StockActionModal({
             placeholder="Enter name (e.g. Prof. Juan Dela Cruz)"
             list={personOptions.length ? "inventory-transaction-users" : undefined}
             value={personName}
+            readOnly={lockPersonToOptions}
             onChange={(event) => setPersonName?.(event.target.value)}
           />
           {personOptions.length > 0 && (

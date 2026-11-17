@@ -109,7 +109,7 @@ beforeEach(() => {
   mockMasterlistResponse();
 });
 
-test("requires a real Supabase session before loading the secretary masterlist", async () => {
+test("requires a real Supabase session before loading the inventory masterlist", async () => {
   supabase.auth.getUser.mockResolvedValue({
     data: { user: null },
     error: null,
@@ -160,6 +160,74 @@ test("disables inventory actions while Supabase data is loading", () => {
     screen.getByRole("button", { name: /open item details for folders/i }),
   ).toBeDisabled();
   expect(screen.getByRole("button", { name: /add product/i })).toBeDisabled();
+});
+
+test("Dean can act on inventory from their own account without management controls", async () => {
+  const item = {
+    item_id: 17,
+    item_name: "Projector",
+    stock_onhand: 5,
+    unit: "pieces",
+    min_stock: 1,
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const user = { user_id: 42, username: "Ma'am Beth" };
+  const borrowTransaction = {
+    transaction_id: 88,
+    item_id: 17,
+    is_issued_to: user.user_id,
+    purpose: "Class presentation",
+    quantity: 2,
+    action_type: "Borrow",
+    return_date: null,
+    borrow_date: "2026-11-14",
+    status: "Borrowed",
+    unit: "pieces",
+    created_at: "2026-11-14T08:30:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+  const userQuery = createTableQuery({ rows: [user] });
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") {
+      return createTableQuery({ rows: [item] });
+    }
+    if (table === "users") return userQuery;
+    if (table === "inventory_transactions") {
+      return createTableQuery({ rows: [borrowTransaction] });
+    }
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        readOnly
+        canRecordInventory
+        recordInventoryForCurrentUserOnly
+        userName={user.username}
+      />,
+    );
+  });
+
+  expect(await screen.findByRole("button", { name: /^borrow$/i })).toBeEnabled();
+  expect(screen.getByRole("button", { name: /^use$/i })).toBeEnabled();
+  expect(screen.getByRole("button", { name: /^return$/i })).toBeEnabled();
+  expect(screen.queryByRole("button", { name: /add product/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /delete projector/i })).not.toBeInTheDocument();
+  expect(userQuery.eq).toHaveBeenCalledWith("auth_user_id", "auth-user-1");
+
+  fireEvent.click(screen.getByRole("button", { name: /^return$/i }));
+  const actionDialog = within(screen.getByRole("dialog"));
+  expect(
+    actionDialog.getByLabelText(/borrowed by \(borrower account\)/i),
+  ).toHaveValue(user.username);
+  expect(
+    actionDialog.getByLabelText(/borrowed by \(borrower account\)/i),
+  ).toHaveAttribute("readonly");
 });
 
 test("renders bento metrics and switches between Master list and Transaction folder tabs", async () => {

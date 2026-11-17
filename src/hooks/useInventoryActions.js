@@ -246,7 +246,7 @@ export function useInventoryActions({
 
     const matchedBorrowRecord =
       action.type === "Return"
-        ? recordItems.find(
+        ? scopedRecords.find(
             (existing) =>
               existing.productId === id &&
               existing.status === "Borrowed" &&
@@ -256,7 +256,7 @@ export function useInventoryActions({
                 String(existing.person).toLowerCase() ===
                   trimmedPerson.toLowerCase()),
           ) ||
-          recordItems.find(
+          scopedRecords.find(
             (existing) =>
               existing.productId === id &&
               existing.status === "Borrowed" &&
@@ -267,14 +267,14 @@ export function useInventoryActions({
                 String(existing.person).toLowerCase() ===
                   trimmedPerson.toLowerCase()),
           ) ||
-          recordItems.find(
+          scopedRecords.find(
             (existing) =>
               existing.productId === id &&
               existing.status === "Borrowed" &&
               Number(existing.returnedQuantity || 0) <
                 Number(existing.quantity || 0),
           ) ||
-          recordItems.find(
+          scopedRecords.find(
             (existing) =>
               existing.productId === id && existing.status === "Borrowed",
           )

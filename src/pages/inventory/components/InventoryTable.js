@@ -18,6 +18,7 @@ function InventoryTable({
   onDelete,
   onViewDetails,
   readOnly = false,
+  canRecord = !readOnly,
 }) {
   return (
     <section
@@ -25,7 +26,7 @@ function InventoryTable({
       aria-label="Master list"
     >
       <p className="inventory-panel-subtitle">
-        {readOnly
+        {readOnly && !canRecord
           ? "Current stock levels and status."
           : "Usable items are consumed when used; borrowable items can be borrowed and returned."}
       </p>
@@ -129,7 +130,7 @@ function InventoryTable({
                       </span>
                     </td>
                     <td className="inventory-actions-col">
-                      {readOnly ? (
+                      {readOnly && !canRecord ? (
                         <span className="status-pill status-started">
                           View only
                         </span>
@@ -144,7 +145,7 @@ function InventoryTable({
                           >
                             Details
                           </button>
-                          {allowBorrow && (
+                          {canRecord && allowBorrow && (
                             <button
                               type="button"
                               className="stock-adjust-button borrow-button"
@@ -158,7 +159,7 @@ function InventoryTable({
                               Borrow
                             </button>
                           )}
-                          {allowUse && (
+                          {canRecord && allowUse && (
                             <button
                               type="button"
                               className="stock-adjust-button use-button"
@@ -172,7 +173,7 @@ function InventoryTable({
                               Use
                             </button>
                           )}
-                          {allowBorrow && (
+                          {canRecord && allowBorrow && (
                             <button
                               type="button"
                               className="stock-adjust-button return-button"
@@ -186,15 +187,17 @@ function InventoryTable({
                               Return
                             </button>
                           )}
-                          <button
-                            className="delete-button"
-                            type="button"
-                            onClick={() => onDelete(item.id)}
-                            disabled={actionsDisabled}
-                            aria-label={`Delete ${item.name}`}
-                          >
-                            ×
-                          </button>
+                          {!readOnly && (
+                            <button
+                              className="delete-button"
+                              type="button"
+                              onClick={() => onDelete(item.id)}
+                              disabled={actionsDisabled}
+                              aria-label={`Delete ${item.name}`}
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>

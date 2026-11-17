@@ -33,6 +33,9 @@ export function useAdminInventory({
   search = "",
   persistAction,
   userName = "Secretary",
+  recordInventoryForCurrentUserOnly = false,
+  recordingUserId = null,
+  recordingPerson = "",
 }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [formError, setFormError] = useState("");
@@ -52,6 +55,17 @@ export function useAdminInventory({
   const recordItems = useMemo(
     () => (Array.isArray(records) ? records.filter(Boolean) : []),
     [records],
+  );
+  const balanceRecords = useMemo(
+    () =>
+      recordInventoryForCurrentUserOnly
+        ? recordItems.filter(
+            (record) =>
+              recordingUserId &&
+              Number(record.personUserId) === Number(recordingUserId),
+          )
+        : recordItems,
+    [recordInventoryForCurrentUserOnly, recordItems, recordingUserId],
   );
 
   const visibleItems = useMemo(
@@ -181,9 +195,11 @@ export function useAdminInventory({
   const stockActions = useInventoryActions({
     inventory: inventoryItems,
     records: recordItems,
+    balanceRecords,
     setInventory,
     setRecords,
     persistAction,
+    person: recordingPerson,
     requireRemarks: true,
   });
 

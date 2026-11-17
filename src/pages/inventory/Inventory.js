@@ -46,8 +46,23 @@ function Inventory({
   },
   search = "",
   readOnly = false,
+  canRecordInventory = !readOnly,
+  recordInventoryForCurrentUserOnly = false,
   userName = "Secretary",
 }) {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
+  const [inventoryLoading, setInventoryLoading] = useState(true);
+  const [inventoryLoadError, setInventoryLoadError] = useState("");
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionsLoadError, setTransactionsLoadError] = useState("");
+  const [transactionUsers, setTransactionUsers] = useState([]);
+  const recordingUserId = recordInventoryForCurrentUserOnly
+    ? transactionUsers[0]?.user_id
+    : null;
+  const recordingPerson = recordInventoryForCurrentUserOnly
+    ? transactionUsers[0]?.username || ""
+    : "";
   const {
     form,
     setForm,
@@ -86,15 +101,10 @@ function Inventory({
     search,
     persistAction: persistInventoryAction,
     userName,
+    recordInventoryForCurrentUserOnly,
+    recordingUserId,
+    recordingPerson,
   });
-
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
-  const [inventoryLoading, setInventoryLoading] = useState(true);
-  const [inventoryLoadError, setInventoryLoadError] = useState("");
-  const [transactionsLoading, setTransactionsLoading] = useState(true);
-  const [transactionsLoadError, setTransactionsLoadError] = useState("");
-  const [transactionUsers, setTransactionUsers] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -123,13 +133,20 @@ function Inventory({
         return;
       }
 
+      const usersQuery = supabase
+        .from("users")
+        .select("user_id, username");
+      if (recordInventoryForCurrentUserOnly) {
+        usersQuery.eq("auth_user_id", authResult.data.user.id);
+      }
+
       const [itemsResult, usersResult, transactionsResult] = await Promise.all([
         supabase
           .from("items_masterlist")
           .select(MASTERLIST_COLUMNS)
           .is("archived_at", null)
           .order("item_name"),
-        supabase.from("users").select("user_id, username").order("username"),
+        usersQuery.order("username"),
         supabase
           .from("inventory_transactions")
           .select(INVENTORY_TRANSACTION_COLUMNS)
@@ -139,7 +156,7 @@ function Inventory({
       if (!isMounted) return;
       if (itemsResult.error) {
         console.error(
-          "Could not load the secretary inventory masterlist.",
+          "Could not load the inventory masterlist.",
           itemsResult.error,
         );
         setInventory([]);
@@ -170,7 +187,7 @@ function Inventory({
 
       if (transactionsResult.error) {
         console.error(
-          "Could not load secretary inventory transactions.",
+          "Could not load inventory transactions.",
           transactionsResult.error,
         );
         setTransactionsLoadError(
@@ -203,7 +220,7 @@ function Inventory({
 
     loadInventoryData().catch((error) => {
       if (!isMounted) return;
-      console.error("Could not load secretary inventory data.", error);
+      console.error("Could not load inventory data.", error);
       setInventoryLoadError(
         `Could not load the inventory masterlist: ${error.message}`,
       );
@@ -217,7 +234,7 @@ function Inventory({
     return () => {
       isMounted = false;
     };
-  }, [setInventory, setRecords]);
+  }, [recordInventoryForCurrentUserOnly, setInventory, setRecords]);
 
   async function persistInventoryAction({
     actionType,
@@ -263,9 +280,11 @@ function Inventory({
         eyebrow="OFFICE WORKSPACE · SUPPLY & INVENTORY"
         title="Supply & inventory"
         subtitle={
-          readOnly
-            ? "Review stock levels, borrowing history, and item usage statistics."
-            : "Track products, record borrowing and use, and keep a history of returns."
+          readOnly && canRecordInventory
+            ? "Borrow, use, or return supplies from your account. Inventory items are read-only."
+            : readOnly
+              ? "Review stock levels, borrowing history, and item usage statistics."
+              : "Track products, record borrowing and use, and keep a history of returns."
         }
         actions={
           !readOnly && (
@@ -424,6 +443,7 @@ function Inventory({
             onDelete={deleteItem}
             onViewDetails={setSelectedInventoryItem}
             readOnly={readOnly}
+            canRecord={canRecordInventory}
           />
         ) : (
           <InventoryRecords
@@ -469,6 +489,7 @@ function Inventory({
         error={stockActions.error}
         getBorrowedBalance={stockActions.getBorrowedBalance}
         personOptions={transactionUsers}
+        lockPersonToOptions={recordInventoryForCurrentUserOnly}
         isSubmitting={stockActions.isSubmitting}
         onSubmit={stockActions.submitAction}
         onClose={stockActions.closeAction}
