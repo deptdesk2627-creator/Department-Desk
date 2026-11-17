@@ -1,3 +1,5 @@
+import { SystemIcon } from "./SystemIcons";
+
 const THEME_OPTIONS = [
   { value: "light", label: "Light", hint: "Clean, soft neutral canvas" },
   { value: "dark", label: "Dark", hint: "Easier on the eyes at night" },
@@ -51,7 +53,14 @@ function ChoiceGroup({ label, name, value, options, onChange, footer }) {
               checked={value === option.value}
               onChange={() => onChange?.(option.value)}
             />
-            <strong>{option.label}</strong>
+            <span className="system-choice__top">
+              <strong>{option.label}</strong>
+              {value === option.value && (
+                <span className="system-choice__check" aria-hidden="true">
+                  <SystemIcon name="check" size={13} />
+                </span>
+              )}
+            </span>
             <span>{option.hint}</span>
           </label>
         ))}
@@ -83,17 +92,27 @@ function SettingsAppearanceTab({
     TASK_VIEW_OPTIONS[0];
 
   return (
-    <section className="card panel">
-      <div className="panel-heading">
-        <div>
-          <h2>Appearance &amp; layout</h2>
-          <p>
-            Choose your color theme, table density, and default workspace views.
-          </p>
+    <section className="card system-card">
+      <div className="system-card-head">
+        <div className="system-card-head__title">
+          <span className="system-card-icon">
+            <SystemIcon name="sliders" />
+          </span>
+          <div>
+            <h2>Appearance &amp; layout</h2>
+            <p>
+              Choose your color theme, table density, and default workspace
+              views.
+            </p>
+          </div>
         </div>
+        <span className="system-status-badge system-status-badge--accent">
+          <SystemIcon name={theme === "dark" ? "moon" : "sun"} size={13} />
+          {theme === "dark" ? "Dark mode" : "Light mode"}
+        </span>
       </div>
 
-      <div className="system-section-body">
+      <div>
         <ChoiceGroup
           label="Theme"
           name="settings-theme"

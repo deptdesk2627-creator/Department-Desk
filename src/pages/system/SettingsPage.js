@@ -4,24 +4,30 @@ import { DEFAULT_SETTINGS } from "../../constants/system";
 import SettingsAppearanceTab from "./components/SettingsAppearanceTab";
 import SettingsDataTab from "./components/SettingsDataTab";
 import SettingsOfficeTab from "./components/SettingsOfficeTab";
+import { SystemIcon } from "./components/SystemIcons";
+import "./SystemShared.css";
 import "./SettingsPage.css";
 
 const NOTIFICATION_OPTIONS = [
   {
     key: "notifyRequests",
     label: "Requests needing action",
+    badge: "Recommended",
+    icon: "bell",
     description:
       "Alert when outgoing or incoming requests require attention or signature.",
   },
   {
     key: "notifyLowStock",
     label: "Low-stock supplies",
+    icon: "database",
     description:
       "Alert when any supply item reaches or drops below its low-stock threshold.",
   },
   {
     key: "notifyOverdueTasks",
     label: "Overdue tasks",
+    icon: "clock",
     description: "Alert when open tasks pass their scheduled due date.",
   },
 ];
@@ -74,7 +80,7 @@ function SettingsPage({
         </p>
       )}
 
-      <div className="system-settings-grid">
+      <div className="system-settings-stack">
         <SettingsAppearanceTab
           theme={theme}
           onThemeChange={(nextTheme) => {
@@ -131,17 +137,20 @@ function SettingsPage({
           showAdminViews={showAdminPrefs}
         />
 
-        <div className="system-settings-column">
-          <SettingsOfficeTab
-            settings={safeSettings}
-            canManageData={canManageData}
-            onSave={updateSettings}
-            onNotice={setNotice}
-          />
+        <SettingsOfficeTab
+          settings={safeSettings}
+          canManageData={canManageData}
+          onSave={updateSettings}
+          onNotice={setNotice}
+        />
 
-          {showAdminPrefs && (
-            <section className="card panel system-notifications-card">
-              <div className="panel-heading">
+        {showAdminPrefs && (
+          <section className="card system-card">
+            <div className="system-card-head">
+              <div className="system-card-head__title">
+                <span className="system-card-icon">
+                  <SystemIcon name="bell" />
+                </span>
                 <div>
                   <h2>Notification preferences</h2>
                   <p>
@@ -149,30 +158,51 @@ function SettingsPage({
                   </p>
                 </div>
               </div>
+              <span className="system-status-badge system-status-badge--neutral">
+                Top-bar alerts
+              </span>
+            </div>
 
-              <div className="system-section-body system-toggle-list">
-                {NOTIFICATION_OPTIONS.map((item) => {
-                  const checked = safeSettings[item.key] !== false;
-                  return (
-                    <label key={item.key} className="system-toggle-row">
-                      <div>
-                        <strong>{item.label}</strong>
-                        <span>{item.description}</span>
-                      </div>
+            <div className="system-switch-list">
+              {NOTIFICATION_OPTIONS.map((item) => {
+                const checked = safeSettings[item.key] !== false;
+                return (
+                  <label key={item.key} className="system-switch-row">
+                    <span className="system-switch-row__left">
+                      <span className="system-switch-row__icon">
+                        <SystemIcon name={item.icon} size={17} />
+                      </span>
+                      <span className="system-switch-row__text">
+                        <span className="system-switch-row__title">
+                          {item.label}
+                          {item.badge && (
+                            <span className="system-inline-pill">
+                              {item.badge}
+                            </span>
+                          )}
+                        </span>
+                        <span className="system-switch-row__desc">
+                          {item.description}
+                        </span>
+                      </span>
+                    </span>
+                    <span className="system-switch">
                       <input
                         type="checkbox"
+                        role="switch"
                         checked={checked}
                         onChange={(event) =>
                           updateSettings({ [item.key]: event.target.checked })
                         }
                       />
-                    </label>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-        </div>
+                      <span className="system-switch__track" aria-hidden="true" />
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {canManageData && (
           <SettingsDataTab

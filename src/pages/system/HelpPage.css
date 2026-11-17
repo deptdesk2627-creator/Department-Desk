@@ -1,4 +1,4 @@
-/* Help & FAQ search toolbar, 2-column topic cards, and office contact banner */
+/* Help & FAQ search toolbar, topic cards, workflow guide, and office contact banner */
 
 .system-help-toolbar {
   align-items: stretch;
@@ -15,24 +15,19 @@
   width: 100%;
 }
 
-.system-search {
-  background: var(--surface-subtle);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  box-sizing: border-box;
-  color: var(--ink);
-  flex: 1 1 260px;
-  font: inherit;
-  font-size: 14px;
-  min-height: 42px;
-  min-width: 0;
-  outline: none;
-  padding: 9px 14px;
+.system-help-search-wrap {
+  flex: 1 1 280px;
 }
 
-.system-search:focus {
-  border-color: var(--purple);
-  box-shadow: 0 0 0 3px rgb(var(--purple-rgb) / 14%);
+.system-search {
+  font-size: 14px;
+}
+
+.system-hint {
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin: 0;
 }
 
 .system-filter-pills {
@@ -50,7 +45,7 @@
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  padding: 8px 14px;
+  padding: 7px 14px;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -77,11 +72,12 @@
   align-items: stretch;
   display: grid;
   gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
 }
 
 .system-count-pill {
   background: var(--purple-soft);
+  border: 1px solid rgb(var(--purple-rgb) / 18%);
   border-radius: var(--radius-pill);
   color: var(--purple);
   font-size: 12px;
@@ -93,7 +89,6 @@
 .system-faq-list {
   display: grid;
   gap: 10px;
-  margin-top: 16px;
 }
 
 .system-faq-item {
@@ -150,11 +145,6 @@
   padding: 0 15px 14px;
 }
 
-.system-expand-btn {
-  flex: 0 0 auto;
-  white-space: nowrap;
-}
-
 .system-faq-answer p {
   padding-bottom: 10px;
 }
@@ -183,7 +173,6 @@
 .system-guide-list {
   display: grid;
   gap: 12px;
-  margin-top: 16px;
 }
 
 .system-guide-block {
@@ -219,7 +208,7 @@
 .system-workflow-steps li,
 .system-cabinet-badges li {
   background: var(--purple-soft);
-  border: 1px solid var(--line);
+  border: 1px solid rgb(var(--purple-rgb) / 18%);
   border-radius: var(--radius-pill);
   color: var(--purple);
   font-size: 11.5px;
@@ -236,7 +225,7 @@
   display: grid;
   gap: 10px;
   list-style: none;
-  margin: 16px 0 0;
+  margin: 0;
   padding: 0;
 }
 
@@ -273,32 +262,27 @@
   padding: 3px 8px;
 }
 
-.system-contact-banner__head {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: space-between;
+.system-office-summary {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
-.system-contact-banner__head h2 {
+.system-office-summary strong {
   color: var(--ink);
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0;
+  font-size: 15px;
 }
 
-.system-contact-banner__head p {
+.system-office-summary span {
   color: var(--muted);
   font-size: 13px;
-  margin: 4px 0 0;
 }
 
 .system-contact-grid {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
-  margin: 16px 0 0;
+  margin: 0;
 }
 
 .system-contact-grid > div {
@@ -353,4 +337,3 @@
     transition: none;
   }
 }
-

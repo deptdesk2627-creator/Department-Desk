@@ -1,42 +1,56 @@
 import { getRequestStatus } from "../../../constants/requestStatus";
-import {
-  AVAILABILITY_OPTIONS,
-  PERMISSION_LABELS,
-  getInitials,
-} from "../../../constants/system";
+import { PERMISSION_LABELS } from "../../../constants/system";
 import { isLowStock } from "../../../utils/inventory";
+import { SystemIcon } from "./SystemIcons";
 
 function buildWorkloadItems(role, draft, data) {
   if (role?.id === "staff") {
-    const availableCount = (Array.isArray(data?.inventory) ? data.inventory : []).filter(
-      (item) => Number(item?.quantity) > 0,
-    ).length;
-    const staffName = String(draft?.name || "").trim().toLowerCase();
+    const availableCount = (
+      Array.isArray(data?.inventory) ? data.inventory : []
+    ).filter((item) => Number(item?.quantity) > 0).length;
+    const staffName = String(draft?.name || "")
+      .trim()
+      .toLowerCase();
     const myLogsCount = (
       Array.isArray(data?.inventoryRecords) ? data.inventoryRecords : []
     ).filter(
       (rec) =>
         rec &&
-        (!staffName || String(rec.person || "").trim().toLowerCase() === staffName),
+        (!staffName ||
+          String(rec.person || "")
+            .trim()
+            .toLowerCase() === staffName),
     ).length;
 
     return [
-      { label: "Available supplies", value: availableCount, page: "staff-inventory" },
-      { label: "My supply logs", value: myLogsCount, page: "staff-inventory" },
+      {
+        label: "Available supplies",
+        value: availableCount,
+        page: "staff-inventory",
+      },
+      {
+        label: "My supply logs",
+        value: myLogsCount,
+        page: "staff-inventory",
+      },
     ];
   }
 
-  const activeRequests = (Array.isArray(data?.requests) ? data.requests : []).filter(
+  const activeRequests = (
+    Array.isArray(data?.requests) ? data.requests : []
+  ).filter(
     (req) =>
       req &&
-      !["Approved", "Archived", "Sent Out"].includes(getRequestStatus(req.status)),
+      !["Approved", "Archived", "Sent Out"].includes(
+        getRequestStatus(req.status),
+      ),
   ).length;
   const openTasks = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
     (task) => task && !task.done && task.status !== "Done",
   ).length;
-  const lowStockCount = (Array.isArray(data?.inventory) ? data.inventory : []).filter(
-    isLowStock,
-  ).length;
+  const lowStockCount = (
+    Array.isArray(data?.inventory) ? data.inventory : []
+  ).filter(isLowStock).length;
 
   return [
     { label: "Active requests", value: activeRequests, page: "transactions" },
@@ -47,72 +61,48 @@ function buildWorkloadItems(role, draft, data) {
 
 function ProfileSummaryCard({ role, draft, data, onNavigate }) {
   const permissions = Object.entries(role?.can || {});
-  const availabilityLabel =
-    AVAILABILITY_OPTIONS.find((opt) => opt.value === draft.status)?.label ||
-    "Available at desk";
-
-  const metaRows = [
-    ["Status", availabilityLabel],
-    ["Email", draft.email],
-    ["Phone / local", draft.phone],
-    ["Office / room", draft.office],
-  ].filter(([, value]) => value);
-
   const workloadItems = buildWorkloadItems(role, draft, data);
 
   return (
-    <div className="system-page__sidebar">
-      <section className="card panel">
-        <div className="system-profile-card">
-          <span className="system-profile-card__avatar" aria-hidden="true">
-            {getInitials(draft.name, role?.initials)}
-            <span className="system-status-dot" data-status={draft.status} />
-          </span>
-          <div className="system-profile-card__info">
-            <strong>{draft.name || "Your name"}</strong>
-            <span>{draft.title || role?.label}</span>
-            <span className="system-role-chip">
-              {role?.label} · {role?.description}
+    <>
+      <section className="card system-card">
+        <div className="system-card-head">
+          <div className="system-card-head__title">
+            <span className="system-card-icon">
+              <SystemIcon name="activity" />
             </span>
-          </div>
-        </div>
-
-        {draft.statusNote && (
-          <p className="system-profile-note">{draft.statusNote}</p>
-        )}
-
-        <dl className="system-meta-list">
-          {metaRows.map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
+            <div>
+              <h2>Workspace snapshot</h2>
+              <p>Live activity summary for your current role.</p>
             </div>
-          ))}
-        </dl>
-      </section>
-
-      <section className="card panel system-workload-card">
-        <div className="panel-heading">
-          <div>
-            <h2>Workspace snapshot</h2>
-            <p>Live summary for your current role.</p>
           </div>
+          <span className="system-status-badge system-status-badge--neutral">
+            {role?.label}
+          </span>
         </div>
-        <div className="system-workload-list">
+
+        <div className="system-workload-grid">
           {workloadItems.map((item) =>
             onNavigate ? (
               <button
                 key={item.label}
                 type="button"
-                className="system-workload-item"
+                className="system-workload-tile"
                 onClick={() => onNavigate(item.page)}
               >
-                <strong>{item.value}</strong>
+                <div className="system-workload-tile__top">
+                  <strong>{item.value}</strong>
+                  <span className="system-workload-tile__arrow" aria-hidden="true">
+                    →
+                  </span>
+                </div>
                 <span>{item.label}</span>
               </button>
             ) : (
-              <div key={item.label} className="system-workload-item">
-                <strong>{item.value}</strong>
+              <div key={item.label} className="system-workload-tile">
+                <div className="system-workload-tile__top">
+                  <strong>{item.value}</strong>
+                </div>
                 <span>{item.label}</span>
               </div>
             ),
@@ -120,18 +110,28 @@ function ProfileSummaryCard({ role, draft, data, onNavigate }) {
         </div>
       </section>
 
-      <section className="card panel system-permissions">
-        <div className="panel-heading">
-          <div>
-            <h2>Role permissions</h2>
-            <p>Capabilities granted to the {role?.label} role.</p>
+      <section className="card system-card system-permissions">
+        <div className="system-card-head">
+          <div className="system-card-head__title">
+            <span className="system-card-icon">
+              <SystemIcon name="shield" />
+            </span>
+            <div>
+              <h2>Role &amp; permissions</h2>
+              <p>Capabilities granted to the {role?.label} role.</p>
+            </div>
           </div>
+          <span className="system-status-badge system-status-badge--accent">
+            {permissions.filter(([, allowed]) => allowed).length} of{" "}
+            {permissions.length} enabled
+          </span>
         </div>
-        <ul>
+
+        <ul className="system-permissions-grid">
           {permissions.map(([key, allowed]) => (
             <li key={key} data-allowed={allowed ? "true" : "false"}>
               <span aria-hidden="true">{allowed ? "✓" : "—"}</span>
-              {PERMISSION_LABELS[key] || key}
+              <span>{PERMISSION_LABELS[key] || key}</span>
               <span className="sr-only">
                 {allowed ? " (allowed)" : " (not allowed)"}
               </span>
@@ -139,7 +139,7 @@ function ProfileSummaryCard({ role, draft, data, onNavigate }) {
           ))}
         </ul>
       </section>
-    </div>
+    </>
   );
 }
 

@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { PageHeader } from "../../components/ui";
 import { DEFAULT_SETTINGS } from "../../constants/system";
+import { SystemIcon } from "./components/SystemIcons";
 import {
   getFaqForRole,
   KEYBOARD_SHORTCUTS,
   WORKFLOW_GUIDES,
 } from "./helpContent";
+import "./SystemShared.css";
 import "./HelpPage.css";
 
 function HelpPage({ role, settings, search = "", onNavigate }) {
@@ -37,6 +39,11 @@ function HelpPage({ role, settings, search = "", onNavigate }) {
       .filter((section) => section.items.length > 0);
   }, [sections, activeCategory, combinedQuery]);
 
+  const totalTopics = useMemo(
+    () => visibleSections.reduce((sum, s) => sum + s.items.length, 0),
+    [visibleSections],
+  );
+
   const office = { ...DEFAULT_SETTINGS, ...settings };
   const contactRows = [
     ["Office", office.department],
@@ -54,26 +61,38 @@ function HelpPage({ role, settings, search = "", onNavigate }) {
         eyebrow="SYSTEM · HELP"
         title="Help & FAQ"
         subtitle="Answers to common questions about documents, tasks, supplies, and office workflows."
+        actions={
+          <div className="system-header-actions">
+            <span className="system-status-badge system-status-badge--neutral">
+              {totalTopics} {totalTopics === 1 ? "topic" : "topics"}
+            </span>
+            <button
+              type="button"
+              className="secondary-button system-header-btn"
+              aria-pressed={expandAll}
+              onClick={() => setExpandAll((open) => !open)}
+            >
+              {expandAll ? "Collapse all" : "Expand all"}
+            </button>
+          </div>
+        }
       />
 
-      <section className="card panel system-help-toolbar">
+      <section className="card system-card system-help-toolbar">
         <div className="system-help-toolbar__top">
-          <input
-            className="system-search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search frequently asked questions…"
-            aria-label="Search frequently asked questions"
-          />
-          <button
-            type="button"
-            className="secondary-button system-expand-btn"
-            aria-pressed={expandAll}
-            onClick={() => setExpandAll((open) => !open)}
-          >
-            {expandAll ? "Collapse all" : "Expand all"}
-          </button>
+          <div className="system-input-wrap system-help-search-wrap">
+            <span className="system-input-wrap__icon">
+              <SystemIcon name="search" size={16} />
+            </span>
+            <input
+              className="system-search"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search frequently asked questions…"
+              aria-label="Search frequently asked questions"
+            />
+          </div>
         </div>
         <div
           className="system-filter-pills"
@@ -95,7 +114,7 @@ function HelpPage({ role, settings, search = "", onNavigate }) {
       </section>
 
       {visibleSections.length === 0 ? (
-        <section className="card panel">
+        <section className="card system-card">
           <p className="system-hint">
             No answers match “{query || search}”. Try another word, or contact
             the office below.
@@ -104,14 +123,26 @@ function HelpPage({ role, settings, search = "", onNavigate }) {
       ) : (
         <div className="system-faq-grid">
           {visibleSections.map((section) => (
-            <section key={section.id} className="card panel system-faq-card">
-              <div className="panel-heading">
-                <h2>{section.title}</h2>
+            <section
+              key={section.id}
+              className="card system-card system-faq-card"
+            >
+              <div className="system-card-head">
+                <div className="system-card-head__title">
+                  <span className="system-card-icon">
+                    <SystemIcon name="helpCircle" />
+                  </span>
+                  <div>
+                    <h2>{section.title}</h2>
+                    <p>Common questions and step-by-step guidance.</p>
+                  </div>
+                </div>
                 <span className="system-count-pill">
                   {section.items.length}{" "}
                   {section.items.length === 1 ? "topic" : "topics"}
                 </span>
               </div>
+
               <div className="system-faq-list">
                 {section.items.map((item) => {
                   const targetPage =
@@ -151,14 +182,19 @@ function HelpPage({ role, settings, search = "", onNavigate }) {
         className={`system-guide-grid${isStaff ? " system-guide-grid--single" : ""}`}
       >
         {!isStaff && (
-          <section className="card panel">
-            <div className="panel-heading">
-              <div>
-                <h2>Document workflow &amp; cabinet guide</h2>
-                <p>
-                  Quick reference for outgoing requests, incoming signatures,
-                  and filing cabinets.
-                </p>
+          <section className="card system-card">
+            <div className="system-card-head">
+              <div className="system-card-head__title">
+                <span className="system-card-icon">
+                  <SystemIcon name="folder" />
+                </span>
+                <div>
+                  <h2>Document workflow &amp; cabinet guide</h2>
+                  <p>
+                    Quick reference for outgoing requests, incoming signatures,
+                    and filing cabinets.
+                  </p>
+                </div>
               </div>
               {onNavigate && (
                 <button
@@ -195,11 +231,16 @@ function HelpPage({ role, settings, search = "", onNavigate }) {
           </section>
         )}
 
-        <section className="card panel system-shortcuts-card">
-          <div className="panel-heading">
-            <div>
-              <h2>Keyboard shortcuts &amp; quick tips</h2>
-              <p>Navigate DeptDesk faster using your keyboard.</p>
+        <section className="card system-card system-shortcuts-card">
+          <div className="system-card-head">
+            <div className="system-card-head__title">
+              <span className="system-card-icon">
+                <SystemIcon name="keyboard" />
+              </span>
+              <div>
+                <h2>Keyboard shortcuts &amp; quick tips</h2>
+                <p>Navigate DeptDesk faster using your keyboard.</p>
+              </div>
             </div>
           </div>
           <ul className="system-shortcuts-list">
@@ -217,14 +258,34 @@ function HelpPage({ role, settings, search = "", onNavigate }) {
         </section>
       </div>
 
-      <section className="card panel system-contact-banner">
-        <div className="system-contact-banner__head">
-          <div>
-            <h2>Contact the office</h2>
-            <p>
-              Still stuck, or found something that isn&apos;t working? Reach the
-              department office directly.
-            </p>
+      <section className="card system-card system-contact-banner">
+        <div className="system-card-head">
+          <div className="system-card-head__title">
+            <span className="system-card-icon">
+              <SystemIcon name="mail" />
+            </span>
+            <div>
+              <h2>Contact the office</h2>
+              <p>
+                Still stuck, or found something that isn&apos;t working? Reach
+                the department office directly.
+              </p>
+            </div>
+          </div>
+          <span className="system-status-badge system-status-badge--dot">
+            Support active
+          </span>
+        </div>
+
+        <div className="system-inset-banner">
+          <div className="system-inset-banner__main">
+            <span className="system-card-icon">
+              <SystemIcon name="building" size={18} />
+            </span>
+            <div className="system-office-summary">
+              <strong>{office.department}</strong>
+              <span>{office.officeHours || "Standard office hours"}</span>
+            </div>
           </div>
           {office.contactEmail && (
             <a

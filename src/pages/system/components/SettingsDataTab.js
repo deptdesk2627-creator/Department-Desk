@@ -8,6 +8,7 @@ import {
 } from "../../../constants/system";
 import { supabase } from "../../../supabase/supabaseClient";
 import { csvValue } from "../../transactions/utils/transactionHelpers";
+import { SystemIcon } from "./SystemIcons";
 
 function triggerDownload(filename, content, mimeType) {
   const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
@@ -270,18 +271,26 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
   }
 
   return (
-    <section className="card panel system-data-card">
-      <div className="panel-heading">
-        <div>
-          <h2>Data &amp; backup</h2>
-          <p>
-            DeptDesk stores all office records in this browser. Download a
-            backup regularly before clearing browser data or switching devices.
-          </p>
+    <>
+      <section className="card system-card">
+        <div className="system-card-head">
+          <div className="system-card-head__title">
+            <span className="system-card-icon">
+              <SystemIcon name="database" />
+            </span>
+            <div>
+              <h2>Data &amp; backup</h2>
+              <p>
+                Download a full JSON backup or export spreadsheet-ready CSV
+                reports for your office records.
+              </p>
+            </div>
+          </div>
+          <span className="system-status-badge system-status-badge--neutral">
+            JSON &amp; CSV
+          </span>
         </div>
-      </div>
 
-      <div className="system-section-body">
         <ul className="system-data-counts">
           {counts.map(([label, count]) => (
             <li key={label}>
@@ -293,9 +302,16 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
 
         <div className="system-data-actions-grid">
           <div className="system-data-row">
-            <div>
-              <strong>Download backup</strong>
-              <span>Save all requests, tasks, and inventory logs as JSON.</span>
+            <div className="system-data-row__head">
+              <span className="system-switch-row__icon">
+                <SystemIcon name="download" size={17} />
+              </span>
+              <div>
+                <strong>Download backup</strong>
+                <span>
+                  Save all requests, tasks, and inventory logs as JSON.
+                </span>
+              </div>
             </div>
             <button
               type="button"
@@ -307,9 +323,14 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
           </div>
 
           <div className="system-data-row">
-            <div>
-              <strong>Restore from backup</strong>
-              <span>Replace current data with a saved backup file.</span>
+            <div className="system-data-row__head">
+              <span className="system-switch-row__icon">
+                <SystemIcon name="upload" size={17} />
+              </span>
+              <div>
+                <strong>Restore from backup</strong>
+                <span>Replace current data with a saved backup file.</span>
+              </div>
             </div>
             <button
               type="button"
@@ -326,69 +347,14 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
               onChange={handleImportFile}
             />
           </div>
-
-          <div className="system-data-row system-data-row--danger">
-            <div>
-              <strong>Clear all office data</strong>
-              <span>Permanently delete every record stored in this browser.</span>
-            </div>
-            <button
-              type="button"
-              className="system-danger-button"
-              onClick={() => {
-                setPendingImport(null);
-                setLocalNotice(null);
-                setIsConfirmingClear(true);
-              }}
-            >
-              Clear data
-            </button>
-          </div>
         </div>
-
-        {localNotice && (
-          <p
-            className={`system-notice system-notice--${localNotice.type}`}
-            style={{ marginTop: "14px" }}
-            role={localNotice.type === "error" ? "alert" : "status"}
-          >
-            {localNotice.text}
-          </p>
-        )}
-
-        {isConfirmingClear && (
-          <div className="system-confirm system-confirm--danger" role="alert">
-            <p>
-              This cannot be undone. Download a backup first if you might need
-              this data again.
-            </p>
-            <div className="system-actions">
-              <span className="system-actions__spacer" />
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={isClearing}
-                onClick={() => setIsConfirmingClear(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="system-danger-button"
-                disabled={isClearing}
-                onClick={confirmClear}
-              >
-                {isClearing ? "Clearing..." : "Yes, clear everything"}
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="system-csv-bar">
           <div>
             <strong>Export CSV reports (Excel / Sheets)</strong>
             <span>
-              Download spreadsheet-ready tables for requests, tasks, or supplies.
+              Download spreadsheet-ready tables for requests, tasks, or
+              supplies.
             </span>
           </div>
           <div className="system-csv-bar__actions">
@@ -404,6 +370,16 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
             ))}
           </div>
         </div>
+
+        {localNotice && (
+          <p
+            className={`system-notice system-notice--${localNotice.type}`}
+            style={{ marginTop: "14px" }}
+            role={localNotice.type === "error" ? "alert" : "status"}
+          >
+            {localNotice.text}
+          </p>
+        )}
 
         {pendingImport && (
           <div className="system-confirm" role="alert">
@@ -432,8 +408,72 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
             </div>
           </div>
         )}
-      </div>
-    </section>
+      </section>
+
+      <section className="card system-danger-card">
+        <div className="system-danger-card__head">
+          <span className="system-danger-card__title">
+            <SystemIcon name="alertTriangle" size={17} />
+            Danger Zone
+          </span>
+          <span className="system-danger-card__tag">Irreversible Actions</span>
+        </div>
+        <div className="system-danger-card__body">
+          <div className="system-danger-row">
+            <div className="system-danger-row__text">
+              <strong>Clear all office data</strong>
+              <span>
+                Permanently delete every request, task, and supply record stored
+                in this workspace. Download a backup first if needed.
+              </span>
+            </div>
+            <button
+              type="button"
+              className="system-danger-button"
+              onClick={() => {
+                setPendingImport(null);
+                setLocalNotice(null);
+                setIsConfirmingClear(true);
+              }}
+            >
+              Clear data
+            </button>
+          </div>
+
+          {isConfirmingClear && (
+            <div
+              className="system-confirm system-confirm--danger"
+              style={{ marginBottom: "8px" }}
+              role="alert"
+            >
+              <p>
+                This cannot be undone. Download a backup first if you might need
+                this data again.
+              </p>
+              <div className="system-actions">
+                <span className="system-actions__spacer" />
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={isClearing}
+                  onClick={() => setIsConfirmingClear(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="system-danger-button"
+                  disabled={isClearing}
+                  onClick={confirmClear}
+                >
+                  {isClearing ? "Clearing..." : "Yes, clear everything"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    </>
   );
 }
 

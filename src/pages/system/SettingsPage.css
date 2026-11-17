@@ -1,25 +1,9 @@
-/* Settings page layout, appearance choices, office details, and data backup */
+/* Settings page stacked layout, appearance choices, office details, and data backup */
 
-.system-settings-grid {
-  align-items: stretch;
-  display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.system-settings-column {
+.system-settings-stack {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  min-width: 0;
-}
-
-.module-form.system-form {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.system-form__full {
-  grid-column: 1 / -1;
 }
 
 .system-actions {
@@ -52,12 +36,20 @@
   color: var(--red);
 }
 
-.system-data-card {
-  grid-column: 1 / -1;
+.system-office-summary {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
-.system-section-body {
-  margin-top: 18px;
+.system-office-summary strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.system-office-summary span {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .system-section-label {
@@ -70,16 +62,9 @@
   text-transform: uppercase;
 }
 
-.system-hint {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
-  margin: 0;
-}
-
 .system-choice-group {
   border: 0;
-  margin: 0 0 20px;
+  margin: 0 0 22px;
   min-width: 0;
   padding: 0;
 }
@@ -99,7 +84,7 @@
 }
 
 .system-choice-group__options--three .system-choice {
-  padding: 11px 12px;
+  padding: 12px 13px;
 }
 
 .system-choice {
@@ -134,12 +119,31 @@
   outline-offset: 1px;
 }
 
+.system-choice__top {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
 .system-choice strong {
   color: var(--ink);
   font-size: 14px;
 }
 
-.system-choice span {
+.system-choice__check {
+  align-items: center;
+  background: var(--purple);
+  border-radius: 50%;
+  color: #fff;
+  display: inline-flex;
+  flex: 0 0 18px;
+  height: 18px;
+  justify-content: center;
+  width: 18px;
+}
+
+.system-choice > span:last-child {
   color: var(--muted);
   font-size: 12.5px;
 }
@@ -219,24 +223,31 @@
 .system-data-actions-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .system-data-row {
-  align-items: flex-start;
+  align-items: center;
   background: var(--surface-subtle);
   border: 1px solid var(--line);
   border-radius: 12px;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 14px;
   justify-content: space-between;
   padding: 16px;
 }
 
-.system-data-row > div {
+.system-data-row__head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.system-data-row__head > div {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -249,10 +260,6 @@
   color: var(--muted);
   font-size: 12.5px;
   line-height: 1.45;
-}
-
-.system-data-row--danger strong {
-  color: var(--red);
 }
 
 .system-danger-button {
@@ -291,50 +298,6 @@
   border-color: var(--red);
 }
 
-.system-notifications-card {
-  flex: 1;
-}
-
-.system-toggle-list {
-  display: grid;
-  gap: 10px;
-}
-
-.system-toggle-row {
-  align-items: center;
-  background: var(--surface-subtle);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
-  padding: 14px 16px;
-}
-
-.system-toggle-row > div {
-  display: grid;
-  gap: 3px;
-}
-
-.system-toggle-row strong {
-  color: var(--ink);
-  font-size: 13.5px;
-}
-
-.system-toggle-row span {
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-.system-toggle-row input[type="checkbox"] {
-  accent-color: var(--purple);
-  cursor: pointer;
-  flex: 0 0 auto;
-  height: 18px;
-  width: 18px;
-}
-
 .system-csv-bar {
   align-items: center;
   background: var(--surface-subtle);
@@ -370,8 +333,7 @@
   gap: 8px;
 }
 
-@media (max-width: 1024px) {
-  .system-settings-grid,
+@media (max-width: 900px) {
   .system-data-actions-grid,
   .system-choice-group__options--three {
     grid-template-columns: 1fr;
@@ -379,7 +341,6 @@
 }
 
 @media (max-width: 600px) {
-  .module-form.system-form,
   .system-choice-group__options {
     grid-template-columns: 1fr;
   }
@@ -394,4 +355,3 @@
     transition: none;
   }
 }
-
