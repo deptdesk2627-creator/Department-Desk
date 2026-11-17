@@ -19,6 +19,8 @@ function InventoryReceiptModal({
   const {
     isBorrowable,
     isReturnedStatus,
+    isPendingReturnStatus,
+    isDeclinedReturnStatus,
     borrowedDateTime,
     completedReturnDateTime,
     totalBorrowedQty,
@@ -35,6 +37,7 @@ function InventoryReceiptModal({
     remarksHeading,
     statusPillLabel,
     statusPillVariant,
+    receivedBy,
   } = details;
 
   return (
@@ -90,9 +93,13 @@ function InventoryReceiptModal({
                 <span className="inventory-receipt__value">
                   {completedReturnDateTime
                     ? `${formatReceiptDateOnly(completedReturnDateTime)} · ${formatReceiptTimeOnly(completedReturnDateTime)}`
-                    : isPartiallyReturned
-                      ? `Pending full return (${remainingBorrowedQty} ${record.unit} left)`
-                      : "Pending return"}
+                    : isPendingReturnStatus
+                      ? `Pending secretary confirmation (${record.quantity} ${record.unit})`
+                      : isDeclinedReturnStatus
+                        ? "Return declined by secretary"
+                        : isPartiallyReturned
+                          ? `Pending full return (${remainingBorrowedQty} ${record.unit} left)`
+                          : "Pending return"}
                 </span>
               </div>
             </>
@@ -191,11 +198,15 @@ function InventoryReceiptModal({
                 Borrowable Item · Return Tracking
               </span>
               <span className="inventory-usage-badge inventory-usage-badge--borrowable">
-                {isFullyReturned
-                  ? `Fully Returned (${totalReturnedQty}/${totalBorrowedQty} ${record.unit})`
-                  : isPartiallyReturned
-                    ? `Incomplete Return · ${remainingBorrowedQty} ${record.unit} Still Out`
-                    : `Must Be Returned (${totalBorrowedQty} ${record.unit})`}
+                {isPendingReturnStatus
+                  ? `Awaiting Secretary Confirmation (${record.quantity} ${record.unit})`
+                  : isDeclinedReturnStatus
+                    ? "Return Declined"
+                    : isFullyReturned
+                      ? `Fully Returned (${totalReturnedQty}/${totalBorrowedQty} ${record.unit})`
+                      : isPartiallyReturned
+                        ? `Incomplete Return · ${remainingBorrowedQty} ${record.unit} Still Out`
+                        : `Must Be Returned (${totalBorrowedQty} ${record.unit})`}
               </span>
             </div>
             <div className="inventory-receipt__return-lines">
@@ -273,8 +284,20 @@ function InventoryReceiptModal({
           </div>
           <div className="inventory-receipt__sig-block">
             <div className="inventory-receipt__sig-line" />
-            <strong>Issued / Verified By</strong>
-            <span>Office Administrator · {formatDate(record.dateTime)}</span>
+            <strong>
+              {isReturnedStatus && receivedBy
+                ? "Return Confirmed By"
+                : "Issued / Verified By"}
+            </strong>
+            <span>
+              {isPendingReturnStatus
+                ? "Pending Secretary Confirmation"
+                : isDeclinedReturnStatus
+                  ? `Declined by ${receivedBy || "Secretary"} · ${formatDate(record.dateTime)}`
+                  : receivedBy
+                    ? `${receivedBy} · ${formatDate(record.dateTime)}`
+                    : `Office Administrator · ${formatDate(record.dateTime)}`}
+            </span>
           </div>
         </div>
       </div>

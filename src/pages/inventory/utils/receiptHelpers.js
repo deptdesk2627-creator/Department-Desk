@@ -1,5 +1,10 @@
 import { getProductId } from "../../../hooks/useInventoryActions";
-import { getItemUsageType, recordStatusClass } from "../../../utils/inventory";
+import {
+  getItemUsageType,
+  PENDING_RETURN_STATUS,
+  recordStatusClass,
+  RETURN_DECLINED_STATUS,
+} from "../../../utils/inventory";
 
 export function formatReceiptDateOnly(value) {
   if (!value) return "—";
@@ -35,9 +40,15 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
         item.name === record.productName),
   );
 
+  const isPendingReturnStatus = record.status === PENDING_RETURN_STATUS;
+  const isDeclinedReturnStatus = record.status === RETURN_DECLINED_STATUS;
+  const isReturnedStatus = record.status === "Returned";
+  const isReturnRecord =
+    isReturnedStatus || isPendingReturnStatus || isDeclinedReturnStatus;
+
   const resolvedUsageType =
     record.usageType ||
-    (record.status === "Borrowed" || record.status === "Returned"
+    (record.status === "Borrowed" || isReturnRecord
       ? "Borrowable"
       : matchedItem
         ? getItemUsageType(matchedItem)
@@ -46,12 +57,10 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
   const isBorrowable =
     resolvedUsageType === "Borrowable" ||
     record.status === "Borrowed" ||
-    record.status === "Returned";
-
-  const isReturnedStatus = record.status === "Returned";
+    isReturnRecord;
 
   // Link Borrowed <-> Returned records
-  const linkedBorrowRecord = isReturnedStatus
+  const linkedBorrowRecord = isReturnRecord
     ? allRecords.find(
         (entry) =>
           entry.id === record.borrowRecordId ||
@@ -92,7 +101,7 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
       })
     : [];
 
-  const totalBorrowedQty = isReturnedStatus
+  const totalBorrowedQty = isReturnRecord
     ? Number(
         record.borrowedQuantity ||
           linkedBorrowRecord?.quantity ||
@@ -103,7 +112,7 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
   const totalReturnedQty = (() => {
     if (!isBorrowable) return 0;
     if (
-      isReturnedStatus &&
+      isReturnRecord &&
       Number.isFinite(Number(record.cumulativeReturnedQuantity)) &&
       Number.isFinite(Number(record.borrowedQuantity))
     ) {
@@ -139,15 +148,19 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
 
   const remainingBorrowedQty = Math.max(0, totalBorrowedQty - totalReturnedQty);
   const isFullyReturned =
-    isBorrowable && totalBorrowedQty > 0 && remainingBorrowedQty === 0;
+    isBorrowable &&
+    !isPendingReturnStatus &&
+    !isDeclinedReturnStatus &&
+    totalBorrowedQty > 0 &&
+    remainingBorrowedQty === 0;
   const isPartiallyReturned =
     isBorrowable && totalReturnedQty > 0 && remainingBorrowedQty > 0;
 
-  const borrowedDateTime = isReturnedStatus
+  const borrowedDateTime = isReturnRecord
     ? record.borrowedAt || linkedBorrowRecord?.dateTime || null
     : record.dateTime;
 
-  // ONLY populate the final Date & Time Returned when 100% of the borrowed quantity has been returned!
+  // ONLY populate the final Date & Time Returned when 100% of the borrowed quantity has been confirmed returned!
   const completedReturnDateTime = isFullyReturned
     ? (isReturnedStatus
         ? record.returnedAt || record.dateTime
@@ -200,14 +213,14 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
     Boolean(latestRepresentative) &&
     latestRepresentative.toLowerCase() !== borrowerAccountName.toLowerCase();
 
-  const primaryRemark = isReturnedStatus
+  const primaryRemark = isReturnRecord
     ? record.borrowRemarks ||
       linkedBorrowRecord?.remarks ||
       record.remarks ||
       ""
     : record.remarks || "";
 
-  const returnConditionNote = isReturnedStatus
+  const returnConditionNote = isReturnRecord
     ? record.returnRemarks ||
       (record.borrowRemarks || linkedBorrowRecord?.remarks
         ? record.remarks !==
@@ -224,23 +237,33 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
     ? "Remark / Reason for Borrowing"
     : "Remark / Purpose of Request";
 
-  const statusPillLabel = isPartiallyReturned
-    ? `Partially Returned (${totalReturnedQty}/${totalBorrowedQty})`
-    : isFullyReturned
-      ? record.status === "Borrowed"
-        ? `Borrowed · Returned (${totalReturnedQty}/${totalBorrowedQty})`
-        : `Returned (${totalReturnedQty}/${totalBorrowedQty})`
-      : record.status;
+  const statusPillLabel = isPendingReturnStatus
+    ? `Pending Confirmation (${record.quantity} ${record.unit})`
+    : isDeclinedReturnStatus
+      ? "Return Declined"
+      : isPartiallyReturned
+        ? `Partially Returned (${totalReturnedQty}/${totalBorrowedQty})`
+        : isFullyReturned
+          ? record.status === "Borrowed"
+            ? `Borrowed · Returned (${totalReturnedQty}/${totalBorrowedQty})`
+            : `Returned (${totalReturnedQty}/${totalBorrowedQty})`
+          : record.status;
 
-  const statusPillVariant = isPartiallyReturned
-    ? "status-waiting"
-    : isFullyReturned
-      ? recordStatusClass("Returned")
-      : recordStatusClass(record.status);
+  const statusPillVariant = isPendingReturnStatus
+    ? "status-pending"
+    : isDeclinedReturnStatus
+      ? "status-action-needed"
+      : isPartiallyReturned
+        ? "status-waiting"
+        : isFullyReturned
+          ? recordStatusClass("Returned")
+          : recordStatusClass(record.status);
 
   return {
     isBorrowable,
     isReturnedStatus,
+    isPendingReturnStatus,
+    isDeclinedReturnStatus,
     borrowedDateTime,
     completedReturnDateTime,
     totalBorrowedQty,
@@ -257,5 +280,6 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
     remarksHeading,
     statusPillLabel,
     statusPillVariant,
+    receivedBy: record.receivedBy || "",
   };
 }

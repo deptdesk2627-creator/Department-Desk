@@ -114,6 +114,7 @@ export function getRolePages({
         setRecords={data.setInventoryRecords}
         search={search}
         readOnly={!canManageInventory}
+        userName={profile?.name || role?.name}
       />
     ),
     ...systemPages,

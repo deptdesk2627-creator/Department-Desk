@@ -233,6 +233,8 @@ function StaffInventory({
     error,
     isSubmitting,
     getBorrowedBalance: getMyBorrowedBalance,
+    getPendingReturnBalance: getMyPendingReturnBalance,
+    getReturnableBalance: getMyReturnableBalance,
     openAction,
     openReceipt,
     quantity,
@@ -269,11 +271,13 @@ function StaffInventory({
         amount,
         matchedBorrowRecord,
         record,
+        pendingConfirmation: actionType === "Return",
       });
     },
     person,
     requirePerson: true,
     requireRemarks: true,
+    requireReturnConfirmation: true,
     returnLimitMessage: "You cannot return more than you borrowed.",
   });
 
@@ -301,6 +305,8 @@ function StaffInventory({
             !transactionsError,
         )}
         getMyBorrowedBalance={getMyBorrowedBalance}
+        getMyPendingReturnBalance={getMyPendingReturnBalance}
+        getMyReturnableBalance={getMyReturnableBalance}
         onOpenAction={openAction}
       />
 
@@ -325,7 +331,7 @@ function StaffInventory({
         maxQuantity={
           action
             ? action.type === "Return"
-              ? getMyBorrowedBalance(action.item)
+              ? getMyReturnableBalance(action.item)
               : Number(action.item.quantity)
             : 0
         }

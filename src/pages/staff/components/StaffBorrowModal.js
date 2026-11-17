@@ -37,10 +37,16 @@ function StaffBorrowModal({
         <span>
           ·{" "}
           {isReturn
-            ? `${maxQuantity} borrowed by you`
+            ? `${maxQuantity} ${action.item.unit} available to return`
             : `${action.item.quantity} ${action.item.unit} available`}
         </span>
       </p>
+      {isReturn && (
+        <p className="staff-return-notice" role="note">
+          Your return will be reviewed and confirmed by the secretary before
+          stock is restored.
+        </p>
+      )}
       <form className="module-form action-form" onSubmit={onSubmit}>
         <label className={isReturn ? "" : "action-form__remarks"}>
           Quantity ({action.item.unit})
@@ -95,7 +101,9 @@ function StaffBorrowModal({
           >
             {isSubmitting
               ? "Saving transaction..."
-              : `Record ${action.type.toLowerCase()} & view receipt`}
+              : isReturn
+                ? "Submit return for confirmation"
+                : `Record ${action.type.toLowerCase()} & view receipt`}
           </button>
         </div>
       </form>

@@ -314,3 +314,79 @@ test("keeps final return date blank on partial return (e.g. 15 of 30 monoblocks 
     screen.getByTestId("receipt-return-date-line").textContent.trim(),
   ).not.toBe("");
 });
+
+test("defers stock restoration when requireReturnConfirmation is enabled and blocks duplicate pending returns", () => {
+  let inventory = [
+    {
+      id: "supply-1",
+      productId: "PRD-0001",
+      name: "Projector",
+      usageType: "Borrowable",
+      quantity: 4,
+      unit: "pcs",
+    },
+  ];
+  let records = [
+    {
+      id: "REC-1",
+      dateTime: "2026-11-01T08:00:00.000Z",
+      productId: "PRD-0001",
+      productName: "Projector",
+      usageType: "Borrowable",
+      quantity: 2,
+      unit: "pcs",
+      status: "Borrowed",
+      person: "Prof. Maria Clara",
+      remarks: "Lecture",
+      returnedQuantity: 0,
+      pendingReturnQuantity: 0,
+    },
+  ];
+  const setInventory = jest.fn((update) => {
+    inventory = update(inventory);
+  });
+  const setRecords = jest.fn((update) => {
+    records = update(records);
+  });
+
+  const { result, rerender } = renderHook(() =>
+    useInventoryActions({
+      inventory,
+      records,
+      setInventory,
+      setRecords,
+      person: "Prof. Maria Clara",
+      requirePerson: true,
+      requireRemarks: true,
+      requireReturnConfirmation: true,
+    }),
+  );
+
+  expect(result.current.getBorrowedBalance(inventory[0])).toBe(2);
+  expect(result.current.getReturnableBalance(inventory[0])).toBe(2);
+
+  act(() => result.current.openAction(inventory[0], "Return"));
+  act(() => result.current.setQuantity("2"));
+  act(() => result.current.setRemarks("Returning to office"));
+  act(() => result.current.submitAction({ preventDefault: jest.fn() }));
+
+  expect(inventory[0].quantity).toBe(4);
+  expect(records[0]).toMatchObject({
+    status: "Pending Return",
+    quantity: 2,
+    returnedAt: null,
+    isPendingConfirmation: true,
+  });
+  expect(records[1].pendingReturnQuantity).toBe(2);
+
+  rerender();
+  expect(result.current.getPendingReturnBalance(inventory[0])).toBe(2);
+  expect(result.current.getReturnableBalance(inventory[0])).toBe(0);
+
+  act(() => result.current.openAction(inventory[0], "Return"));
+  act(() => result.current.setQuantity("1"));
+  act(() => result.current.submitAction({ preventDefault: jest.fn() }));
+  expect(result.current.error).toBe(
+    "Your return is already pending secretary confirmation.",
+  );
+});

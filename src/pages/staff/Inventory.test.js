@@ -332,7 +332,7 @@ test("persists a staff use action and deducts masterlist stock", async () => {
   });
 });
 
-test("persists a partial return and shows the updated return balance", async () => {
+test("submits a staff return as Pending Return without restoring stock until confirmed by the secretary", async () => {
   tableResponses.inventory_transactions = {
     data: [
       {
@@ -359,6 +359,9 @@ test("persists a partial return and shows the updated return balance", async () 
   });
 
   fireEvent.click(screen.getByRole("button", { name: /^return$/i }));
+  expect(
+    screen.getByText(/will be reviewed and confirmed by the secretary/i),
+  ).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText(/^quantity/i), {
     target: { value: "1" },
   });
@@ -366,7 +369,7 @@ test("persists a partial return and shows the updated return balance", async () 
     target: { value: "Good condition" },
   });
   fireEvent.click(
-    screen.getByRole("button", { name: /record return & view receipt/i }),
+    screen.getByRole("button", { name: /submit return for confirmation/i }),
   );
 
   await waitFor(() => {
@@ -378,10 +381,61 @@ test("persists a partial return and shows the updated return balance", async () 
       is_issued_to: STAFF_USER.user_id,
       quantity: 1,
       action_type: "Return",
-      status: "Returned",
+      status: "Pending Return",
+      return_date: null,
       borrow_date: "2026-10-12",
+      recieved_by: null,
       returned_by: null,
     }),
   );
-  expect(await screen.findByText("Partial Return (1/3)")).toBeInTheDocument();
+  // Masterlist stock must NOT be updated before the secretary confirms
+  expect(tableQueries.items_masterlist.update).not.toHaveBeenCalled();
+  expect(await screen.findAllByText(/pending confirmation/i)).not.toHaveLength(0);
+  expect(screen.getByText("1 Boxes pending confirmation")).toBeInTheDocument();
+});
+
+test("disables Return when the full borrowed quantity is already awaiting secretary confirmation", async () => {
+  tableResponses.inventory_transactions = {
+    data: [
+      {
+        transaction_id: 44,
+        item_id: 17,
+        is_issued_to: STAFF_USER.user_id,
+        purpose: "Workshop",
+        quantity: 2,
+        action_type: "Borrow",
+        return_date: null,
+        borrow_date: "2026-10-12",
+        status: "Borrowed",
+        unit: "Boxes",
+        created_at: "2026-10-12T10:00:00",
+        recieved_by: null,
+        returned_by: null,
+      },
+      {
+        transaction_id: 45,
+        item_id: 17,
+        is_issued_to: STAFF_USER.user_id,
+        purpose: "Returned to office",
+        quantity: 2,
+        action_type: "Return",
+        return_date: null,
+        borrow_date: "2026-10-12",
+        status: "Pending Return",
+        unit: "Boxes",
+        created_at: "2026-10-12T12:00:00",
+        recieved_by: null,
+        returned_by: null,
+      },
+    ],
+    error: null,
+  };
+
+  await act(async () => {
+    render(<StaffInventoryWithState inventory={[]} records={[]} />);
+  });
+
+  expect(screen.getByText("2 Boxes borrowed")).toBeInTheDocument();
+  expect(screen.getByText("2 Boxes pending confirmation")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /^return$/i })).toBeDisabled();
 });

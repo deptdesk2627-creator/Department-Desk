@@ -558,3 +558,187 @@
     width: 100%;
   }
 }
+
+/* Pending return confirmations */
+.inventory-tab-pending-badge {
+  align-items: center;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 9999px;
+  color: #b45309;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 2px 8px;
+}
+
+.inventory-pending-panel {
+  border-color: #fde68a;
+  background: linear-gradient(180deg, #fffdf7 0%, #ffffff 100%);
+  margin-bottom: 18px;
+  padding: 20px 24px;
+}
+
+.inventory-pending-panel__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.inventory-pending-panel__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.inventory-pending-panel__title-row h2 {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.inventory-pending-panel__title-group p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.inventory-pending-panel__error {
+  margin-bottom: 12px;
+}
+
+.inventory-pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inventory-pending-item {
+  align-items: center;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  justify-content: space-between;
+  padding: 13px 16px;
+}
+
+.inventory-pending-item__info {
+  display: flex;
+  flex: 1 1 320px;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.inventory-pending-item__top {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inventory-pending-item__product {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.inventory-pending-item__qty {
+  background: var(--orange-soft);
+  border-radius: 9999px;
+  color: var(--orange);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+}
+
+.inventory-pending-item__meta {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  gap: 6px;
+}
+
+.inventory-pending-item__meta strong {
+  color: var(--ink-secondary);
+}
+
+.inventory-pending-item__remarks {
+  font-style: italic;
+}
+
+.inventory-pending-item__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inventory-confirm-btn {
+  min-height: 36px;
+  padding: 7px 14px;
+}
+
+.inventory-decline-btn {
+  min-height: 36px;
+  padding: 7px 12px;
+}
+
+.inventory-record-status-cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.inventory-record-confirmed-by {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.inventory-record-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.inventory-inline-confirm-btn {
+  background: var(--green-soft);
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.inventory-inline-confirm-btn:hover:not(:disabled) {
+  background: #bbf7d0;
+  border-color: #4ade80;
+}
+
+:root[data-theme="dark"] .inventory-pending-panel {
+  background: var(--surface);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+:root[data-theme="dark"] .inventory-pending-item {
+  background: #0f172a;
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .inventory-tab-pending-badge {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.38);
+  color: #fde68a;
+}

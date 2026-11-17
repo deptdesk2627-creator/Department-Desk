@@ -1,14 +1,40 @@
 import { formatDateTime } from "../../../utils/formatters";
-import { recordStatusClass } from "../../../utils/inventory";
+import {
+  PENDING_RETURN_STATUS,
+  recordStatusClass,
+  RETURN_DECLINED_STATUS,
+} from "../../../utils/inventory";
 
 function getRecordStatusDisplay(record) {
+  if (record.status === PENDING_RETURN_STATUS) {
+    return {
+      label: "Pending Confirmation",
+      className: recordStatusClass(PENDING_RETURN_STATUS),
+    };
+  }
+  if (record.status === RETURN_DECLINED_STATUS) {
+    return {
+      label: "Return Declined",
+      className: recordStatusClass(RETURN_DECLINED_STATUS),
+    };
+  }
   if (record.status === "Borrowed") {
     const borrowed = Number(record.quantity) || 0;
     const returned = Number(record.returnedQuantity) || 0;
+    const pendingReturn = Number(record.pendingReturnQuantity) || 0;
     if (returned > 0 && returned < borrowed) {
       return {
-        label: `Partially Returned (${returned}/${borrowed})`,
+        label:
+          pendingReturn > 0
+            ? `Partially Returned (${returned}/${borrowed} · ${pendingReturn} pending)`
+            : `Partially Returned (${returned}/${borrowed})`,
         className: "status-waiting",
+      };
+    }
+    if (returned === 0 && pendingReturn > 0) {
+      return {
+        label: `Pending Return (${pendingReturn}/${borrowed})`,
+        className: "status-pending",
       };
     }
     if (borrowed > 0 && returned >= borrowed) {
@@ -39,6 +65,9 @@ function InventoryRecords({
   totalRecords,
   isLoading = false,
   loadError = "",
+  readOnly = false,
+  processingReturnIds = new Set(),
+  onConfirmReturn,
   onViewReceipt,
 }) {
   return (
@@ -110,19 +139,43 @@ function InventoryRecords({
                       {record.remarks || "—"}
                     </td>
                     <td>
-                      <span className={`status-pill ${statusDisplay.className}`}>
-                        {statusDisplay.label}
-                      </span>
+                      <div className="inventory-record-status-cell">
+                        <span className={`status-pill ${statusDisplay.className}`}>
+                          {statusDisplay.label}
+                        </span>
+                        {record.status === "Returned" && record.receivedBy && (
+                          <span className="inventory-record-confirmed-by">
+                            Confirmed by {record.receivedBy}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="inventory-status-col">
-                      <button
-                        type="button"
-                        className="receipt-table-btn"
-                        onClick={() => onViewReceipt?.(record)}
-                        aria-label={`View receipt for ${record.productName}`}
-                      >
-                        Receipt
-                      </button>
+                      <div className="inventory-record-actions">
+                        {!readOnly &&
+                          record.status === PENDING_RETURN_STATUS &&
+                          onConfirmReturn && (
+                            <button
+                              type="button"
+                              className="stock-adjust-button inventory-inline-confirm-btn"
+                              onClick={() => onConfirmReturn(record)}
+                              disabled={processingReturnIds.has(record.id)}
+                              aria-label={`Confirm return for ${record.productName}`}
+                            >
+                              {processingReturnIds.has(record.id)
+                                ? "Confirming..."
+                                : "Confirm"}
+                            </button>
+                          )}
+                        <button
+                          type="button"
+                          className="receipt-table-btn"
+                          onClick={() => onViewReceipt?.(record)}
+                          aria-label={`View receipt for ${record.productName}`}
+                        >
+                          Receipt
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

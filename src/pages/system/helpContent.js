@@ -148,7 +148,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: "How do I return an item?",
-        a: "Choose Return on the item you borrowed. You can only return up to the quantity still borrowed by you. If a student assistant or representative returns it for you, type their name in “Returned by”.",
+        a: "Choose Return on the item you borrowed. You can only return up to the quantity still borrowed by you. If a student assistant or representative returns it for you, type their name in “Returned by”. Once submitted, the secretary must confirm the return before available stock is restored.",
         roles: ["staff"],
       },
       {

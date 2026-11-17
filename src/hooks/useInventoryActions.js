@@ -3,6 +3,7 @@ import {
   canBorrowItem,
   canUseItem,
   getItemUsageType,
+  PENDING_RETURN_STATUS,
 } from "../utils/inventory";
 
 const STATUS_BY_ACTION = {
@@ -27,6 +28,7 @@ export function useInventoryActions({
   person = "",
   requirePerson = false,
   requireRemarks = false,
+  requireReturnConfirmation = false,
   returnLimitMessage = "The return quantity cannot exceed the borrowed balance.",
 }) {
   const [action, setAction] = useState(null);
@@ -62,6 +64,31 @@ export function useInventoryActions({
       if (record.status === "Returned") return balance - amount;
       return balance;
     }, 0);
+  }
+
+  function getPendingReturnBalance(item, borrowerName = "") {
+    const id = getProductId(item);
+    const normalizedBorrower = String(borrowerName || "").trim().toLowerCase();
+    return scopedRecords.reduce((pending, record) => {
+      if (record.productId !== id) return pending;
+      if (record.status !== PENDING_RETURN_STATUS) return pending;
+      if (
+        normalizedBorrower &&
+        String(record.person || "").trim().toLowerCase() !== normalizedBorrower
+      ) {
+        return pending;
+      }
+      const amount = Number(record.quantity);
+      return Number.isFinite(amount) && amount > 0 ? pending + amount : pending;
+    }, 0);
+  }
+
+  function getReturnableBalance(item, borrowerName = "") {
+    return Math.max(
+      0,
+      getBorrowedBalance(item, borrowerName) -
+        getPendingReturnBalance(item, borrowerName),
+    );
   }
 
   const activeBorrowers = useMemo(() => {
@@ -169,15 +196,38 @@ export function useInventoryActions({
       return;
     }
 
+    const isPendingReturn =
+      action.type === "Return" && requireReturnConfirmation;
+
     const totalItemBorrowedBalance = getBorrowedBalance(item);
+    const totalItemReturnableBalance = getReturnableBalance(item);
     const personBorrowedBalance = trimmedPerson
       ? getBorrowedBalance(item, trimmedPerson)
       : totalItemBorrowedBalance;
-    const effectiveMaxReturn =
-      personBorrowedBalance > 0 ? personBorrowedBalance : totalItemBorrowedBalance;
+    const personReturnableBalance = trimmedPerson
+      ? getReturnableBalance(item, trimmedPerson)
+      : totalItemReturnableBalance;
+    const personPendingBalance = trimmedPerson
+      ? getPendingReturnBalance(item, trimmedPerson)
+      : getPendingReturnBalance(item);
+    const effectiveMaxReturn = requireReturnConfirmation
+      ? personBorrowedBalance > 0 || trimmedPerson
+        ? personReturnableBalance
+        : totalItemReturnableBalance
+      : personBorrowedBalance > 0
+        ? personBorrowedBalance
+        : totalItemBorrowedBalance;
 
     if (action.type === "Return" && amount > effectiveMaxReturn) {
-      setError(returnLimitMessage);
+      if (
+        requireReturnConfirmation &&
+        effectiveMaxReturn === 0 &&
+        personPendingBalance > 0
+      ) {
+        setError("Your return is already pending secretary confirmation.");
+      } else {
+        setError(returnLimitMessage);
+      }
       return;
     }
 
@@ -187,9 +237,26 @@ export function useInventoryActions({
     const newRecordId = `REC-${Date.now()}-${recordItems.length + 1}`;
 
     // Find open Borrowed record for this return
+    const hasOpenReturnRoom = (existing) =>
+      Number(existing.returnedQuantity || 0) +
+        (requireReturnConfirmation
+          ? Number(existing.pendingReturnQuantity || 0)
+          : 0) <
+      Number(existing.quantity || 0);
+
     const matchedBorrowRecord =
       action.type === "Return"
         ? recordItems.find(
+            (existing) =>
+              existing.productId === id &&
+              existing.status === "Borrowed" &&
+              hasOpenReturnRoom(existing) &&
+              (!trimmedPerson ||
+                !existing.person ||
+                String(existing.person).toLowerCase() ===
+                  trimmedPerson.toLowerCase()),
+          ) ||
+          recordItems.find(
             (existing) =>
               existing.productId === id &&
               existing.status === "Borrowed" &&
@@ -221,19 +288,24 @@ export function useInventoryActions({
       : 0;
     const cumulativeReturnedQty =
       action.type === "Return"
-        ? Math.min(borrowedTotalQty, previouslyReturnedQty + amount)
+        ? isPendingReturn
+          ? previouslyReturnedQty
+          : Math.min(borrowedTotalQty, previouslyReturnedQty + amount)
         : 0;
     const remainingBorrowedQty =
       action.type === "Return"
         ? Math.max(0, borrowedTotalQty - cumulativeReturnedQty)
         : 0;
     const isFullReturn =
-      action.type === "Return" && remainingBorrowedQty === 0;
+      action.type === "Return" && !isPendingReturn && remainingBorrowedQty === 0;
     const isPartialReturn =
-      action.type === "Return" && remainingBorrowedQty > 0;
+      action.type === "Return" &&
+      (isPendingReturn
+        ? amount < remainingBorrowedQty
+        : remainingBorrowedQty > 0);
 
     const returnEventEntry =
-      action.type === "Return"
+      action.type === "Return" && !isPendingReturn
         ? {
             id: newRecordId,
             dateTime: nowIso,
@@ -250,7 +322,7 @@ export function useInventoryActions({
         : null;
 
     const updatedReturnEvents =
-      action.type === "Return"
+      action.type === "Return" && !isPendingReturn
         ? [
             ...(Array.isArray(matchedBorrowRecord?.returnEvents)
               ? matchedBorrowRecord.returnEvents
@@ -266,16 +338,20 @@ export function useInventoryActions({
 
     const record = {
       id: newRecordId,
+      itemId: Number(item.item_id ?? item.id) || undefined,
       dateTime: nowIso,
       productId: id,
       productName: item.name,
       usageType: getItemUsageType(item),
       quantity: amount,
       unit: item.unit,
-      status: STATUS_BY_ACTION[action.type] || "Used",
+      status: isPendingReturn
+        ? PENDING_RETURN_STATUS
+        : STATUS_BY_ACTION[action.type] || "Used",
       ...(action.type === "Borrow"
         ? {
             returnedQuantity: 0,
+            pendingReturnQuantity: 0,
             returnEvents: [],
           }
         : {}),
@@ -290,8 +366,9 @@ export function useInventoryActions({
         ? {
             // Only set returnedAt as the final completion date when 100% of the borrowed quantity is returned
             returnedAt: isFullReturn ? nowIso : null,
-            partialReturnedAt: isPartialReturn ? nowIso : null,
+            partialReturnedAt: isPartialReturn && !isPendingReturn ? nowIso : null,
             isPartialReturn,
+            isPendingConfirmation: isPendingReturn,
             borrowedQuantity: borrowedTotalQty,
             cumulativeReturnedQuantity: cumulativeReturnedQty,
             remainingQuantity: remainingBorrowedQty,
@@ -305,37 +382,47 @@ export function useInventoryActions({
     };
 
     function commitRecord(savedRecord) {
-      setInventory((current) =>
-        (Array.isArray(current) ? current : []).map((stock) =>
-          stock?.id === item.id
-            ? {
-                ...stock,
-                productId: id,
-                quantity:
-                  Number(stock.quantity) +
-                  (action.type === "Return" ? amount : -amount),
-                usedThisYear:
-                  Number(stock.usedThisYear || 0) +
-                  (action.type === "Use" ? amount : 0),
-              }
-            : stock,
-        ),
-      );
+      if (!isPendingReturn) {
+        setInventory((current) =>
+          (Array.isArray(current) ? current : []).map((stock) =>
+            stock?.id === item.id
+              ? {
+                  ...stock,
+                  productId: id,
+                  quantity:
+                    Number(stock.quantity) +
+                    (action.type === "Return" ? amount : -amount),
+                  usedThisYear:
+                    Number(stock.usedThisYear || 0) +
+                    (action.type === "Use" ? amount : 0),
+                }
+              : stock,
+          ),
+        );
+      }
       setRecords((current) => {
         const existingList = Array.isArray(current) ? current : [];
         const updatedList =
           action.type === "Return" && matchedBorrowRecord
             ? existingList.map((entry) =>
                 entry?.id === matchedBorrowRecord.id
-                  ? {
-                      ...entry,
-                      returnedQuantity: cumulativeReturnedQty,
-                      remainingQuantity: remainingBorrowedQty,
-                      returnedAt: isFullReturn ? nowIso : null,
-                      returnRecordId: savedRecord.id,
-                      returnEvents: updatedReturnEvents,
-                      ...(trimmedRemarks ? { returnRemarks: trimmedRemarks } : {}),
-                    }
+                  ? isPendingReturn
+                    ? {
+                        ...entry,
+                        pendingReturnQuantity:
+                          (Number(entry.pendingReturnQuantity) || 0) + amount,
+                      }
+                    : {
+                        ...entry,
+                        returnedQuantity: cumulativeReturnedQty,
+                        remainingQuantity: remainingBorrowedQty,
+                        returnedAt: isFullReturn ? nowIso : null,
+                        returnRecordId: savedRecord.id,
+                        returnEvents: updatedReturnEvents,
+                        ...(trimmedRemarks
+                          ? { returnRemarks: trimmedRemarks }
+                          : {}),
+                      }
                   : entry,
               )
             : existingList;
@@ -389,6 +476,8 @@ export function useInventoryActions({
     error,
     isSubmitting,
     getBorrowedBalance,
+    getPendingReturnBalance,
+    getReturnableBalance,
     openAction,
     openReceipt,
     personName,

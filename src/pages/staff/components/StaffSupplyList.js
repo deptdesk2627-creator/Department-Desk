@@ -14,6 +14,8 @@ function StaffSupplyList({
   onSupplySearchChange = () => {},
   canRecord,
   getMyBorrowedBalance,
+  getMyPendingReturnBalance,
+  getMyReturnableBalance,
   onOpenAction,
 }) {
   return (
@@ -86,6 +88,12 @@ function StaffSupplyList({
               {items.map((item) => {
                 const available = Number(item.quantity) || 0;
                 const borrowed = getMyBorrowedBalance(item);
+                const pendingReturn = getMyPendingReturnBalance
+                  ? getMyPendingReturnBalance(item)
+                  : 0;
+                const returnable = getMyReturnableBalance
+                  ? getMyReturnableBalance(item)
+                  : Math.max(0, borrowed - pendingReturn);
                 const usageType = getItemUsageType(item);
                 const allowBorrow = canBorrowItem(item);
                 const allowUse = canUseItem(item);
@@ -130,9 +138,16 @@ function StaffSupplyList({
                     </td>
                     <td>
                       {borrowed > 0 ? (
-                        <span className="status-pill status-started">
-                          {borrowed} {item.unit} borrowed
-                        </span>
+                        <div className="staff-borrowed-cell">
+                          <span className="status-pill status-started">
+                            {borrowed} {item.unit} borrowed
+                          </span>
+                          {pendingReturn > 0 && (
+                            <span className="status-pill status-pending">
+                              {pendingReturn} {item.unit} pending confirmation
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         "—"
                       )}
@@ -164,7 +179,12 @@ function StaffSupplyList({
                             type="button"
                             className="stock-adjust-button"
                             onClick={() => onOpenAction(item, "Return")}
-                            disabled={!canRecord || borrowed <= 0}
+                            disabled={!canRecord || returnable <= 0}
+                            title={
+                              borrowed > 0 && returnable <= 0
+                                ? "Awaiting secretary confirmation"
+                                : undefined
+                            }
                           >
                             Return
                           </button>

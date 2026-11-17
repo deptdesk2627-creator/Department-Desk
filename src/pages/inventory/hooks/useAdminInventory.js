@@ -1,9 +1,14 @@
 import { useMemo, useState } from "react";
 import {
+  confirmInventoryReturn,
+  declineInventoryReturn,
   getItemUsageType,
   isLowStock,
   MASTERLIST_COLUMNS,
   mapMasterlistItem,
+  PENDING_RETURN_STATUS,
+  reconcileBorrowReturnState,
+  RETURN_DECLINED_STATUS,
 } from "../../../utils/inventory";
 import {
   getProductId,
@@ -27,10 +32,13 @@ export function useAdminInventory({
   setRecords,
   search = "",
   persistAction,
+  userName = "Secretary",
 }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [formError, setFormError] = useState("");
   const [inventoryError, setInventoryError] = useState("");
+  const [returnActionError, setReturnActionError] = useState("");
+  const [processingReturnIds, setProcessingReturnIds] = useState(() => new Set());
   const [activeTab, setActiveTab] = useState("master");
   const [productSearch, setProductSearch] = useState("");
   const [stockFilter, setStockFilter] = useState("All");
@@ -162,6 +170,14 @@ export function useAdminInventory({
     [inventoryItems],
   );
 
+  const pendingReturns = useMemo(
+    () =>
+      recordItems.filter(
+        (record) => record.status === PENDING_RETURN_STATUS,
+      ),
+    [recordItems],
+  );
+
   const stockActions = useInventoryActions({
     inventory: inventoryItems,
     records: recordItems,
@@ -278,11 +294,142 @@ export function useAdminInventory({
     }
   }
 
+  async function confirmReturn(record) {
+    if (!record || record.status !== PENDING_RETURN_STATUS) return false;
+    if (processingReturnIds.has(record.id)) return false;
+
+    const matchedItem = inventoryItems.find(
+      (item) =>
+        Number(item.item_id ?? item.id) === Number(record.itemId) ||
+        getProductId(item) === record.productId,
+    );
+    if (!matchedItem) {
+      setReturnActionError(
+        "Could not find this product in the active inventory masterlist.",
+      );
+      return false;
+    }
+
+    const amount = Number(record.quantity);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      setReturnActionError("This return record does not have a valid quantity.");
+      return false;
+    }
+
+    setReturnActionError("");
+    setProcessingReturnIds((current) => new Set(current).add(record.id));
+    const confirmedBy = String(userName || "").trim() || "Secretary";
+    const today = new Date().toISOString().slice(0, 10);
+
+    try {
+      const result = await confirmInventoryReturn({
+        supabaseClient: supabase,
+        record,
+        item: matchedItem,
+        receivedBy: confirmedBy,
+      });
+      const nextStock = result.updatedStock;
+      const savedReturnDate = result.updatedTransaction?.return_date || today;
+
+      setInventory((current) =>
+        (Array.isArray(current) ? current : []).map((item) =>
+          item?.id === matchedItem.id
+            ? {
+                ...item,
+                quantity: nextStock,
+                stock_onhand: nextStock,
+              }
+            : item,
+        ),
+      );
+      setRecords((current) => {
+        const existingList = Array.isArray(current) ? current : [];
+        const updatedList = existingList.map((entry) =>
+          entry?.id === record.id
+            ? {
+                ...entry,
+                status: "Returned",
+                returnDate: savedReturnDate,
+                receivedBy: confirmedBy,
+                isPendingConfirmation: false,
+              }
+            : entry,
+        );
+        return reconcileBorrowReturnState(updatedList);
+      });
+      return true;
+    } catch (error) {
+      console.error("Could not confirm the staff return.", error);
+      setReturnActionError(
+        error.message || "Could not confirm this return. Please try again.",
+      );
+      return false;
+    } finally {
+      setProcessingReturnIds((current) => {
+        const next = new Set(current);
+        next.delete(record.id);
+        return next;
+      });
+    }
+  }
+
+  async function declineReturn(record, reason = "") {
+    if (!record || record.status !== PENDING_RETURN_STATUS) return false;
+    if (processingReturnIds.has(record.id)) return false;
+
+    setReturnActionError("");
+    setProcessingReturnIds((current) => new Set(current).add(record.id));
+    const declinedBy = String(userName || "").trim() || "Secretary";
+    const trimmedReason = String(reason || "").trim();
+
+    try {
+      const updatedTx = await declineInventoryReturn({
+        supabaseClient: supabase,
+        record,
+        receivedBy: declinedBy,
+        reason: trimmedReason,
+      });
+      const nextPurpose = updatedTx?.purpose ?? (record.remarks || "");
+
+      setRecords((current) => {
+        const existingList = Array.isArray(current) ? current : [];
+        const updatedList = existingList.map((entry) =>
+          entry?.id === record.id
+            ? {
+                ...entry,
+                status: RETURN_DECLINED_STATUS,
+                receivedBy: declinedBy,
+                remarks: nextPurpose,
+                returnRemarks: nextPurpose,
+                isPendingConfirmation: false,
+              }
+            : entry,
+        );
+        return reconcileBorrowReturnState(updatedList);
+      });
+      return true;
+    } catch (error) {
+      console.error("Could not decline the staff return.", error);
+      setReturnActionError(
+        error.message || "Could not decline this return. Please try again.",
+      );
+      return false;
+    } finally {
+      setProcessingReturnIds((current) => {
+        const next = new Set(current);
+        next.delete(record.id);
+        return next;
+      });
+    }
+  }
+
   return {
     form,
     setForm,
     formError,
     inventoryError,
+    returnActionError,
+    processingReturnIds,
     activeTab,
     setActiveTab,
     productSearch,
@@ -297,11 +444,14 @@ export function useAdminInventory({
     recordItems,
     visibleItems,
     visibleRecords,
+    pendingReturns,
     usageBreakdown,
     lowStockCount,
     stockActions,
     addItem,
     deleteItem,
     updateItem,
+    confirmReturn,
+    declineReturn,
   };
 }

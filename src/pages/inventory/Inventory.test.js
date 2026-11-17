@@ -801,3 +801,239 @@ test("opens item details from the master list actions", async () => {
   });
   expect(detailsDialog.getByText("8 Packs")).toBeInTheDocument();
 });
+
+test("lets the secretary confirm a pending staff return and restore stock", async () => {
+  const item = {
+    item_id: 17,
+    item_name: "Projector",
+    stock_onhand: 3,
+    unit: "pieces",
+    min_stock: 1,
+    category: "Borrowable",
+    classification: "Equipment",
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const user = { user_id: 42, username: "Prof. Test User" };
+  const borrowTx = {
+    transaction_id: 88,
+    item_id: 17,
+    is_issued_to: 42,
+    purpose: "Class presentation",
+    quantity: 2,
+    action_type: "Borrow",
+    return_date: null,
+    borrow_date: "2026-11-14",
+    status: "Borrowed",
+    unit: "pieces",
+    created_at: "2026-11-14T08:30:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+  const pendingReturnTx = {
+    transaction_id: 89,
+    item_id: 17,
+    is_issued_to: 42,
+    purpose: "Returned after class",
+    quantity: 2,
+    action_type: "Return",
+    return_date: null,
+    borrow_date: "2026-11-14",
+    status: "Pending Return",
+    unit: "pieces",
+    created_at: "2026-11-14T10:30:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+  const confirmedReturnTx = {
+    ...pendingReturnTx,
+    status: "Returned",
+    return_date: "2026-11-17",
+    recieved_by: "Ma'am Aubrey",
+  };
+
+  let itemCallCount = 0;
+  const itemLoadQuery = createTableQuery({ rows: [item] });
+  const itemReadQuery = createTableQuery({
+    maybeSingleRow: { item_id: 17, stock_onhand: 3, archived_at: null },
+  });
+  const itemUpdateQuery = createTableQuery({
+    maybeSingleRow: { item_id: 17, stock_onhand: 5 },
+  });
+  const userQuery = createTableQuery({ rows: [user] });
+  const txLoadQuery = createTableQuery({ rows: [pendingReturnTx, borrowTx] });
+  const txUpdateQuery = createTableQuery({ maybeSingleRow: confirmedReturnTx });
+  let txCallCount = 0;
+
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") {
+      itemCallCount += 1;
+      if (itemCallCount === 1) return itemLoadQuery;
+      if (itemCallCount === 2) return itemReadQuery;
+      return itemUpdateQuery;
+    }
+    if (table === "users") return userQuery;
+    if (table === "inventory_transactions") {
+      txCallCount += 1;
+      return txCallCount === 1 ? txLoadQuery : txUpdateQuery;
+    }
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        userName="Ma'am Aubrey"
+      />,
+    );
+  });
+
+  const pendingRegion = await screen.findByRole("region", {
+    name: /pending return confirmations/i,
+  });
+  expect(within(pendingRegion).getByText("Projector")).toBeInTheDocument();
+  expect(within(pendingRegion).getByText("Prof. Test User")).toBeInTheDocument();
+  expect(screen.getByText("3 pieces")).toBeInTheDocument();
+
+  await act(async () => {
+    fireEvent.click(
+      within(pendingRegion).getByRole("button", { name: /confirm return/i }),
+    );
+  });
+
+  expect(txUpdateQuery.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: "Returned",
+      recieved_by: "Ma'am Aubrey",
+    }),
+  );
+  expect(itemUpdateQuery.update).toHaveBeenCalledWith({ stock_onhand: 5 });
+  expect(await screen.findByText("5 pieces")).toBeInTheDocument();
+  expect(
+    screen.queryByRole("region", { name: /pending return confirmations/i }),
+  ).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
+  expect(screen.getByText("Confirmed by Ma'am Aubrey")).toBeInTheDocument();
+});
+
+test("lets the secretary decline a pending return and hides confirm controls in read-only mode", async () => {
+  const item = {
+    item_id: 17,
+    item_name: "Projector",
+    stock_onhand: 3,
+    unit: "pieces",
+    min_stock: 1,
+    category: "Borrowable",
+    classification: "Equipment",
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const user = { user_id: 42, username: "Prof. Test User" };
+  const pendingReturnTx = {
+    transaction_id: 89,
+    item_id: 17,
+    is_issued_to: 42,
+    purpose: "Returned after class",
+    quantity: 1,
+    action_type: "Return",
+    return_date: null,
+    borrow_date: "2026-11-14",
+    status: "Pending Return",
+    unit: "pieces",
+    created_at: "2026-11-14T10:30:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") return createTableQuery({ rows: [item] });
+    if (table === "users") return createTableQuery({ rows: [user] });
+    if (table === "inventory_transactions") {
+      return createTableQuery({ rows: [pendingReturnTx] });
+    }
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  const { unmount } = await act(async () =>
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        readOnly
+      />,
+    ),
+  );
+
+  const deanPending = await screen.findByRole("region", {
+    name: /pending return confirmations/i,
+  });
+  expect(
+    within(deanPending).queryByRole("button", { name: /confirm return/i }),
+  ).not.toBeInTheDocument();
+  expect(
+    within(deanPending).queryByRole("button", { name: /decline/i }),
+  ).not.toBeInTheDocument();
+  unmount();
+
+  const declineTxQuery = createTableQuery({
+    maybeSingleRow: {
+      ...pendingReturnTx,
+      status: "Return Declined",
+      recieved_by: "Ma'am Aubrey",
+      purpose: "Returned after class [Declined: Not handed over]",
+    },
+  });
+  let txCalls = 0;
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") return createTableQuery({ rows: [item] });
+    if (table === "users") return createTableQuery({ rows: [user] });
+    if (table === "inventory_transactions") {
+      txCalls += 1;
+      return txCalls === 1
+        ? createTableQuery({ rows: [pendingReturnTx] })
+        : declineTxQuery;
+    }
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        userName="Ma'am Aubrey"
+      />,
+    );
+  });
+
+  const pendingRegion = await screen.findByRole("region", {
+    name: /pending return confirmations/i,
+  });
+  fireEvent.click(within(pendingRegion).getByRole("button", { name: /decline/i }));
+  const declineDialog = within(screen.getByRole("dialog"));
+  fireEvent.change(declineDialog.getByLabelText(/reason for declining/i), {
+    target: { value: "Not handed over" },
+  });
+  await act(async () => {
+    fireEvent.click(
+      declineDialog.getByRole("button", { name: /decline return/i }),
+    );
+  });
+
+  expect(declineTxQuery.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: "Return Declined",
+      recieved_by: "Ma'am Aubrey",
+      purpose: "Returned after class [Declined: Not handed over]",
+    }),
+  );
+  expect(screen.getByText("3 pieces")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
+  const transactionSection = screen.getByRole("region", {
+    name: "Transaction records",
+  });
+  expect(within(transactionSection).getByText("Return Declined")).toBeInTheDocument();
+});

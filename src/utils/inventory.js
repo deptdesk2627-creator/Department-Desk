@@ -20,6 +20,33 @@ export const MASTERLIST_COLUMNS =
 export const INVENTORY_TRANSACTION_COLUMNS =
   "transaction_id, item_id, is_issued_to, purpose, quantity, action_type, return_date, borrow_date, status, unit, created_at, recieved_by, returned_by";
 
+export const PENDING_RETURN_STATUS = "Pending Return";
+export const RETURN_DECLINED_STATUS = "Return Declined";
+
+function formatLocalDate(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+async function readActiveMasterlistItem(supabaseClient, itemId) {
+  const { data: currentItem, error: currentItemError } = await supabaseClient
+    .from("items_masterlist")
+    .select("item_id, stock_onhand, archived_at")
+    .eq("item_id", itemId)
+    .maybeSingle();
+  if (currentItemError) throw currentItemError;
+  if (!currentItem) {
+    throw new Error(
+      "This inventory item is not visible in Supabase. Check its item_id and the authenticated SELECT policy for items_masterlist.",
+    );
+  }
+  if (currentItem.archived_at) {
+    throw new Error(
+      "This inventory item has been archived and cannot be changed.",
+    );
+  }
+  return currentItem;
+}
+
 export async function persistInventoryTransaction({
   supabaseClient,
   item,
@@ -28,6 +55,7 @@ export async function persistInventoryTransaction({
   amount,
   matchedBorrowRecord,
   record,
+  pendingConfirmation = false,
 }) {
   const itemId = Number(item.item_id ?? item.id);
   const currentQuantity = Number(item.stock_onhand ?? item.quantity);
@@ -35,49 +63,39 @@ export async function persistInventoryTransaction({
     throw new Error("The selected inventory item has invalid stock details.");
   }
 
-  const nextQuantity =
-    currentQuantity + (actionType === "Return" ? amount : -amount);
-  const { data: updatedItem, error: stockError } = await supabaseClient
-    .from("items_masterlist")
-    .update({ stock_onhand: nextQuantity })
-    .eq("item_id", itemId)
-    .eq("stock_onhand", currentQuantity)
-    .is("archived_at", null)
-    .select("item_id, stock_onhand")
-    .maybeSingle();
-  if (stockError) throw stockError;
-  if (!updatedItem) {
-    const { data: currentItem, error: currentItemError } = await supabaseClient
+  const isPendingReturn =
+    actionType === "Return" &&
+    (pendingConfirmation || record.status === PENDING_RETURN_STATUS);
+
+  let nextQuantity = currentQuantity;
+  if (!isPendingReturn) {
+    nextQuantity =
+      currentQuantity + (actionType === "Return" ? amount : -amount);
+    const { data: updatedItem, error: stockError } = await supabaseClient
       .from("items_masterlist")
-      .select("stock_onhand, archived_at")
+      .update({ stock_onhand: nextQuantity })
       .eq("item_id", itemId)
+      .eq("stock_onhand", currentQuantity)
+      .is("archived_at", null)
+      .select("item_id, stock_onhand")
       .maybeSingle();
-    if (currentItemError) throw currentItemError;
-    if (!currentItem) {
-      throw new Error(
-        "This inventory item is not visible in Supabase. Check its item_id and the authenticated SELECT policy for items_masterlist.",
-      );
-    }
-    if (currentItem.archived_at) {
-      throw new Error(
-        "This inventory item has been archived and cannot be changed.",
-      );
-    }
+    if (stockError) throw stockError;
+    if (!updatedItem) {
+      const currentItem = await readActiveMasterlistItem(supabaseClient, itemId);
+      const latestQuantity = Number(currentItem.stock_onhand);
+      if (latestQuantity !== currentQuantity) {
+        throw new Error(
+          `Stock changed in Supabase from ${currentQuantity} to ${latestQuantity}. Reload the page and try again.`,
+        );
+      }
 
-    const latestQuantity = Number(currentItem.stock_onhand);
-    if (latestQuantity !== currentQuantity) {
       throw new Error(
-        `Stock changed in Supabase from ${currentQuantity} to ${latestQuantity}. Reload the page and try again.`,
+        "Supabase did not update this item's stock. Check the authenticated UPDATE policy for items_masterlist.",
       );
     }
-
-    throw new Error(
-      "Supabase did not update this item's stock. Check the authenticated UPDATE policy for items_masterlist.",
-    );
   }
 
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const today = formatLocalDate();
   const borrowDate =
     actionType === "Borrow"
       ? today
@@ -94,12 +112,15 @@ export async function persistInventoryTransaction({
     purpose: record.remarks || "",
     quantity: amount,
     action_type: actionType,
-    return_date: actionType === "Return" ? today : null,
+    return_date: actionType === "Return" && !isPendingReturn ? today : null,
     borrow_date: borrowDate,
-    status: record.status,
+    status: isPendingReturn ? PENDING_RETURN_STATUS : record.status,
     unit: record.unit,
     created_at: record.dateTime,
-    recieved_by: null,
+    recieved_by:
+      actionType === "Return" && !isPendingReturn
+        ? record.receivedBy || null
+        : null,
     returned_by: actionType === "Return" ? record.returnedBy || null : null,
   };
 
@@ -115,12 +136,18 @@ export async function persistInventoryTransaction({
     return {
       ...record,
       id: data.transaction_id,
+      itemId,
       dateTime: data.created_at || record.dateTime,
       personUserId: recipientId,
       borrowDate: data.borrow_date,
       returnDate: data.return_date,
+      status: data.status || transaction.status,
+      receivedBy: data.recieved_by || "",
     };
   } catch (transactionError) {
+    if (isPendingReturn) {
+      throw transactionError;
+    }
     const { data: rolledBackItem, error: rollbackError } = await supabaseClient
       .from("items_masterlist")
       .update({ stock_onhand: currentQuantity })
@@ -141,6 +168,124 @@ export async function persistInventoryTransaction({
   }
 }
 
+export async function confirmInventoryReturn({
+  supabaseClient,
+  record,
+  item,
+  receivedBy = "Secretary",
+}) {
+  const itemId = Number(item?.item_id ?? item?.id ?? record?.itemId);
+  const amount = Number(record?.quantity);
+  if (!Number.isInteger(itemId) || !Number.isInteger(amount) || amount <= 0) {
+    throw new Error("This return record does not have valid item or quantity details.");
+  }
+
+  const currentItem = await readActiveMasterlistItem(supabaseClient, itemId);
+  const currentStock = Number(currentItem.stock_onhand);
+  if (!Number.isFinite(currentStock)) {
+    throw new Error("The selected inventory item has invalid stock details.");
+  }
+
+  const today = formatLocalDate();
+  const confirmedBy = String(receivedBy || "").trim() || "Secretary";
+  const { data: updatedTx, error: txError } = await supabaseClient
+    .from("inventory_transactions")
+    .update({
+      status: "Returned",
+      return_date: today,
+      recieved_by: confirmedBy,
+    })
+    .eq("transaction_id", record.id)
+    .eq("status", PENDING_RETURN_STATUS)
+    .select(INVENTORY_TRANSACTION_COLUMNS)
+    .maybeSingle();
+
+  if (txError) throw txError;
+  if (!updatedTx) {
+    throw new Error(
+      "This return request has already been processed or could not be updated.",
+    );
+  }
+
+  const nextStock = currentStock + amount;
+  try {
+    const { data: updatedItem, error: stockError } = await supabaseClient
+      .from("items_masterlist")
+      .update({ stock_onhand: nextStock })
+      .eq("item_id", itemId)
+      .eq("stock_onhand", currentStock)
+      .is("archived_at", null)
+      .select("item_id, stock_onhand")
+      .maybeSingle();
+    if (stockError) throw stockError;
+    if (!updatedItem) {
+      throw new Error(
+        "Stock changed while confirming the return. Reload the page and try again.",
+      );
+    }
+
+    return {
+      updatedTransaction: updatedTx,
+      updatedStock: Number(updatedItem.stock_onhand),
+    };
+  } catch (stockError) {
+    const { error: rollbackError } = await supabaseClient
+      .from("inventory_transactions")
+      .update({
+        status: PENDING_RETURN_STATUS,
+        return_date: null,
+        recieved_by: null,
+      })
+      .eq("transaction_id", record.id)
+      .eq("status", "Returned");
+    if (rollbackError) {
+      console.error(
+        "Return confirmation stock update failed and transaction rollback did not complete.",
+        rollbackError,
+      );
+    }
+    throw stockError;
+  }
+}
+
+export async function declineInventoryReturn({
+  supabaseClient,
+  record,
+  receivedBy = "Secretary",
+  reason = "",
+}) {
+  const declinedBy = String(receivedBy || "").trim() || "Secretary";
+  const trimmedReason = String(reason || "").trim();
+  const baseRemarks = String(record?.remarks || "").trim();
+  const nextPurpose = trimmedReason
+    ? baseRemarks
+      ? `${baseRemarks} [Declined: ${trimmedReason}]`
+      : `[Declined: ${trimmedReason}]`
+    : undefined;
+
+  const updatePayload = {
+    status: RETURN_DECLINED_STATUS,
+    recieved_by: declinedBy,
+    ...(nextPurpose !== undefined ? { purpose: nextPurpose } : {}),
+  };
+
+  const { data: updatedTx, error: txError } = await supabaseClient
+    .from("inventory_transactions")
+    .update(updatePayload)
+    .eq("transaction_id", record.id)
+    .eq("status", PENDING_RETURN_STATUS)
+    .select(INVENTORY_TRANSACTION_COLUMNS)
+    .maybeSingle();
+
+  if (txError) throw txError;
+  if (!updatedTx) {
+    throw new Error(
+      "This return request has already been processed or could not be updated.",
+    );
+  }
+  return updatedTx;
+}
+
 export function mapMasterlistItem(item) {
   const usageType = getItemUsageType(item);
   return {
@@ -154,37 +299,11 @@ export function mapMasterlistItem(item) {
   };
 }
 
-export function mapInventoryTransactions(rows, inventoryById, usersById) {
-  const mappedRecords = (Array.isArray(rows) ? rows : []).map((row) => {
-    const item = inventoryById.get(Number(row.item_id));
-    const user = usersById.get(Number(row.is_issued_to));
-    const actionType = String(row.action_type || "").toLowerCase();
-    return {
-      id: row.transaction_id,
-      dateTime: row.created_at || row.return_date || row.borrow_date || "",
-      productId: `PRD-${String(row.item_id).padStart(4, "0")}`,
-      productName: item?.name || `Item ${row.item_id}`,
-      usageType:
-        actionType === "borrow" || actionType === "return"
-          ? "Borrowable"
-          : item?.usageType || "Usable",
-      quantity: row.quantity,
-      unit: row.unit,
-      status:
-        actionType === "return"
-          ? "Returned"
-          : row.status,
-      actionType: row.action_type,
-      person: user?.username || "",
-      personUserId: row.is_issued_to,
-      remarks: row.purpose,
-      returnedBy: row.returned_by || "",
-      receivedBy: row.recieved_by || "",
-      borrowDate: row.borrow_date || null,
-      returnDate: row.return_date || null,
-    };
-  });
-  const chronologicalRecords = [...mappedRecords].sort((left, right) => {
+export function reconcileBorrowReturnState(records) {
+  const nextRecords = (Array.isArray(records) ? records : [])
+    .filter(Boolean)
+    .map((record) => ({ ...record }));
+  const chronologicalRecords = [...nextRecords].sort((left, right) => {
     const dateOrder =
       new Date(left.dateTime || 0).getTime() -
       new Date(right.dateTime || 0).getTime();
@@ -193,8 +312,20 @@ export function mapInventoryTransactions(rows, inventoryById, usersById) {
   const loansByOwnerAndItem = new Map();
 
   for (const record of chronologicalRecords) {
-    const key = `${record.personUserId}:${record.productId}`;
-    const actionType = String(record.actionType || "").toLowerCase();
+    const ownerKey =
+      record.personUserId ??
+      String(record.person || "").trim().toLowerCase();
+    const key = `${ownerKey}:${record.productId}`;
+    const actionType = record.actionType
+      ? String(record.actionType).toLowerCase()
+      : record.status === "Borrowed"
+        ? "borrow"
+        : record.status === "Returned" ||
+            record.status === PENDING_RETURN_STATUS ||
+            record.status === RETURN_DECLINED_STATUS
+          ? "return"
+          : "use";
+
     let account = loansByOwnerAndItem.get(key);
     if (!account) {
       account = { loans: [], borrowed: 0, returned: 0 };
@@ -209,15 +340,68 @@ export function mapInventoryTransactions(rows, inventoryById, usersById) {
       }
       const quantity = Number(record.quantity) || 0;
       record.returnedQuantity = 0;
+      record.pendingReturnQuantity = 0;
+      record.returnEvents = [];
+      record.returnedAt = null;
       account.loans.push({
         record,
         remaining: quantity,
+        pending: 0,
       });
       account.borrowed += quantity;
       continue;
     }
 
     if (actionType !== "return") continue;
+
+    if (record.status === RETURN_DECLINED_STATUS) {
+      const firstOpenLoan = account.loans.find((loan) => loan.remaining > 0);
+      record.isPendingConfirmation = false;
+      record.borrowedQuantity = account.borrowed;
+      record.cumulativeReturnedQuantity = account.returned;
+      record.remainingQuantity = Math.max(0, account.borrowed - account.returned);
+      record.borrowedAt = firstOpenLoan?.record.dateTime || null;
+      record.borrowRecordId = firstOpenLoan?.record.id || null;
+      record.returnedAt = null;
+      record.borrowRemarks = firstOpenLoan?.record.remarks || "";
+      record.returnRemarks = record.remarks;
+      continue;
+    }
+
+    if (record.status === PENDING_RETURN_STATUS) {
+      const quantity = Number(record.quantity) || 0;
+      let quantityToAllocate = quantity;
+      let firstMatchedLoan = null;
+      const matchedLoans = [];
+
+      for (const loan of account.loans) {
+        if (quantityToAllocate <= 0) break;
+        const unallocated = Math.max(0, loan.remaining - loan.pending);
+        if (unallocated <= 0) continue;
+
+        const pendingFromLoan = Math.min(quantityToAllocate, unallocated);
+        loan.pending += pendingFromLoan;
+        quantityToAllocate -= pendingFromLoan;
+        loan.record.pendingReturnQuantity =
+          Number(loan.record.pendingReturnQuantity || 0) + pendingFromLoan;
+        firstMatchedLoan ||= loan;
+        matchedLoans.push(loan);
+      }
+
+      const remainingBalance = Math.max(0, account.borrowed - account.returned);
+      record.isPendingConfirmation = true;
+      record.isPartialReturn = quantity < remainingBalance;
+      record.borrowedQuantity = account.borrowed;
+      record.cumulativeReturnedQuantity = account.returned;
+      record.remainingQuantity = remainingBalance;
+      record.borrowedAt = firstMatchedLoan?.record.dateTime || null;
+      record.borrowRecordId =
+        matchedLoans.length === 1 ? firstMatchedLoan?.record.id || null : null;
+      record.returnedAt = null;
+      record.borrowRemarks = firstMatchedLoan?.record.remarks || "";
+      record.returnRemarks = record.remarks;
+      continue;
+    }
 
     const quantity = Number(record.quantity) || 0;
     const availableBalance = Math.max(0, account.borrowed - account.returned);
@@ -257,6 +441,7 @@ export function mapInventoryTransactions(rows, inventoryById, usersById) {
 
     account.returned += appliedQuantity;
     const remainingBalance = Math.max(0, account.borrowed - account.returned);
+    record.isPendingConfirmation = false;
     record.isPartialReturn = remainingBalance > 0;
     record.borrowedQuantity = account.borrowed;
     record.cumulativeReturnedQuantity = account.returned;
@@ -271,7 +456,48 @@ export function mapInventoryTransactions(rows, inventoryById, usersById) {
     record.returnRemarks = record.remarks;
   }
 
-  return mappedRecords;
+  return nextRecords;
+}
+
+export function mapInventoryTransactions(rows, inventoryById, usersById) {
+  const mappedRecords = (Array.isArray(rows) ? rows : []).map((row) => {
+    const item = inventoryById.get(Number(row.item_id));
+    const user = usersById.get(Number(row.is_issued_to));
+    const actionType = String(row.action_type || "").toLowerCase();
+    const rawStatus = String(row.status || "").trim();
+    const status =
+      actionType === "return"
+        ? rawStatus === PENDING_RETURN_STATUS ||
+          rawStatus === RETURN_DECLINED_STATUS
+          ? rawStatus
+          : "Returned"
+        : row.status;
+
+    return {
+      id: row.transaction_id,
+      itemId: Number(row.item_id),
+      dateTime: row.created_at || row.return_date || row.borrow_date || "",
+      productId: `PRD-${String(row.item_id).padStart(4, "0")}`,
+      productName: item?.name || `Item ${row.item_id}`,
+      usageType:
+        actionType === "borrow" || actionType === "return"
+          ? "Borrowable"
+          : item?.usageType || "Usable",
+      quantity: row.quantity,
+      unit: row.unit,
+      status,
+      actionType: row.action_type,
+      person: user?.username || "",
+      personUserId: row.is_issued_to,
+      remarks: row.purpose,
+      returnedBy: row.returned_by || "",
+      receivedBy: row.recieved_by || "",
+      borrowDate: row.borrow_date || null,
+      returnDate: row.return_date || null,
+    };
+  });
+
+  return reconcileBorrowReturnState(mappedRecords);
 }
 
 export function getItemUsageType(item) {
@@ -308,5 +534,7 @@ export function isLowStock(item) {
 export function recordStatusClass(status) {
   if (status === "Returned") return "status-done";
   if (status === "Borrowed") return "status-waiting";
+  if (status === PENDING_RETURN_STATUS) return "status-pending";
+  if (status === RETURN_DECLINED_STATUS) return "status-action-needed";
   return "status-started";
 }

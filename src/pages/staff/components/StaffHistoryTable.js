@@ -1,14 +1,40 @@
 import { formatDateTime } from "../../../utils/formatters";
-import { recordStatusClass as statusClass } from "../../../utils/inventory";
+import {
+  PENDING_RETURN_STATUS,
+  recordStatusClass as statusClass,
+  RETURN_DECLINED_STATUS,
+} from "../../../utils/inventory";
 
 function getStaffRecordStatus(record) {
+  if (record.status === PENDING_RETURN_STATUS) {
+    return {
+      label: "Pending Confirmation",
+      className: statusClass(PENDING_RETURN_STATUS),
+    };
+  }
+  if (record.status === RETURN_DECLINED_STATUS) {
+    return {
+      label: "Return Declined",
+      className: statusClass(RETURN_DECLINED_STATUS),
+    };
+  }
   if (record.status === "Borrowed") {
     const borrowed = Number(record.quantity) || 0;
     const returned = Number(record.returnedQuantity) || 0;
+    const pendingReturn = Number(record.pendingReturnQuantity) || 0;
     if (returned > 0 && returned < borrowed) {
       return {
-        label: `Partially Returned (${returned}/${borrowed})`,
+        label:
+          pendingReturn > 0
+            ? `Partially Returned (${returned}/${borrowed} · ${pendingReturn} pending)`
+            : `Partially Returned (${returned}/${borrowed})`,
         className: "status-waiting",
+      };
+    }
+    if (returned === 0 && pendingReturn > 0) {
+      return {
+        label: `Pending Return (${pendingReturn}/${borrowed})`,
+        className: "status-pending",
       };
     }
     if (borrowed > 0 && returned >= borrowed) {
@@ -94,9 +120,16 @@ function StaffHistoryTable({
                       {record.quantity} {record.unit}
                     </td>
                     <td>
-                      <span className={`status-pill ${statusDisplay.className}`}>
-                        {statusDisplay.label}
-                      </span>
+                      <div className="staff-status-cell">
+                        <span className={`status-pill ${statusDisplay.className}`}>
+                          {statusDisplay.label}
+                        </span>
+                        {record.status === "Returned" && record.receivedBy && (
+                          <span className="staff-confirmed-by">
+                            Confirmed by {record.receivedBy}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>{record.remarks || "—"}</td>
                     <td>

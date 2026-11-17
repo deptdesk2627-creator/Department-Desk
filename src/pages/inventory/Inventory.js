@@ -9,6 +9,7 @@ import InventoryReceiptModal from "./components/InventoryReceiptModal";
 import InventoryRecords from "./components/InventoryRecords";
 import InventoryTable from "./components/InventoryTable";
 import InventoryItemModal from "./components/InventoryItemModal";
+import PendingReturnsPanel from "./components/PendingReturnsPanel";
 import StockActionModal from "./components/StockActionModal";
 import { useAdminInventory } from "./hooks/useAdminInventory";
 import {
@@ -45,6 +46,7 @@ function Inventory({
   },
   search = "",
   readOnly = false,
+  userName = "Secretary",
 }) {
   const {
     form,
@@ -61,16 +63,21 @@ function Inventory({
     recordFilter,
     setRecordFilter,
     inventoryError,
+    returnActionError,
+    processingReturnIds,
     inventoryItems,
     recordItems,
     visibleItems,
     visibleRecords,
+    pendingReturns,
     usageBreakdown,
     lowStockCount,
     stockActions,
     addItem,
     deleteItem,
     updateItem,
+    confirmReturn,
+    declineReturn,
   } = useAdminInventory({
     inventory,
     setInventory,
@@ -78,6 +85,7 @@ function Inventory({
     setRecords,
     search,
     persistAction: persistInventoryAction,
+    userName,
   });
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -236,7 +244,10 @@ function Inventory({
       actionType,
       amount,
       matchedBorrowRecord,
-      record,
+      record:
+        actionType === "Return"
+          ? { ...record, receivedBy: record.receivedBy || userName }
+          : record,
     });
   }
 
@@ -292,6 +303,16 @@ function Inventory({
         />
       )}
 
+      <PendingReturnsPanel
+        pendingReturns={pendingReturns}
+        readOnly={readOnly}
+        processingIds={processingReturnIds}
+        actionError={returnActionError}
+        onConfirm={confirmReturn}
+        onDecline={declineReturn}
+        onViewReceipt={stockActions.openReceipt}
+      />
+
       <div className="inventory-workspace">
         <div className="inventory-tabs-bar">
           <div
@@ -320,6 +341,11 @@ function Inventory({
             >
               <span>Transaction</span>
               <span className="inventory-tab-badge">{recordItems.length}</span>
+              {pendingReturns.length > 0 && (
+                <span className="inventory-tab-pending-badge">
+                  {pendingReturns.length} pending
+                </span>
+              )}
             </button>
           </div>
 
@@ -368,7 +394,9 @@ function Inventory({
                   >
                     <option value="All">All status</option>
                     <option value="Borrowed">Borrowed</option>
+                    <option value="Pending Return">Pending Return</option>
                     <option value="Returned">Returned</option>
+                    <option value="Return Declined">Return Declined</option>
                     <option value="Used">Used</option>
                   </select>
                 </div>
@@ -403,6 +431,9 @@ function Inventory({
             totalRecords={recordItems.length}
             isLoading={transactionsLoading}
             loadError={transactionsLoadError}
+            readOnly={readOnly}
+            processingReturnIds={processingReturnIds}
+            onConfirmReturn={confirmReturn}
             filter={recordFilter}
             setFilter={setRecordFilter}
             onViewReceipt={stockActions.openReceipt}
