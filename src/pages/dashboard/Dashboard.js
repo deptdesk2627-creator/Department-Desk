@@ -31,7 +31,7 @@ function Dashboard({
     recentTasks,
   } = useDashboardData({
     requests,
-    tasks: canViewTasks ? tasks : [],
+    tasks,
     inventory,
     search,
   });
@@ -49,7 +49,7 @@ function Dashboard({
           formattedDate={formattedDate}
           role={role}
         />
-        <DashboardMetrics metrics={metrics} showTasks={canViewTasks} />
+        <DashboardMetrics metrics={metrics} />
       </div>
 
       <div className="dashboard-columns">

@@ -29,8 +29,9 @@ export const ROLES = {
       createRequests: false,
       createTasks: true,
       editTasks: true,
-      manageInventory: false, // review statistics only
-      recordInventory: false,
+      manageInventory: false, // review only; cannot add or edit inventory items
+      recordInventory: true,
+      recordInventoryForCurrentUserOnly: true,
     },
   },
   staff: {

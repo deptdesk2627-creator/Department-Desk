@@ -12,6 +12,9 @@ test("Dean can manage personal tasks alongside the dashboard, transactions, and 
   expect(canAccessPage("dean", "inventory")).toBe(true);
   expect(getRole("dean").can.createTasks).toBe(true);
   expect(getRole("dean").can.editTasks).toBe(true);
+  expect(getRole("dean").can.manageInventory).toBe(false);
+  expect(getRole("dean").can.recordInventory).toBe(true);
+  expect(getRole("dean").can.recordInventoryForCurrentUserOnly).toBe(true);
 });
 
 test("Faculty and staff can manage personal tasks", () => {

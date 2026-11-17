@@ -52,7 +52,7 @@ export const FAQ_SECTIONS = [
     items: [
       {
         q: "What can my role do?",
-        a: "The Secretary is the main administrator: she logs requests and documents, manages tasks, and runs the inventory. The Dean can monitor requests and documents (view only), create and update tasks, and review inventory. Faculty & Staff use the Office Supplies portal to borrow, use, and return supplies. Open My profile to see exactly what your role can do.",
+        a: "The Secretary is the main administrator: she logs requests and documents, manages tasks, and runs the inventory. The Dean can monitor requests and documents (view only), create and update tasks, review inventory, and borrow, use, and return supplies from their own account. Faculty & Staff use the Office Supplies portal to borrow, use, and return supplies. Open My profile to see exactly what your role can do.",
         page: "profile",
         actionLabel: "Open My profile",
       },

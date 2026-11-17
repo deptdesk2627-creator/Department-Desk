@@ -83,6 +83,9 @@ export function getRolePages({
 
   const canEditDocuments = role ? Boolean(role.can?.editDocuments) : true;
   const canManageInventory = role ? Boolean(role.can?.manageInventory) : true;
+  const canRecordInventory = role
+    ? Boolean(role.can?.recordInventory)
+    : true;
 
   return {
     dashboard: (
@@ -114,6 +117,10 @@ export function getRolePages({
         setRecords={data.setInventoryRecords}
         search={search}
         readOnly={!canManageInventory}
+        canRecordInventory={canRecordInventory}
+        recordInventoryForCurrentUserOnly={Boolean(
+          role?.can?.recordInventoryForCurrentUserOnly,
+        )}
         userName={profile?.name || role?.name}
       />
     ),

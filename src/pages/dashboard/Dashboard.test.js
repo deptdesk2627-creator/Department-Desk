@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import Dashboard from "./Dashboard";
 
-test("Dean dashboard shows no task summaries or task actions", () => {
+test("Dean dashboard shows the open task count without exposing task details or actions", () => {
   render(
     <Dashboard
       role={{ id: "dean", can: { createRequests: false, manageInventory: false } }}
@@ -12,7 +12,9 @@ test("Dean dashboard shows no task summaries or task actions", () => {
   );
 
   expect(screen.queryByText("Tasks Management")).not.toBeInTheDocument();
-  expect(screen.queryByText("Open tasks")).not.toBeInTheDocument();
+  const summary = screen.getByLabelText("Office summary");
+  expect(within(summary).getByText("Open tasks")).toBeInTheDocument();
+  expect(within(summary).getByText("1")).toBeInTheDocument();
   expect(screen.queryByText("Confidential task")).not.toBeInTheDocument();
   expect(screen.queryByText("Add To-Do List")).not.toBeInTheDocument();
 });
