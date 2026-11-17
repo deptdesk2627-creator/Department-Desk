@@ -25,6 +25,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   defaultRequestView: "table",
   defaultTaskView: "table",
   notifyRequests: true,
+  notifyPendingReturns: true,
   notifyLowStock: true,
   notifyOverdueTasks: true,
   department: "",

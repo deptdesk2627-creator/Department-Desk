@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./Inventory.css";
 import { PageHeader } from "../../components/ui";
 import { isItemCleared, isRecordCleared } from "../../constants/system";
@@ -49,6 +49,7 @@ function Inventory({
   canRecordInventory = !readOnly,
   recordInventoryForCurrentUserOnly = false,
   userName = "Secretary",
+  navigationContext = null,
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
@@ -82,9 +83,11 @@ function Inventory({
     processingReturnIds,
     inventoryItems,
     recordItems,
+    transactionRecords,
     visibleItems,
     visibleRecords,
     pendingReturns,
+    visiblePendingReturns,
     usageBreakdown,
     lowStockCount,
     stockActions,
@@ -105,6 +108,32 @@ function Inventory({
     recordingUserId,
     recordingPerson,
   });
+  });
+
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
+  const [inventoryLoading, setInventoryLoading] = useState(true);
+  const [inventoryLoadError, setInventoryLoadError] = useState("");
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionsLoadError, setTransactionsLoadError] = useState("");
+  const [transactionUsers, setTransactionUsers] = useState([]);
+  const appliedNavKeyRef = useRef(null);
+
+  useEffect(() => {
+    if (
+      navigationContext?.page === "inventory" &&
+      navigationContext.key &&
+      appliedNavKeyRef.current !== navigationContext.key
+    ) {
+      appliedNavKeyRef.current = navigationContext.key;
+      if (navigationContext.tab) {
+        setActiveTab(navigationContext.tab);
+      }
+      if (navigationContext.stockFilter) {
+        setStockFilter(navigationContext.stockFilter);
+      }
+    }
+  }, [navigationContext, setActiveTab, setStockFilter]);
 
   useEffect(() => {
     let isMounted = true;
@@ -309,7 +338,7 @@ function Inventory({
         productCount={inventoryItems.length}
         lowStockCount={lowStockCount}
         usageBreakdown={usageBreakdown}
-        recordCount={recordItems.length}
+        recordCount={transactionRecords.length}
       />
       {!readOnly && (
         <InventoryForm
@@ -321,16 +350,6 @@ function Inventory({
           onCancel={() => setIsFormOpen(false)}
         />
       )}
-
-      <PendingReturnsPanel
-        pendingReturns={pendingReturns}
-        readOnly={readOnly}
-        processingIds={processingReturnIds}
-        actionError={returnActionError}
-        onConfirm={confirmReturn}
-        onDecline={declineReturn}
-        onViewReceipt={stockActions.openReceipt}
-      />
 
       <div className="inventory-workspace">
         <div className="inventory-tabs-bar">
@@ -359,12 +378,25 @@ function Inventory({
               onClick={() => setActiveTab("transactions")}
             >
               <span>Transaction</span>
-              <span className="inventory-tab-badge">{recordItems.length}</span>
-              {pendingReturns.length > 0 && (
-                <span className="inventory-tab-pending-badge">
-                  {pendingReturns.length} pending
-                </span>
-              )}
+              <span className="inventory-tab-badge">
+                {transactionRecords.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "pending"}
+              className={`inventory-folder-tab ${activeTab === "pending" ? "is-active" : ""}`}
+              onClick={() => setActiveTab("pending")}
+            >
+              <span>Pending return confirmations</span>
+              <span
+                className={`inventory-tab-badge ${
+                  pendingReturns.length > 0 ? "inventory-tab-badge--pending" : ""
+                }`}
+              >
+                {pendingReturns.length}
+              </span>
             </button>
           </div>
 
@@ -405,20 +437,21 @@ function Inventory({
                     aria-label="Search transaction records"
                   />
                 </label>
-                <div className="inventory-filter-pill">
-                  <select
-                    value={recordFilter}
-                    onChange={(event) => setRecordFilter(event.target.value)}
-                    aria-label="Filter status"
-                  >
-                    <option value="All">All status</option>
-                    <option value="Borrowed">Borrowed</option>
-                    <option value="Pending Return">Pending Return</option>
-                    <option value="Returned">Returned</option>
-                    <option value="Return Declined">Return Declined</option>
-                    <option value="Used">Used</option>
-                  </select>
-                </div>
+                {activeTab === "transactions" && (
+                  <div className="inventory-filter-pill">
+                    <select
+                      value={recordFilter}
+                      onChange={(event) => setRecordFilter(event.target.value)}
+                      aria-label="Filter status"
+                    >
+                      <option value="All">All status</option>
+                      <option value="Borrowed">Borrowed</option>
+                      <option value="Returned">Returned</option>
+                      <option value="Return Declined">Return Declined</option>
+                      <option value="Used">Used</option>
+                    </select>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -445,10 +478,10 @@ function Inventory({
             readOnly={readOnly}
             canRecord={canRecordInventory}
           />
-        ) : (
+        ) : activeTab === "transactions" ? (
           <InventoryRecords
             records={visibleRecords}
-            totalRecords={recordItems.length}
+            totalRecords={transactionRecords.length}
             isLoading={transactionsLoading}
             loadError={transactionsLoadError}
             readOnly={readOnly}
@@ -456,6 +489,19 @@ function Inventory({
             onConfirmReturn={confirmReturn}
             filter={recordFilter}
             setFilter={setRecordFilter}
+            onViewReceipt={stockActions.openReceipt}
+          />
+        ) : (
+          <PendingReturnsPanel
+            pendingReturns={visiblePendingReturns}
+            totalPending={pendingReturns.length}
+            isLoading={transactionsLoading}
+            loadError={transactionsLoadError}
+            readOnly={readOnly}
+            processingIds={processingReturnIds}
+            actionError={returnActionError}
+            onConfirm={confirmReturn}
+            onDecline={declineReturn}
             onViewReceipt={stockActions.openReceipt}
           />
         )}

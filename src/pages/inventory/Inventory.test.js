@@ -958,12 +958,25 @@ test("lets the secretary confirm a pending staff return and restore stock", asyn
     );
   });
 
+  expect(screen.getByText("3 pieces")).toBeInTheDocument();
+
+  // Unconfirmed pending return must not appear in the Transaction tab yet
+  fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
+  const preConfirmTxSection = screen.getByRole("region", {
+    name: "Transaction records",
+  });
+  expect(
+    within(preConfirmTxSection).queryByText("Returned after class"),
+  ).not.toBeInTheDocument();
+
+  fireEvent.click(
+    screen.getByRole("tab", { name: /pending return confirmations/i }),
+  );
   const pendingRegion = await screen.findByRole("region", {
     name: /pending return confirmations/i,
   });
   expect(within(pendingRegion).getByText("Projector")).toBeInTheDocument();
   expect(within(pendingRegion).getByText("Prof. Test User")).toBeInTheDocument();
-  expect(screen.getByText("3 pieces")).toBeInTheDocument();
 
   await act(async () => {
     fireEvent.click(
@@ -978,10 +991,12 @@ test("lets the secretary confirm a pending staff return and restore stock", asyn
     }),
   );
   expect(itemUpdateQuery.update).toHaveBeenCalledWith({ stock_onhand: 5 });
-  expect(await screen.findByText("5 pieces")).toBeInTheDocument();
   expect(
-    screen.queryByRole("region", { name: /pending return confirmations/i }),
-  ).not.toBeInTheDocument();
+    within(pendingRegion).getByText(/no pending return confirmations right now/i),
+  ).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("tab", { name: /master list/i }));
+  expect(await screen.findByText("5 pieces")).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
   expect(screen.getByText("Confirmed by Ma'am Aubrey")).toBeInTheDocument();
@@ -1035,6 +1050,9 @@ test("lets the secretary decline a pending return and hides confirm controls in 
     ),
   );
 
+  fireEvent.click(
+    screen.getByRole("tab", { name: /pending return confirmations/i }),
+  );
   const deanPending = await screen.findByRole("region", {
     name: /pending return confirmations/i,
   });
@@ -1077,6 +1095,9 @@ test("lets the secretary decline a pending return and hides confirm controls in 
     );
   });
 
+  fireEvent.click(
+    screen.getByRole("tab", { name: /pending return confirmations/i }),
+  );
   const pendingRegion = await screen.findByRole("region", {
     name: /pending return confirmations/i,
   });
@@ -1098,6 +1119,7 @@ test("lets the secretary decline a pending return and hides confirm controls in 
       purpose: "Returned after class [Declined: Not handed over]",
     }),
   );
+  fireEvent.click(screen.getByRole("tab", { name: /master list/i }));
   expect(screen.getByText("3 pieces")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
   const transactionSection = screen.getByRole("region", {

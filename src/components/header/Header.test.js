@@ -236,3 +236,268 @@ test("switches between light and dark mode using the header theme switch", () =>
   expect(document.documentElement.getAttribute("data-theme")).toBe("light");
   expect(themeToggle).toBeChecked();
 });
+
+test("renders pending return notifications and invokes onSelectNotification with tab metadata", () => {
+  const onNavigate = jest.fn();
+  const onSelectNotification = jest.fn();
+
+  render(
+    <Header
+      inventoryRecords={[
+        {
+          id: 55,
+          person: "Prof. Reyes",
+          productName: "Wireless Mic",
+          quantity: 1,
+          unit: "set",
+          status: "Pending Return",
+        },
+      ]}
+      onNavigate={onNavigate}
+      onSelectNotification={onSelectNotification}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Notifications, 1 unread" }));
+  fireEvent.click(screen.getByRole("button", { name: /pending return/i }));
+
+  expect(onSelectNotification).toHaveBeenCalledWith(
+    expect.objectContaining({
+      id: "return-pending:55",
+      page: "inventory",
+      tab: "pending",
+    }),
+  );
+  expect(onNavigate).toHaveBeenCalledWith("inventory");
+});
+
+test("persists read and dismissed notifications when notificationStorageKey is provided", () => {
+  window.localStorage.clear();
+  const inventory = [
+    { id: "supply-1", name: "Paper", quantity: 1, unit: "ream", lowStockAt: 2 },
+    { id: "supply-2", name: "Markers", quantity: 1, unit: "box", lowStockAt: 2 },
+  ];
+
+  const { unmount } = render(
+    <Header
+      inventory={inventory}
+      notificationStorageKey="officeflow.notifications.secretary"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Notifications, 2 unread" }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Delete notification: Markers: 1 box remaining.",
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Mark all as read" }));
+  expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
+
+  unmount();
+
+  render(
+    <Header
+      inventory={inventory}
+      notificationStorageKey="officeflow.notifications.secretary"
+    />,
+  );
+
+  expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
+  expect(screen.getByText("Paper: 1 ream remaining.")).toBeInTheDocument();
+  expect(screen.queryByText("Markers: 1 box remaining.")).not.toBeInTheDocument();
+  expect(screen.getByText("All caught up")).toBeInTheDocument();
+
+  window.localStorage.clear();
+});
+
+test("Staff sees overdue tasks and return notifications without exposing office requests", () => {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const due = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+
+  render(
+    <Header
+      role={{ id: "staff", pages: ["staff-inventory", "tasks"] }}
+      requests={[
+        {
+          id: "DOC-9",
+          student: "Dean Office",
+          document: "Confidential Memo",
+          status: "Waiting",
+        },
+      ]}
+      tasks={[{ id: "task-9", title: "Submit grades", due, done: false }]}
+      inventory={[
+        { id: "supply-1", name: "Paper", quantity: 1, unit: "ream", lowStockAt: 2 },
+      ]}
+      inventoryRecords={[
+        {
+          id: 99,
+          productName: "Projector",
+          quantity: 1,
+          unit: "unit",
+          status: "Return Declined",
+        },
+      ]}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Notifications, 2 unread" }));
+  expect(screen.getByText(/Submit grades was due/)).toBeInTheDocument();
+  expect(screen.getByText(/Return of 1 unit of Projector was declined\./)).toBeInTheDocument();
+  expect(screen.queryByText(/Confidential Memo/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Paper: 1 ream remaining/)).not.toBeInTheDocument();
+});
+
+test("does not play notification sound on initial hydration until a new alert arrives afterward", () => {
+  const play = jest.fn().mockResolvedValue(undefined);
+  const audioSpy = jest
+    .spyOn(window, "Audio")
+    .mockImplementation(() => ({ play }));
+
+  const { rerender } = render(
+    <Header isNotificationsReady={false} requests={[]} />,
+  );
+  expect(play).not.toHaveBeenCalled();
+
+  rerender(
+    <Header
+      isNotificationsReady
+      requests={[
+        {
+          id: "DOC-1",
+          student: "Alex",
+          document: "Transcript",
+          status: "Waiting",
+        },
+      ]}
+    />,
+  );
+  expect(play).not.toHaveBeenCalled();
+
+  rerender(
+    <Header
+      isNotificationsReady
+      requests={[
+        {
+          id: "DOC-1",
+          student: "Alex",
+          document: "Transcript",
+          status: "Waiting",
+        },
+        {
+          id: "DOC-2",
+          student: "Sam",
+          document: "Form 137",
+          status: "Waiting",
+        },
+      ]}
+    />,
+  );
+  expect(play).toHaveBeenCalledTimes(1);
+  audioSpy.mockRestore();
+});
+
+test("confirms a pending return directly from the notification panel for roles that can manage inventory", async () => {
+  const onConfirmReturn = jest.fn().mockResolvedValue(true);
+  const onNavigate = jest.fn();
+
+  render(
+    <Header
+      role={{ id: "secretary", can: { manageInventory: true } }}
+      inventoryRecords={[
+        {
+          id: 71,
+          person: "Prof. Reyes",
+          productName: "Projector",
+          quantity: 1,
+          unit: "unit",
+          status: "Pending Return",
+        },
+      ]}
+      onConfirmReturn={onConfirmReturn}
+      onNavigate={onNavigate}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Notifications, 1 unread" }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /Confirm return: Prof\. Reyes returned 1 unit of Projector/i,
+    }),
+  );
+
+  expect(onConfirmReturn).toHaveBeenCalledWith(
+    expect.objectContaining({
+      id: "return-pending:71",
+      recordId: 71,
+      page: "inventory",
+      tab: "pending",
+    }),
+  );
+  expect(onNavigate).not.toHaveBeenCalled();
+  expect(
+    await screen.findByRole("button", { name: "Notifications" }),
+  ).toBeInTheDocument();
+});
+
+test("shows an error alert if confirming a return from notifications fails", async () => {
+  const onConfirmReturn = jest
+    .fn()
+    .mockRejectedValue(new Error("Stock changed while confirming the return."));
+
+  render(
+    <Header
+      role={{ id: "secretary", can: { manageInventory: true } }}
+      inventoryRecords={[
+        {
+          id: 72,
+          person: "Prof. Reyes",
+          productName: "Projector",
+          quantity: 1,
+          unit: "unit",
+          status: "Pending Return",
+        },
+      ]}
+      onConfirmReturn={onConfirmReturn}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Notifications, 1 unread" }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /Confirm return: Prof\. Reyes returned 1 unit of Projector/i,
+    }),
+  );
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Stock changed while confirming the return.",
+  );
+});
+
+test("does not show the Confirm return button for view-only Dean role", () => {
+  render(
+    <Header
+      role={{ id: "dean", can: { manageInventory: false } }}
+      inventoryRecords={[
+        {
+          id: 73,
+          person: "Prof. Reyes",
+          productName: "Projector",
+          quantity: 1,
+          unit: "unit",
+          status: "Pending Return",
+        },
+      ]}
+      onConfirmReturn={jest.fn()}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Notifications, 1 unread" }));
+  expect(screen.getByText(/Prof\. Reyes returned 1 unit of Projector/)).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /confirm return/i }),
+  ).not.toBeInTheDocument();
+});

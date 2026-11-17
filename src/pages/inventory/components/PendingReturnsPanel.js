@@ -4,6 +4,9 @@ import { formatDateTime } from "../../../utils/formatters";
 
 function PendingReturnsPanel({
   pendingReturns = [],
+  totalPending = 0,
+  isLoading = false,
+  loadError = "",
   readOnly = false,
   processingIds = new Set(),
   actionError = "",
@@ -13,8 +16,6 @@ function PendingReturnsPanel({
 }) {
   const [declineTarget, setDeclineTarget] = useState(null);
   const [declineReason, setDeclineReason] = useState("");
-
-  if (!pendingReturns.length) return null;
 
   async function handleDeclineSubmit(event) {
     event.preventDefault();
@@ -28,109 +29,120 @@ function PendingReturnsPanel({
 
   return (
     <section
-      className="card panel inventory-pending-panel"
-      aria-labelledby="pending-returns-heading"
+      className="card panel module-list-panel inventory-folder-panel inventory-folder-panel--pending"
+      aria-label="Pending return confirmations"
     >
-      <div className="inventory-pending-panel__header">
-        <div className="inventory-pending-panel__title-group">
-          <div className="inventory-pending-panel__title-row">
-            <h2 id="pending-returns-heading">Pending return confirmations</h2>
-            <span className="status-pill status-pending">
-              {pendingReturns.length} awaiting confirmation
-            </span>
-          </div>
-          <p>
-            {readOnly
-              ? "Staff return requests currently waiting for the secretary's confirmation."
-              : "Verify that each returned item has been handed back before adding it to available stock."}
-          </p>
-        </div>
-      </div>
+      <p className="inventory-panel-subtitle">
+        {readOnly
+          ? "Staff return requests currently waiting for the secretary's confirmation."
+          : "Verify that each returned item has been handed back before adding it to available stock."}
+      </p>
 
+      {isLoading && (
+        <p className="empty-state" role="status">
+          Loading pending return confirmations...
+        </p>
+      )}
+      {loadError && (
+        <p className="empty-state" role="alert">
+          {loadError}
+        </p>
+      )}
       {actionError && (
         <p className="empty-state inventory-pending-panel__error" role="alert">
           {actionError}
         </p>
       )}
 
-      <div className="inventory-pending-list">
-        {pendingReturns.map((record) => {
-          const isProcessing = processingIds.has(record.id);
-          const hasRep =
-            record.returnedBy &&
-            record.person &&
-            record.returnedBy.toLowerCase() !== record.person.toLowerCase();
+      {pendingReturns.length ? (
+        <div className="inventory-pending-list">
+          {pendingReturns.map((record) => {
+            const isProcessing = processingIds.has(record.id);
+            const hasRep =
+              record.returnedBy &&
+              record.person &&
+              record.returnedBy.toLowerCase() !== record.person.toLowerCase();
 
-          return (
-            <article className="inventory-pending-item" key={record.id}>
-              <div className="inventory-pending-item__info">
-                <div className="inventory-pending-item__top">
-                  <span className="inventory-product-id-pill">
-                    {record.productId}
-                  </span>
-                  <strong className="inventory-pending-item__product">
-                    {record.productName}
-                  </strong>
-                  <span className="inventory-pending-item__qty">
-                    {record.quantity} {record.unit}
-                  </span>
+            return (
+              <article className="inventory-pending-item" key={record.id}>
+                <div className="inventory-pending-item__info">
+                  <div className="inventory-pending-item__top">
+                    <span className="inventory-product-id-pill">
+                      {record.productId}
+                    </span>
+                    <strong className="inventory-pending-item__product">
+                      {record.productName}
+                    </strong>
+                    <span className="inventory-pending-item__qty">
+                      {record.quantity} {record.unit}
+                    </span>
+                  </div>
+                  <div className="inventory-pending-item__meta">
+                    <span>
+                      Returned by{" "}
+                      <strong>{record.person || "Staff member"}</strong>
+                      {hasRep ? ` (via ${record.returnedBy})` : ""}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span>{formatDateTime(record.dateTime)}</span>
+                    {record.remarks && (
+                      <>
+                        <span aria-hidden="true">·</span>
+                        <span className="inventory-pending-item__remarks">
+                          “{record.remarks}”
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="inventory-pending-item__meta">
-                  <span>
-                    Returned by{" "}
-                    <strong>{record.person || "Staff member"}</strong>
-                    {hasRep ? ` (via ${record.returnedBy})` : ""}
-                  </span>
-                  <span aria-hidden="true">·</span>
-                  <span>{formatDateTime(record.dateTime)}</span>
-                  {record.remarks && (
+
+                <div className="inventory-pending-item__actions">
+                  <button
+                    type="button"
+                    className="receipt-table-btn"
+                    onClick={() => onViewReceipt?.(record)}
+                    disabled={isProcessing}
+                  >
+                    Receipt
+                  </button>
+                  {!readOnly && (
                     <>
-                      <span aria-hidden="true">·</span>
-                      <span className="inventory-pending-item__remarks">
-                        “{record.remarks}”
-                      </span>
+                      <button
+                        type="button"
+                        className="secondary-button inventory-decline-btn"
+                        onClick={() => {
+                          setDeclineTarget(record);
+                          setDeclineReason("");
+                        }}
+                        disabled={isProcessing}
+                      >
+                        Decline
+                      </button>
+                      <button
+                        type="button"
+                        className="primary-button inventory-confirm-btn"
+                        onClick={() => onConfirm?.(record)}
+                        disabled={isProcessing}
+                      >
+                        {isProcessing ? "Confirming..." : "Confirm return"}
+                      </button>
                     </>
                   )}
                 </div>
-              </div>
-
-              <div className="inventory-pending-item__actions">
-                <button
-                  type="button"
-                  className="receipt-table-btn"
-                  onClick={() => onViewReceipt?.(record)}
-                  disabled={isProcessing}
-                >
-                  Receipt
-                </button>
-                {!readOnly && (
-                  <>
-                    <button
-                      type="button"
-                      className="secondary-button inventory-decline-btn"
-                      onClick={() => {
-                        setDeclineTarget(record);
-                        setDeclineReason("");
-                      }}
-                      disabled={isProcessing}
-                    >
-                      Decline
-                    </button>
-                    <button
-                      type="button"
-                      className="primary-button inventory-confirm-btn"
-                      onClick={() => onConfirm?.(record)}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? "Confirming..." : "Confirm return"}
-                    </button>
-                  </>
-                )}
-              </div>
-            </article>
-          );
-        })}
-      </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        !isLoading &&
+        !loadError && (
+          <p className="empty-state">
+            {totalPending
+              ? "No pending returns match your search."
+              : "No pending return confirmations right now."}
+          </p>
+        )
+      )}
 
       <Modal
         isOpen={Boolean(declineTarget)}

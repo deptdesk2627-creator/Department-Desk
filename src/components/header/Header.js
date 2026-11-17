@@ -13,10 +13,15 @@ function Header({
   requests = [],
   tasks = [],
   inventory = [],
+  inventoryRecords = [],
   settings,
+  isNotificationsReady = true,
+  notificationStorageKey = "",
   search = "",
   onSearchChange,
   onNavigate,
+  onSelectNotification,
+  onConfirmReturn,
   onToggleSidebar,
   isSidebarOpen = false,
   theme,
@@ -38,6 +43,7 @@ function Header({
 
   const isStaff = role?.id === "staff";
   const isDean = role?.id === "dean";
+  const canConfirmReturns = role ? Boolean(role.can?.manageInventory) : true;
   const {
     areNotificationsOpen,
     closeNotifications,
@@ -158,20 +164,24 @@ function Header({
             </svg>
           </span>
         </label>
-        {!isStaff && (
-          <HeaderNotifications
-            requests={requests}
-            tasks={isDean ? [] : tasks}
-            inventory={inventory}
-            settings={settings}
-            isOpen={areNotificationsOpen}
-            onClose={closeNotifications}
-            onToggle={toggleNotifications}
-            onNavigate={onNavigate}
-            notificationRef={notificationRef}
-            notificationButtonRef={notificationButtonRef}
-          />
-        )}
+        <HeaderNotifications
+          requests={isStaff ? [] : requests}
+          tasks={isDean ? [] : tasks}
+          inventory={isStaff ? [] : inventory}
+          inventoryRecords={inventoryRecords}
+          roleId={role?.id || "secretary"}
+          settings={settings}
+          isReady={isNotificationsReady}
+          storageKey={notificationStorageKey}
+          isOpen={areNotificationsOpen}
+          onClose={closeNotifications}
+          onToggle={toggleNotifications}
+          onNavigate={onNavigate}
+          onSelectNotification={onSelectNotification}
+          onConfirmReturn={canConfirmReturns ? onConfirmReturn : undefined}
+          notificationRef={notificationRef}
+          notificationButtonRef={notificationButtonRef}
+        />
         <HeaderProfile
           role={role}
           onLogout={onLogout}

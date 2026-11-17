@@ -4,31 +4,98 @@ import { getNotifications } from "../../utils/headerHelpers";
 
 const NOTIFICATION_SOUND_URL = `${process.env.PUBLIC_URL || ""}/sound-message.mp3`;
 
+function readStoredNotificationIds(key) {
+  if (!key || typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? new Set(parsed) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function writeStoredNotificationIds(key, ids) {
+  if (!key || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(Array.from(ids)));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 function HeaderNotifications({
   requests,
   tasks,
   inventory,
+  inventoryRecords = [],
+  roleId = "secretary",
   settings,
+  isReady = true,
+  storageKey = "",
   isOpen,
   onClose,
   onToggle,
   onNavigate,
+  onSelectNotification,
+  onConfirmReturn,
   notificationRef,
   notificationButtonRef,
 }) {
-  const [readNotificationIds, setReadNotificationIds] = useState(() => new Set());
-  const previousNotificationIds = useRef(null);
-  const [dismissedNotificationIds, setDismissedNotificationIds] = useState(
-    () => new Set(),
+  const readStorageKey = storageKey ? `${storageKey}.read` : "";
+  const dismissedStorageKey = storageKey ? `${storageKey}.dismissed` : "";
+
+  const [readNotificationIds, setReadNotificationIds] = useState(() =>
+    readStoredNotificationIds(readStorageKey),
   );
+  const previousNotificationIds = useRef(null);
+  const lastStorageKeyRef = useRef(storageKey);
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState(() =>
+    readStoredNotificationIds(dismissedStorageKey),
+  );
+  const [confirmingIds, setConfirmingIds] = useState(() => new Set());
+  const [actionError, setActionError] = useState("");
+
+  useEffect(() => {
+    if (lastStorageKeyRef.current === storageKey) return;
+    lastStorageKeyRef.current = storageKey;
+    previousNotificationIds.current = null;
+    setReadNotificationIds(readStoredNotificationIds(readStorageKey));
+    setDismissedNotificationIds(readStoredNotificationIds(dismissedStorageKey));
+  }, [storageKey, readStorageKey, dismissedStorageKey]);
+
   const notifications = useMemo(
     () =>
-      getNotifications(requests, tasks, inventory, settings).filter(
-        (notification) => !dismissedNotificationIds.has(notification.id),
-      ),
-    [requests, tasks, inventory, settings, dismissedNotificationIds],
+      isReady
+        ? getNotifications(
+            requests,
+            tasks,
+            inventory,
+            settings,
+            inventoryRecords,
+            roleId,
+          ).filter(
+            (notification) => !dismissedNotificationIds.has(notification.id),
+          )
+        : [],
+    [
+      isReady,
+      requests,
+      tasks,
+      inventory,
+      settings,
+      inventoryRecords,
+      roleId,
+      dismissedNotificationIds,
+    ],
   );
   useEffect(() => {
+    if (!isReady) {
+      previousNotificationIds.current = null;
+      return;
+    }
+
     const currentNotificationIds = new Set(
       notifications.map((notification) => notification.id),
     );
@@ -49,7 +116,7 @@ function HeaderNotifications({
     }
 
     previousNotificationIds.current = currentNotificationIds;
-  }, [notifications]);
+  }, [isReady, notifications]);
   const unreadCount = notifications.filter(
     (notification) => !readNotificationIds.has(notification.id),
   ).length;
@@ -58,20 +125,54 @@ function HeaderNotifications({
     setReadNotificationIds((current) => {
       const next = new Set(current);
       notifications.forEach((notification) => next.add(notification.id));
+      writeStoredNotificationIds(readStorageKey, next);
       return next;
     });
   }
 
   function dismissNotification(notificationId) {
-    setDismissedNotificationIds((current) =>
-      new Set(current).add(notificationId),
-    );
+    setDismissedNotificationIds((current) => {
+      const next = new Set(current).add(notificationId);
+      writeStoredNotificationIds(dismissedStorageKey, next);
+      return next;
+    });
   }
 
   function openNotification(notification) {
-    setReadNotificationIds((current) => new Set(current).add(notification.id));
+    setReadNotificationIds((current) => {
+      const next = new Set(current).add(notification.id);
+      writeStoredNotificationIds(readStorageKey, next);
+      return next;
+    });
     onClose();
+    onSelectNotification?.(notification);
     onNavigate?.(notification.page);
+  }
+
+  async function handleConfirmReturn(notification) {
+    if (!onConfirmReturn || !notification?.recordId) return;
+    if (confirmingIds.has(notification.id)) return;
+
+    setActionError("");
+    setConfirmingIds((current) => new Set(current).add(notification.id));
+    try {
+      await onConfirmReturn(notification);
+      setReadNotificationIds((current) => {
+        const next = new Set(current).add(notification.id);
+        writeStoredNotificationIds(readStorageKey, next);
+        return next;
+      });
+    } catch (error) {
+      setActionError(
+        error?.message || "Could not confirm this return. Please try again.",
+      );
+    } finally {
+      setConfirmingIds((current) => {
+        const next = new Set(current);
+        next.delete(notification.id);
+        return next;
+      });
+    }
   }
 
   return (
@@ -130,29 +231,53 @@ function HeaderNotifications({
               </button>
             )}
           </div>
+          {actionError && (
+            <p className="app-header__notification-error" role="alert">
+              {actionError}
+            </p>
+          )}
           {notifications.length ? (
             <div className="app-header__notification-list">
               {notifications.map((notification) => {
                 const isRead = readNotificationIds.has(notification.id);
+                const canConfirm = Boolean(
+                  onConfirmReturn && notification.recordId,
+                );
+                const isConfirming = confirmingIds.has(notification.id);
                 return (
                   <div
                     className="app-header__notification-row"
                     key={notification.id}
                   >
-                    <button
-                      className={`app-header__notification-item${isRead ? "" : " app-header__notification-item--unread"}`}
-                      type="button"
-                      onClick={() => openNotification(notification)}
-                    >
-                      <span
-                        className="app-header__notification-item-dot"
-                        aria-hidden="true"
-                      />
-                      <span>
-                        <strong>{notification.title}</strong>
-                        <span>{notification.message}</span>
-                      </span>
-                    </button>
+                    <div className="app-header__notification-body">
+                      <button
+                        className={`app-header__notification-item${isRead ? "" : " app-header__notification-item--unread"}`}
+                        type="button"
+                        onClick={() => openNotification(notification)}
+                      >
+                        <span
+                          className="app-header__notification-item-dot"
+                          aria-hidden="true"
+                        />
+                        <span>
+                          <strong>{notification.title}</strong>
+                          <span>{notification.message}</span>
+                        </span>
+                      </button>
+                      {canConfirm && (
+                        <div className="app-header__notification-actions">
+                          <button
+                            className="app-header__notification-confirm"
+                            type="button"
+                            disabled={isConfirming}
+                            aria-label={`Confirm return: ${notification.message}`}
+                            onClick={() => handleConfirmReturn(notification)}
+                          >
+                            {isConfirming ? "Confirming..." : "Confirm return"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <button
                       className="app-header__notification-delete"
                       type="button"

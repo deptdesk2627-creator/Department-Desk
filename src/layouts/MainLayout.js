@@ -9,9 +9,14 @@ function MainLayout({
   requests = [],
   tasks = [],
   inventory = [],
+  inventoryRecords = [],
   settings,
+  isNotificationsReady = true,
+  notificationStorageKey = "",
   search = "",
   onNavigate,
+  onSelectNotification,
+  onConfirmReturn,
   onSearchChange,
   isOpen = true,
   onToggle,
@@ -46,9 +51,14 @@ function MainLayout({
           requests={requests}
           tasks={tasks}
           inventory={inventory}
+          inventoryRecords={inventoryRecords}
           settings={settings}
+          isNotificationsReady={isNotificationsReady}
+          notificationStorageKey={notificationStorageKey}
           search={search}
           onNavigate={onNavigate}
+          onSelectNotification={onSelectNotification}
+          onConfirmReturn={onConfirmReturn}
           onSearchChange={onSearchChange}
           onToggleSidebar={onToggle}
           isSidebarOpen={isOpen}

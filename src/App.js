@@ -11,6 +11,7 @@ import {
   getRole,
   ROLES,
 } from "./constants/roles";
+import { getProductId } from "./hooks/useInventoryActions";
 import { useOfficeData } from "./hooks/useOfficeData";
 import { useStoredState } from "./hooks/useStoredState";
 import AuthLayout from "./layouts/AuthLayout";
@@ -18,6 +19,11 @@ import MainLayout from "./layouts/MainLayout";
 import { getRolePages } from "./pages";
 import Login from "./pages/auth/Login";
 import { supabase } from "./supabase/supabaseClient";
+import {
+  confirmInventoryReturn,
+  PENDING_RETURN_STATUS,
+  reconcileBorrowReturnState,
+} from "./utils/inventory";
 
 function extractMetadataProfilePatch(user) {
   const meta = user?.user_metadata || {};
@@ -51,13 +57,16 @@ function App() {
   const activeTheme = theme === "dark" ? "dark" : "light";
   const role = getRole(roleId);
   const [page, setPage] = useState(() => getHomePage(roleId));
+  const [navigationContext, setNavigationContext] = useState(null);
+  const navigationKeyRef = useRef(0);
+  const skipNextNavResetRef = useRef(false);
   const [search, setSearch] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
     typeof window !== "undefined"
       ? window.innerWidth > 768 && settings?.sidebarDefault !== "collapsed"
       : true,
   );
-  const data = useOfficeData();
+  const data = useOfficeData({ isAuthenticated, roleId: role.id });
   const setTasks = data.setTasks;
   const safeSearch = typeof search === "string" ? search : "";
 
@@ -196,11 +205,89 @@ function App() {
 
   function navigate(nextPage) {
     if (canAccessPage(role.id, nextPage)) {
+      if (skipNextNavResetRef.current) {
+        skipNextNavResetRef.current = false;
+      } else {
+        setNavigationContext(null);
+      }
       setPage(nextPage);
       if (typeof window !== "undefined" && window.innerWidth <= 768) {
         setIsSidebarOpen(false);
       }
     }
+  }
+
+  function handleSelectNotification(notification) {
+    skipNextNavResetRef.current = true;
+    setNavigationContext({
+      page: notification.page,
+      tab: notification.tab || null,
+      stockFilter: notification.stockFilter || null,
+      key: ++navigationKeyRef.current,
+    });
+  }
+
+  async function handleConfirmReturnFromNotification(notification) {
+    if (!role?.can?.manageInventory) return false;
+    const record = (data.inventoryRecords || []).find(
+      (entry) =>
+        entry &&
+        entry.status === PENDING_RETURN_STATUS &&
+        String(entry.id) === String(notification?.recordId),
+    );
+    if (!record) {
+      throw new Error("This return request is no longer pending.");
+    }
+
+    const matchedItem = (data.inventory || []).find(
+      (item) =>
+        Number(item.item_id ?? item.id) === Number(record.itemId) ||
+        getProductId(item) === record.productId,
+    );
+    if (!matchedItem) {
+      throw new Error(
+        "Could not find this product in the active inventory masterlist.",
+      );
+    }
+
+    const confirmedBy = String(profile?.name || role?.name || "").trim() || "Secretary";
+    const today = new Date().toISOString().slice(0, 10);
+    const result = await confirmInventoryReturn({
+      supabaseClient: supabase,
+      record,
+      item: matchedItem,
+      receivedBy: confirmedBy,
+    });
+    const nextStock = result.updatedStock;
+    const savedReturnDate = result.updatedTransaction?.return_date || today;
+
+    data.setInventory((current) =>
+      (Array.isArray(current) ? current : []).map((item) =>
+        item?.id === matchedItem.id
+          ? {
+              ...item,
+              quantity: nextStock,
+              stock_onhand: nextStock,
+            }
+          : item,
+      ),
+    );
+    data.setInventoryRecords((current) => {
+      const existingList = Array.isArray(current) ? current : [];
+      const updatedList = existingList.map((entry) =>
+        entry?.id === record.id
+          ? {
+              ...entry,
+              status: "Returned",
+              returnDate: savedReturnDate,
+              receivedBy: confirmedBy,
+              isPendingConfirmation: false,
+            }
+          : entry,
+      );
+      return reconcileBorrowReturnState(updatedList);
+    });
+    return true;
   }
 
   function saveProfile(nextProfile) {
@@ -256,6 +343,7 @@ function App() {
 
   async function handleLogout() {
     setSearch("");
+    setNavigationContext(null);
     setIsLoggingOut(true);
     try {
       const { error } = await supabase.auth.signOut();
@@ -290,6 +378,7 @@ function App() {
     data,
     search: safeSearch,
     navigate,
+    navigationContext,
     profile,
     onSaveProfile: saveProfile,
     settings,
@@ -308,10 +397,15 @@ function App() {
       requests={data.requests}
       tasks={data.tasks}
       inventory={data.inventory}
+      inventoryRecords={data.inventoryRecords}
       settings={settings}
+      isNotificationsReady={data.isReady}
+      notificationStorageKey={`officeflow.notifications.${role.id}`}
       search={safeSearch}
       onSearchChange={setSearch}
       onNavigate={navigate}
+      onSelectNotification={handleSelectNotification}
+      onConfirmReturn={handleConfirmReturnFromNotification}
       isOpen={isSidebarOpen}
       onToggle={() => setIsSidebarOpen((open) => !open)}
       onCloseSidebar={() => setIsSidebarOpen(false)}

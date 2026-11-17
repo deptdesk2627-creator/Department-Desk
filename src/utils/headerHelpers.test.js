@@ -14,6 +14,89 @@ test("builds notifications for waiting requests, low stock, and overdue tasks", 
   ]);
 });
 
+test("distinguishes outgoing and incoming waiting requests with unique IDs and target tabs", () => {
+  const notifications = getNotifications(
+    [
+      {
+        id: 1,
+        direction: "outgoing",
+        student: "Ari",
+        document: "Travel order",
+        status: "Pending",
+      },
+      {
+        id: 1,
+        direction: "incoming",
+        student: "Registrar",
+        document: "Memo 104",
+        status: "For Signature",
+      },
+    ],
+    [],
+    [],
+  );
+
+  expect(notifications).toEqual([
+    expect.objectContaining({
+      id: "request:1",
+      title: "Request waiting",
+      page: "transactions",
+      tab: "outgoing",
+    }),
+    expect.objectContaining({
+      id: "request:incoming:1",
+      title: "Request waiting",
+      page: "transactions",
+      tab: "incoming",
+    }),
+  ]);
+});
+
+test("builds pending return notifications for secretary and return updates for staff", () => {
+  const records = [
+    {
+      id: 12,
+      person: "Prof. Santos",
+      productName: "Projector",
+      quantity: 1,
+      unit: "unit",
+      status: "Pending Return",
+    },
+    {
+      id: 13,
+      person: "Prof. Santos",
+      productName: "HDMI Cable",
+      quantity: 2,
+      unit: "pcs",
+      status: "Return Declined",
+    },
+  ];
+
+  const secretaryAlerts = getNotifications([], [], [], {}, records, "secretary");
+  expect(secretaryAlerts).toEqual([
+    expect.objectContaining({
+      id: "return-pending:12",
+      title: "Pending return",
+      page: "inventory",
+      tab: "pending",
+    }),
+  ]);
+
+  const staffAlerts = getNotifications([], [], [], {}, records, "staff");
+  expect(staffAlerts).toEqual([
+    expect.objectContaining({
+      id: "return-awaiting:12",
+      title: "Return awaiting confirmation",
+      page: "staff-inventory",
+    }),
+    expect.objectContaining({
+      id: "return-declined:13",
+      title: "Return declined",
+      page: "staff-inventory",
+    }),
+  ]);
+});
+
 test("returns searchable results with normalized request status", () => {
   expect(
     getSearchResults(
