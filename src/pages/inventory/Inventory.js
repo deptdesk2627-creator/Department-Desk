@@ -108,15 +108,6 @@ function Inventory({
     recordingUserId,
     recordingPerson,
   });
-  });
-
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
-  const [inventoryLoading, setInventoryLoading] = useState(true);
-  const [inventoryLoadError, setInventoryLoadError] = useState("");
-  const [transactionsLoading, setTransactionsLoading] = useState(true);
-  const [transactionsLoadError, setTransactionsLoadError] = useState("");
-  const [transactionUsers, setTransactionUsers] = useState([]);
   const appliedNavKeyRef = useRef(null);
 
   useEffect(() => {
