@@ -20,7 +20,6 @@ export function getRolePages({
   onThemeChange,
   isSidebarOpen,
   onSidebarOpenChange,
-  isDemo = false,
 }) {
   const systemPages = {
     profile: (
@@ -61,7 +60,6 @@ export function getRolePages({
       setTasks={data.setTasks}
       search={search}
       defaultView={settings?.defaultTaskView}
-      isDemo={isDemo}
     />
   );
 
@@ -77,7 +75,6 @@ export function getRolePages({
           search={search}
           profile={profile}
           role={role}
-          isDemo={isDemo}
         />
       ),
       ...systemPages,
@@ -106,7 +103,6 @@ export function getRolePages({
         search={search}
         readOnly={!canEditDocuments}
         defaultView={settings?.defaultRequestView}
-        isDemo={isDemo}
       />
     ),
     tasks: taskPage,
@@ -118,7 +114,6 @@ export function getRolePages({
         setRecords={data.setInventoryRecords}
         search={search}
         readOnly={!canManageInventory}
-        isDemo={isDemo}
       />
     ),
     ...systemPages,

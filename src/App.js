@@ -37,8 +37,6 @@ const storedObjectOptions = { validate: isPlainObject };
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isDemoSession, setIsDemoSession] = useState(false);
-  const isDemoRef = useRef(false);
   const taskOwnerAuthId = useRef(null);
   const [roleId, setRoleId] = useStoredState("officeflow.role", "secretary");
   const [theme, setTheme] = useStoredState("officeflow.theme", "light", {
@@ -135,11 +133,9 @@ function App() {
         !session ||
         !Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
       ) {
-        if (!isDemoRef.current) {
-          taskOwnerAuthId.current = null;
-          setTasks([]);
-          setIsAuthenticated(false);
-        }
+        taskOwnerAuthId.current = null;
+        setTasks([]);
+        setIsAuthenticated(false);
         return;
       }
 
@@ -148,10 +144,8 @@ function App() {
         taskOwnerAuthId.current = sessionUserId;
         setTasks([]);
       }
-      isDemoRef.current = false;
       setRoleId(sessionRole);
       syncSessionProfile(session.user, sessionRole);
-      setIsDemoSession(false);
       setIsAuthenticated(true);
     });
 
@@ -163,11 +157,9 @@ function App() {
 
         const session = data.session;
         if (!session) {
-          if (!isDemoRef.current) {
-            taskOwnerAuthId.current = null;
-            setTasks([]);
-            setIsAuthenticated(false);
-          }
+          taskOwnerAuthId.current = null;
+          setTasks([]);
+          setIsAuthenticated(false);
           return;
         }
 
@@ -182,12 +174,10 @@ function App() {
             taskOwnerAuthId.current = sessionUserId;
             setTasks([]);
           }
-          isDemoRef.current = false;
           setRoleId(sessionRole);
           syncSessionProfile(session.user, sessionRole);
-          setIsDemoSession(false);
           setIsAuthenticated(true);
-        } else if (!isDemoRef.current) {
+        } else {
           setIsAuthenticated(false);
         }
       })
@@ -259,12 +249,8 @@ function App() {
         },
       }));
     }
-    const isDemo =
-      !user?.id && String(user?.email || "").endsWith("@deptdesk.edu");
-    isDemoRef.current = isDemo;
     setSearch("");
     setPage(getHomePage(resolvedRole));
-    setIsDemoSession(isDemo);
     setIsAuthenticated(true);
   }
 
@@ -275,10 +261,8 @@ function App() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setTimeout(() => {
-        isDemoRef.current = false;
         taskOwnerAuthId.current = null;
         setTasks([]);
-        setIsDemoSession(false);
         setIsAuthenticated(false);
         setIsLoggingOut(false);
       }, 220);
@@ -314,7 +298,6 @@ function App() {
     onThemeChange: setTheme,
     isSidebarOpen,
     onSidebarOpenChange: setIsSidebarOpen,
-    isDemo: isDemoSession,
   });
 
   return (

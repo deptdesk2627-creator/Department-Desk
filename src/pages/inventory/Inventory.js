@@ -45,7 +45,6 @@ function Inventory({
   },
   search = "",
   readOnly = false,
-  isDemo = false,
 }) {
   const {
     form,
@@ -78,31 +77,18 @@ function Inventory({
     records,
     setRecords,
     search,
-    persistAction: isDemo ? undefined : persistInventoryAction,
+    persistAction: persistInventoryAction,
   });
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
-  const [inventoryLoading, setInventoryLoading] = useState(!isDemo);
+  const [inventoryLoading, setInventoryLoading] = useState(true);
   const [inventoryLoadError, setInventoryLoadError] = useState("");
-  const [transactionsLoading, setTransactionsLoading] = useState(!isDemo);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [transactionsLoadError, setTransactionsLoadError] = useState("");
   const [transactionUsers, setTransactionUsers] = useState([]);
 
   useEffect(() => {
-    if (isDemo) {
-      setInventoryLoading(false);
-      setTransactionsLoading(false);
-      setInventoryLoadError("");
-      setTransactionsLoadError("");
-      setTransactionUsers([
-        { user_id: 1, username: "Prof. Juan Dela Cruz" },
-        { user_id: 2, username: "Prof. Maria Clara" },
-        { user_id: 3, username: "Dean's Office" },
-      ]);
-      return undefined;
-    }
-
     let isMounted = true;
 
     async function loadInventoryData() {
@@ -223,7 +209,7 @@ function Inventory({
     return () => {
       isMounted = false;
     };
-  }, [isDemo, setInventory, setRecords]);
+  }, [setInventory, setRecords]);
 
   async function persistInventoryAction({
     actionType,

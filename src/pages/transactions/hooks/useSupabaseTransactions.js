@@ -170,12 +170,12 @@ function makeHistoryRows(request, entries, changedBy) {
   }));
 }
 
-export function useSupabaseTransactions({ setRequests, isDemo = false }) {
+export function useSupabaseTransactions({ setRequests }) {
   const [officeRows, setOfficeRows] = useState([]);
   const [locationRows, setLocationRows] = useState([]);
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(!isDemo);
-  const [isReady, setIsReady] = useState(isDemo);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -184,13 +184,6 @@ export function useSupabaseTransactions({ setRequests, isDemo = false }) {
   }, []);
 
   useEffect(() => {
-    if (isDemo) {
-      setIsLoading(false);
-      setIsReady(true);
-      setError("");
-      return undefined;
-    }
-
     let isMounted = true;
 
     async function loadTransactions() {
@@ -317,7 +310,7 @@ export function useSupabaseTransactions({ setRequests, isDemo = false }) {
     return () => {
       isMounted = false;
     };
-  }, [isDemo, reloadToken, setRequests]);
+  }, [reloadToken, setRequests]);
 
   const officeNames = useMemo(
     () => officeRows.map((office) => office.name).filter(Boolean),

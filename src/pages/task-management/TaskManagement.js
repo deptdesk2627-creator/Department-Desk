@@ -15,9 +15,8 @@ function TaskManagement({
   },
   search = "",
   defaultView = "table",
-  isDemo = false,
 }) {
-  const taskPersistence = useSupabaseTasks({ tasks, setTasks, isDemo });
+  const taskPersistence = useSupabaseTasks({ tasks, setTasks });
   const {
     addTask,
     bulkComplete,
@@ -52,9 +51,9 @@ function TaskManagement({
     setTasks,
     search,
     defaultView,
-    onTaskAdd: isDemo ? undefined : taskPersistence.persistTaskAdd,
-    onTaskUpdate: isDemo ? undefined : taskPersistence.persistTaskUpdate,
-    onTaskDelete: isDemo ? undefined : taskPersistence.persistTaskDelete,
+    onTaskAdd: taskPersistence.persistTaskAdd,
+    onTaskUpdate: taskPersistence.persistTaskUpdate,
+    onTaskDelete: taskPersistence.persistTaskDelete,
     onTaskError: taskPersistence.reportAddError,
   });
 

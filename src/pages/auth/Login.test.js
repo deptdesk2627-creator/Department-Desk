@@ -266,17 +266,11 @@ test("applies dark theme attribute to split page container", () => {
   );
 });
 
-test("signs in immediately with one-click demo account buttons", () => {
-  const onLogin = jest.fn();
-  render(<Login onLogin={onLogin} />);
+test("does not offer demo sign-in", () => {
+  render(<Login />);
 
-  fireEvent.click(screen.getByRole("button", { name: /secretary/i }));
-  expect(onLogin).toHaveBeenCalledWith({
-    email: "secretary@deptdesk.edu",
-    app_metadata: { role: "secretary" },
-    user_metadata: {
-      full_name: "Ma'am Aubrey",
-      role: "secretary",
-    },
-  });
+  expect(screen.queryByText(/quick demo sign-in/i)).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /secretary/i }),
+  ).not.toBeInTheDocument();
 });

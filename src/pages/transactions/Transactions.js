@@ -15,9 +15,8 @@ function Transactions({
   search = "",
   readOnly = false,
   defaultView = "table",
-  isDemo = false,
 }) {
-  const persistence = useSupabaseTransactions({ setRequests, isDemo });
+  const persistence = useSupabaseTransactions({ setRequests });
   const manager = useTransactionManager({
     requests,
     setRequests,
@@ -29,9 +28,9 @@ function Transactions({
     forwardedOptions: persistence.forwardedOptions.length
       ? persistence.forwardedOptions
       : undefined,
-    onRequestAdd: isDemo ? undefined : persistence.persistAdd,
-    onRequestUpdate: isDemo ? undefined : persistence.persistUpdate,
-    onRequestDelete: isDemo ? undefined : persistence.persistDelete,
+    onRequestAdd: persistence.persistAdd,
+    onRequestUpdate: persistence.persistUpdate,
+    onRequestDelete: persistence.persistDelete,
     onRequestError: persistence.reportPersistenceError,
   });
   const [isFormOpen, setIsFormOpen] = useState(false);

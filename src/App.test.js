@@ -7,11 +7,13 @@ jest.mock("./supabase/supabaseClient", () => ({
     auth: {
       getSession: jest.fn(),
       onAuthStateChange: jest.fn(),
+      getUser: jest.fn(),
       signInWithPassword: jest.fn(),
       signOut: jest.fn(),
       signUp: jest.fn(),
       getClaims: jest.fn(),
     },
+    from: jest.fn(),
   },
 }));
 
@@ -21,6 +23,28 @@ beforeEach(() => {
   supabase.auth.getSession.mockResolvedValue({
     data: { session: null },
     error: null,
+  });
+  supabase.auth.getUser.mockResolvedValue({
+    data: { user: { id: "secretary-user" } },
+    error: null,
+  });
+  supabase.from.mockImplementation(() => {
+    const query = {
+      select: jest.fn(() => query),
+      eq: jest.fn(() => query),
+      delete: jest.fn(() => query),
+      update: jest.fn(() => query),
+      is: jest.fn(() => Promise.resolve({ data: [], error: null })),
+      gte: jest.fn(() => Promise.resolve({ data: [], error: null })),
+      order: jest.fn(() => Promise.resolve({ data: [], error: null })),
+      maybeSingle: jest.fn(() =>
+        Promise.resolve({
+          data: { user_id: 1, username: "Ma'am Aubrey" },
+          error: null,
+        }),
+      ),
+    };
+    return query;
   });
   supabase.auth.getClaims.mockResolvedValue({
     data: { claims: { app_metadata: { role: "secretary" } } },
@@ -130,10 +154,25 @@ test("clears previously saved local profiles without removing Supabase accounts"
 });
 
 test("applies sidebar, table density, and default view buttons in Settings immediately", async () => {
+  const user = {
+    id: "secretary-user",
+    email: "secretary@example.com",
+    app_metadata: { role: "secretary" },
+    user_metadata: { full_name: "Ma'am Aubrey" },
+  };
+  supabase.auth.signInWithPassword.mockResolvedValue({
+    data: { user },
+    error: null,
+  });
   render(<App />);
 
-  // Sign in via quick demo Secretary button
-  fireEvent.click(screen.getByRole("button", { name: /secretary/i }));
+  fireEvent.change(screen.getByLabelText(/email address/i), {
+    target: { value: user.email },
+  });
+  fireEvent.change(screen.getByLabelText(/^password$/i), {
+    target: { value: "secure-password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /sign in to workspace/i }));
   const sidebar = await screen.findByRole("complementary", {
     name: /main navigation/i,
   });

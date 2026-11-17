@@ -133,7 +133,7 @@ test("filters available supplies by name or product ID", async () => {
   expect(screen.queryByText("Folders")).not.toBeInTheDocument();
 });
 
-test("does not mistake an unauthenticated demo session for database access", async () => {
+test("does not mistake an unauthenticated session for database access", async () => {
   supabase.auth.getUser.mockResolvedValue({
     data: { user: null },
     error: null,
