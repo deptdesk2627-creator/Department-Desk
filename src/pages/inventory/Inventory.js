@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./Inventory.css";
 import { PageHeader } from "../../components/ui";
 import { isItemCleared, isRecordCleared } from "../../constants/system";
@@ -47,6 +47,7 @@ function Inventory({
   search = "",
   readOnly = false,
   userName = "Secretary",
+  navigationContext = null,
 }) {
   const {
     form,
@@ -97,6 +98,23 @@ function Inventory({
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [transactionsLoadError, setTransactionsLoadError] = useState("");
   const [transactionUsers, setTransactionUsers] = useState([]);
+  const appliedNavKeyRef = useRef(null);
+
+  useEffect(() => {
+    if (
+      navigationContext?.page === "inventory" &&
+      navigationContext.key &&
+      appliedNavKeyRef.current !== navigationContext.key
+    ) {
+      appliedNavKeyRef.current = navigationContext.key;
+      if (navigationContext.tab) {
+        setActiveTab(navigationContext.tab);
+      }
+      if (navigationContext.stockFilter) {
+        setStockFilter(navigationContext.stockFilter);
+      }
+    }
+  }, [navigationContext, setActiveTab, setStockFilter]);
 
   useEffect(() => {
     let isMounted = true;

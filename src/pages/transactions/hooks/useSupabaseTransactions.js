@@ -170,6 +170,116 @@ function makeHistoryRows(request, entries, changedBy) {
   }));
 }
 
+export async function fetchTransactionsSnapshot() {
+  const authResult = await supabase.auth.getUser();
+  if (authResult.error) throw authResult.error;
+  const authUserId = authResult.data?.user?.id;
+  if (!authUserId) throw new Error("Sign in to load transactions.");
+
+  const [
+    userResult,
+    officesResult,
+    locationsResult,
+    outgoingResult,
+    incomingResult,
+    historyResult,
+  ] = await Promise.all([
+    supabase
+      .from("users")
+      .select("user_id, username, auth_user_id")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle(),
+    supabase.from("offices").select("office_id, name").order("name"),
+    supabase
+      .from("file_location")
+      .select("location_id, drawer, cabinet, section")
+      .order("cabinet"),
+    supabase
+      .from(TABLE_BY_DIRECTION.outgoing)
+      .select(TRANSACTION_COLUMNS)
+      .order("request_date", { ascending: false }),
+    supabase
+      .from(TABLE_BY_DIRECTION.incoming)
+      .select(INCOMING_COLUMNS)
+      .order("request_date", { ascending: false }),
+    supabase
+      .from("transaction_history")
+      .select(HISTORY_COLUMNS)
+      .order("changed_at"),
+  ]);
+  if (userResult.error) throw userResult.error;
+  if (!userResult.data?.user_id) {
+    throw new Error("Your account is not linked in public.users.");
+  }
+  for (const result of [
+    officesResult,
+    locationsResult,
+    outgoingResult,
+    incomingResult,
+    historyResult,
+  ]) {
+    if (result.error) throw result.error;
+  }
+
+  const offices = Array.isArray(officesResult.data)
+    ? officesResult.data
+    : [];
+  const locations = Array.isArray(locationsResult.data)
+    ? locationsResult.data
+    : [];
+  const officeMap = new Map(
+    offices.map((office) => [Number(office.office_id), office]),
+  );
+  const locationMap = new Map(
+    locations.map((location) => [
+      Number(location.location_id),
+      getLocationLabel(location),
+    ]),
+  );
+  const historyByTransaction = new Map();
+  for (const row of historyResult.data || []) {
+    const key = `${row.transaction_table}:${row.request_id}`;
+    const history = historyByTransaction.get(key) || [];
+    history.push(row);
+    historyByTransaction.set(key, history);
+  }
+  const requests = [
+    ...(outgoingResult.data || [])
+      .filter((row) => !isRecordCleared(row.created_at))
+      .map((row) =>
+        mapTransactionRow(
+          row,
+          "outgoing",
+          officeMap,
+          locationMap,
+          historyByTransaction.get(
+            `${TABLE_BY_DIRECTION.outgoing}:${row.request_id}`,
+          ) || [],
+        ),
+      ),
+    ...(incomingResult.data || [])
+      .filter((row) => !isRecordCleared(row.created_at))
+      .map((row) =>
+        mapTransactionRow(
+          row,
+          "incoming",
+          officeMap,
+          locationMap,
+          historyByTransaction.get(
+            `${TABLE_BY_DIRECTION.incoming}:${row.request_id}`,
+          ) || [],
+        ),
+      ),
+  ];
+
+  return {
+    offices,
+    locations,
+    user: userResult.data,
+    requests,
+  };
+}
+
 export function useSupabaseTransactions({ setRequests }) {
   const [officeRows, setOfficeRows] = useState([]);
   const [locationRows, setLocationRows] = useState([]);
@@ -190,112 +300,13 @@ export function useSupabaseTransactions({ setRequests }) {
       setIsLoading(true);
       setError("");
       try {
-        const authResult = await supabase.auth.getUser();
-        if (authResult.error) throw authResult.error;
-        const authUserId = authResult.data?.user?.id;
-        if (!authUserId) throw new Error("Sign in to load transactions.");
-
-        const [
-          userResult,
-          officesResult,
-          locationsResult,
-          outgoingResult,
-          incomingResult,
-          historyResult,
-        ] = await Promise.all([
-          supabase
-            .from("users")
-            .select("user_id, username, auth_user_id")
-            .eq("auth_user_id", authUserId)
-            .maybeSingle(),
-          supabase.from("offices").select("office_id, name").order("name"),
-          supabase
-            .from("file_location")
-            .select("location_id, drawer, cabinet, section")
-            .order("cabinet"),
-          supabase
-            .from(TABLE_BY_DIRECTION.outgoing)
-            .select(TRANSACTION_COLUMNS)
-            .order("request_date", { ascending: false }),
-          supabase
-            .from(TABLE_BY_DIRECTION.incoming)
-            .select(INCOMING_COLUMNS)
-            .order("request_date", { ascending: false }),
-          supabase
-            .from("transaction_history")
-            .select(HISTORY_COLUMNS)
-            .order("changed_at"),
-        ]);
-        if (userResult.error) throw userResult.error;
-        if (!userResult.data?.user_id) {
-          throw new Error("Your account is not linked in public.users.");
-        }
-        for (const result of [
-          officesResult,
-          locationsResult,
-          outgoingResult,
-          incomingResult,
-          historyResult,
-        ]) {
-          if (result.error) throw result.error;
-        }
-
-        const offices = Array.isArray(officesResult.data)
-          ? officesResult.data
-          : [];
-        const locations = Array.isArray(locationsResult.data)
-          ? locationsResult.data
-          : [];
-        const officeMap = new Map(
-          offices.map((office) => [Number(office.office_id), office]),
-        );
-        const locationMap = new Map(
-          locations.map((location) => [
-            Number(location.location_id),
-            getLocationLabel(location),
-          ]),
-        );
-        const historyByTransaction = new Map();
-        for (const row of historyResult.data || []) {
-          const key = `${row.transaction_table}:${row.request_id}`;
-          const history = historyByTransaction.get(key) || [];
-          history.push(row);
-          historyByTransaction.set(key, history);
-        }
-        const requests = [
-          ...(outgoingResult.data || [])
-            .filter((row) => !isRecordCleared(row.created_at))
-            .map((row) =>
-              mapTransactionRow(
-                row,
-                "outgoing",
-                officeMap,
-                locationMap,
-                historyByTransaction.get(
-                  `${TABLE_BY_DIRECTION.outgoing}:${row.request_id}`,
-                ) || [],
-              ),
-            ),
-          ...(incomingResult.data || [])
-            .filter((row) => !isRecordCleared(row.created_at))
-            .map((row) =>
-              mapTransactionRow(
-                row,
-                "incoming",
-                officeMap,
-                locationMap,
-                historyByTransaction.get(
-                  `${TABLE_BY_DIRECTION.incoming}:${row.request_id}`,
-                ) || [],
-              ),
-            ),
-        ];
+        const snapshot = await fetchTransactionsSnapshot();
 
         if (!isMounted) return;
-        setOfficeRows(offices);
-        setLocationRows(locations);
-        setUser(userResult.data);
-        setRequests(requests);
+        setOfficeRows(snapshot.offices);
+        setLocationRows(snapshot.locations);
+        setUser(snapshot.user);
+        setRequests(snapshot.requests);
         setIsReady(true);
       } catch (loadError) {
         if (!isMounted) return;

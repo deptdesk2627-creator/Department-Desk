@@ -12,6 +12,7 @@ export function getRolePages({
   data,
   search,
   navigate,
+  navigationContext,
   profile,
   onSaveProfile,
   settings,
@@ -103,6 +104,7 @@ export function getRolePages({
         search={search}
         readOnly={!canEditDocuments}
         defaultView={settings?.defaultRequestView}
+        navigationContext={navigationContext}
       />
     ),
     tasks: taskPage,
@@ -115,6 +117,7 @@ export function getRolePages({
         search={search}
         readOnly={!canManageInventory}
         userName={profile?.name || role?.name}
+        navigationContext={navigationContext}
       />
     ),
     ...systemPages,

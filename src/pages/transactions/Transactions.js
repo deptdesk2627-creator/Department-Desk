@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./Transactions.css";
 import { PageHeader } from "../../components/ui";
 import TransactionDrawer from "./components/TransactionDrawer";
@@ -15,6 +15,7 @@ function Transactions({
   search = "",
   readOnly = false,
   defaultView = "table",
+  navigationContext = null,
 }) {
   const persistence = useSupabaseTransactions({ setRequests });
   const manager = useTransactionManager({
@@ -35,6 +36,24 @@ function Transactions({
   });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const appliedNavKeyRef = useRef(null);
+  const { setActiveTab } = manager;
+
+  useEffect(() => {
+    if (
+      navigationContext?.page === "transactions" &&
+      navigationContext.key &&
+      appliedNavKeyRef.current !== navigationContext.key
+    ) {
+      appliedNavKeyRef.current = navigationContext.key;
+      if (
+        navigationContext.tab === "incoming" ||
+        navigationContext.tab === "outgoing"
+      ) {
+        setActiveTab(navigationContext.tab);
+      }
+    }
+  }, [navigationContext, setActiveTab]);
 
   function openNewModal() {
     manager.setForm((current) => ({
