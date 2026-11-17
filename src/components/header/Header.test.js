@@ -46,6 +46,33 @@ test("shows current alerts, marks them read, and navigates from an alert", () =>
   expect(screen.getByRole("button", { name: "Notifications, 1 unread" })).toBeInTheDocument();
 });
 
+test("plays the notification sound when a new alert arrives", () => {
+  const play = jest.fn().mockResolvedValue(undefined);
+  const audioSpy = jest
+    .spyOn(window, "Audio")
+    .mockImplementation(() => ({ play }));
+  const { rerender } = render(<Header />);
+
+  rerender(
+    <Header
+      requests={[
+        {
+          id: "DOC-1",
+          student: "Alex",
+          document: "Transcript",
+          status: "Waiting",
+        },
+      ]}
+    />,
+  );
+
+  expect(audioSpy).toHaveBeenCalledWith(
+    `${process.env.PUBLIC_URL || ""}/sound-message.mp3`,
+  );
+  expect(play).toHaveBeenCalledTimes(1);
+  audioSpy.mockRestore();
+});
+
 test("marking all alerts read removes the unread indicator", () => {
   render(
     <Header

@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./HeaderNotifications.css";
 import { getNotifications } from "../../utils/headerHelpers";
+
+const NOTIFICATION_SOUND_URL = `${process.env.PUBLIC_URL || ""}/sound-message.mp3`;
 
 function HeaderNotifications({
   requests,
@@ -15,6 +17,7 @@ function HeaderNotifications({
   notificationButtonRef,
 }) {
   const [readNotificationIds, setReadNotificationIds] = useState(() => new Set());
+  const previousNotificationIds = useRef(null);
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState(
     () => new Set(),
   );
@@ -25,6 +28,28 @@ function HeaderNotifications({
       ),
     [requests, tasks, inventory, settings, dismissedNotificationIds],
   );
+  useEffect(() => {
+    const currentNotificationIds = new Set(
+      notifications.map((notification) => notification.id),
+    );
+    const previousIds = previousNotificationIds.current;
+
+    if (
+      previousIds &&
+      notifications.some(
+        (notification) => !previousIds.has(notification.id),
+      )
+    ) {
+      const sound = new Audio(NOTIFICATION_SOUND_URL);
+      sound.play().catch((error) => {
+        if (error?.name !== "NotAllowedError") {
+          console.error("Could not play the notification sound.", error);
+        }
+      });
+    }
+
+    previousNotificationIds.current = currentNotificationIds;
+  }, [notifications]);
   const unreadCount = notifications.filter(
     (notification) => !readNotificationIds.has(notification.id),
   ).length;
