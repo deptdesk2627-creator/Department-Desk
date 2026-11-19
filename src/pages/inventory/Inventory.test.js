@@ -514,6 +514,7 @@ test("loads and saves secretary inventory transactions in Supabase", async () =>
     created_at: "2026-10-12",
   };
   const user = { user_id: 42, username: "Prof. Test User" };
+  const otherUser = { user_id: 43, username: "Dr. Another User" };
   const savedTransaction = {
     transaction_id: 99,
     item_id: 17,
@@ -533,7 +534,7 @@ test("loads and saves secretary inventory transactions in Supabase", async () =>
     rows: [item],
     maybeSingleRow: { item_id: 17, stock_onhand: 3 },
   });
-  const userQuery = createTableQuery({ rows: [user] });
+  const userQuery = createTableQuery({ rows: [user, otherUser] });
   const transactionQuery = createTableQuery({
     rows: [],
     singleRow: savedTransaction,
@@ -557,9 +558,18 @@ test("loads and saves secretary inventory transactions in Supabase", async () =>
 
   fireEvent.click(await screen.findByRole("button", { name: /^borrow$/i }));
   const actionDialog = within(screen.getByRole("dialog"));
-  fireEvent.change(actionDialog.getByLabelText(/borrowed by/i), {
-    target: { value: user.username },
+  const borrowerInput = actionDialog.getByRole("combobox", {
+    name: /borrowed by/i,
   });
+  fireEvent.change(borrowerInput, { target: { value: "Test" } });
+  expect(
+    actionDialog.getByRole("option", { name: user.username }),
+  ).toBeInTheDocument();
+  expect(
+    actionDialog.queryByRole("option", { name: otherUser.username }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(actionDialog.getByRole("option", { name: user.username }));
+  expect(borrowerInput).toHaveValue(user.username);
   fireEvent.change(actionDialog.getByLabelText(/quantity/i), {
     target: { value: "2" },
   });
