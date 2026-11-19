@@ -30,3 +30,17 @@ test("forwards the current page and header controls through the layout", () => {
   fireEvent.click(screen.getByRole("button", { name: "DeptDesk home" }));
   expect(onNavigate).toHaveBeenCalledWith("dashboard");
 });
+
+test("renders the mobile sidebar backdrop and closes when clicked", () => {
+  const onCloseSidebar = jest.fn();
+  const { container } = render(
+    <MainLayout isOpen onCloseSidebar={onCloseSidebar}>
+      <h1>Dashboard</h1>
+    </MainLayout>,
+  );
+
+  const backdrop = container.querySelector(".sidebar-backdrop");
+  expect(backdrop).toBeInTheDocument();
+  fireEvent.click(backdrop);
+  expect(onCloseSidebar).toHaveBeenCalledTimes(1);
+});

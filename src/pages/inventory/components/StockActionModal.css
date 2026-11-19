@@ -49,9 +49,18 @@
   padding-top: 14px;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   .action-form {
     align-items: stretch;
     grid-template-columns: 1fr;
+  }
+
+  .action-form__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .action-form__actions button {
+    width: 100%;
   }
 }

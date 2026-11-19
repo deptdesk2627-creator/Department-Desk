@@ -88,7 +88,7 @@ function StaffHistoryTable({
       )}
       {records.length ? (
         <div className="table-scroll module-table-scroll">
-          <table className="request-table inventory-record-table">
+          <table className="request-table inventory-record-table mobile-stack-table">
             <thead>
               <tr>
                 <th>Date &amp; time</th>
@@ -110,16 +110,18 @@ function StaffHistoryTable({
                     record.person.toLowerCase();
                 return (
                   <tr key={record.id}>
-                    <td>{formatDateTime(record.dateTime)}</td>
-                    <td>
+                    <td data-label="Date & time">
+                      {formatDateTime(record.dateTime)}
+                    </td>
+                    <td data-label="Name">
                       {record.person || "—"}
                       {hasRep ? ` (via ${record.returnedBy})` : ""}
                     </td>
-                    <td>{record.productName}</td>
-                    <td>
+                    <td data-label="Product name">{record.productName}</td>
+                    <td data-label="Quantity">
                       {record.quantity} {record.unit}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <div className="staff-status-cell">
                         <span className={`status-pill ${statusDisplay.className}`}>
                           {statusDisplay.label}
@@ -131,8 +133,11 @@ function StaffHistoryTable({
                         )}
                       </div>
                     </td>
-                    <td>{record.remarks || "—"}</td>
-                    <td>
+                    <td data-label="Remarks">{record.remarks || "—"}</td>
+                    <td
+                      className="mobile-card-actions"
+                      data-label="Receipt"
+                    >
                       <button
                         type="button"
                         className="receipt-table-btn"

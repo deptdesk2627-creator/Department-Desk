@@ -250,6 +250,25 @@
   padding: 5px 9px;
 }
 
+@media (max-width: 640px) {
+  .request-table-wrap {
+    padding: 0 14px 16px;
+  }
+
+  .request-tracker-table .request-status-select,
+  .request-tracker-table--incoming .request-status-select {
+    max-width: 210px;
+    min-height: 34px;
+    padding: 6px 26px 6px 11px;
+    font-size: 12.5px;
+  }
+
+  .request-tracker-table .request-icon-button {
+    height: 36px;
+    width: 36px;
+  }
+}
+
 .request-tracker-table--incoming .request-status-select {
   background-position: calc(100% - 10px) 50%, calc(100% - 6px) 50%;
   padding-right: 22px;

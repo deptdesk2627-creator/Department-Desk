@@ -530,6 +530,30 @@
 }
 
 @media (max-width: 640px) {
+  .inventory-folder-tabs {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    width: 100%;
+    padding-bottom: 1px;
+  }
+
+  .inventory-folder-tab {
+    flex: 1 0 auto;
+    justify-content: center;
+    padding: 9px 14px;
+    font-size: 13px;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+
+  .dashboard .card.inventory-folder-panel,
+  .inventory-folder-panel {
+    border-radius: 0 0 16px 16px;
+    padding: 16px 14px 20px;
+  }
+
   .inventory-form {
     grid-template-columns: 1fr;
   }
@@ -546,6 +570,34 @@
 
   .inventory-form-actions button {
     width: 100%;
+  }
+
+  .inventory-pending-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .inventory-pending-item__info {
+    flex: 1 1 auto;
+  }
+
+  .inventory-pending-item__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .inventory-pending-item__actions > button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .stock-actions,
+  .stock-actions--right,
+  .inventory-record-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
   }
 }
 

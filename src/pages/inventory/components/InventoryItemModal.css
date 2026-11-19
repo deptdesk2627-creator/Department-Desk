@@ -184,4 +184,13 @@
     flex-direction: column;
     gap: 4px;
   }
+
+  .inventory-detail-edit-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .inventory-detail-edit-actions button {
+    width: 100%;
+  }
 }

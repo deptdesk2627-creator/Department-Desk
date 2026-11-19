@@ -348,6 +348,19 @@
   .system-data-counts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .system-data-row,
+  .system-csv-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .system-data-row button,
+  .system-csv-bar__actions,
+  .system-csv-bar__actions button {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

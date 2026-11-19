@@ -371,3 +371,30 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  .cabinet-locator {
+    padding: 0 14px 18px;
+    gap: 16px;
+  }
+
+  .cabinet-unfiled-tray {
+    padding: 14px;
+  }
+
+  .cabinet-unfiled-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cabinet-drawer-file-main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .cabinet-doc-assign select,
+  .cabinet-drawer-move-select {
+    width: 100%;
+    min-height: 36px;
+  }
+}

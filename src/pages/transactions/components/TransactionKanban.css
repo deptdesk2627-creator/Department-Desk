@@ -138,8 +138,16 @@
 
 @media (max-width: 700px) {
   .request-kanban {
-    grid-template-columns: repeat(5, minmax(220px, 1fr));
+    grid-template-columns: repeat(5, min(78vw, 250px));
     padding: 14px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding: 14px;
+  }
+
+  .request-kanban-column {
+    min-width: min(78vw, 250px);
+    scroll-snap-align: start;
   }
 }
 

@@ -14,7 +14,7 @@ function TaskTableView({
 }) {
   return (
     <div className="deptdesk-card table-card">
-      <table className="deptdesk-table">
+      <table className="deptdesk-table mobile-stack-table">
         <thead>
           <tr>
             <th style={{ width: "30px" }}>

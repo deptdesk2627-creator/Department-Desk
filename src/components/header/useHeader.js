@@ -4,6 +4,7 @@ export function useHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [areNotificationsOpen, setAreNotificationsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const profileRef = useRef(null);
   const profileButtonRef = useRef(null);
   const notificationRef = useRef(null);
@@ -30,6 +31,7 @@ export function useHeader() {
     function handleKeyDown(event) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        setIsMobileSearchOpen(true);
         searchInputRef.current?.focus();
         return;
       }
@@ -102,11 +104,24 @@ export function useHeader() {
     setAreNotificationsOpen(false);
   }
 
+  function toggleMobileSearch() {
+    setIsMobileSearchOpen((open) => {
+      const next = !open;
+      if (next && typeof window !== "undefined") {
+        window.requestAnimationFrame?.(() => {
+          searchInputRef.current?.focus();
+        });
+      }
+      return next;
+    });
+  }
+
   return {
     areNotificationsOpen,
     closeNotifications,
     closeMenu,
     isMenuOpen,
+    isMobileSearchOpen,
     isSearchOpen,
     notificationButtonRef,
     notificationRef,
@@ -114,7 +129,9 @@ export function useHeader() {
     profileRef,
     searchInputRef,
     searchRef,
+    setIsMobileSearchOpen,
     setIsSearchOpen,
+    toggleMobileSearch,
     toggleNotifications,
     toggleProfileMenu,
   };

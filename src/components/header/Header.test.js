@@ -501,3 +501,24 @@ test("does not show the Confirm return button for view-only Dean role", () => {
     screen.queryByRole("button", { name: /confirm return/i }),
   ).not.toBeInTheDocument();
 });
+
+test("toggles the collapsible mobile search bar from the header search button", () => {
+  const { container } = render(<Header search="" />);
+
+  const toggleButton = screen.getByRole("button", { name: /show search bar/i });
+  const searchContainer = container.querySelector(".app-header__search-container");
+
+  expect(toggleButton).toHaveAttribute("aria-expanded", "false");
+  expect(searchContainer).not.toHaveClass(
+    "app-header__search-container--mobile-open",
+  );
+
+  fireEvent.click(toggleButton);
+
+  expect(
+    screen.getByRole("button", { name: /hide search bar/i }),
+  ).toHaveAttribute("aria-expanded", "true");
+  expect(searchContainer).toHaveClass(
+    "app-header__search-container--mobile-open",
+  );
+});

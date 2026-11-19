@@ -41,7 +41,7 @@ function DashboardRecentTable({
       </div>
       {items.length > 0 ? (
         <div className="table-scroll">
-          <table className={`request-table ${tableClassName}`}>
+          <table className={`request-table mobile-stack-table ${tableClassName}`}>
             <thead>
               {isIncomingMode ? (
                 <tr>
@@ -70,7 +70,12 @@ function DashboardRecentTable({
 
                 return (
                   <tr key={item.id}>
-                    <td>
+                    <td
+                      className="mobile-card-primary"
+                      data-label={
+                        isIncomingMode ? "Document / Request" : "Form / Request"
+                      }
+                    >
                       <strong>
                         {item.document || item.description || "Untitled item"}
                       </strong>
@@ -78,11 +83,11 @@ function DashboardRecentTable({
                     </td>
                     {isIncomingMode ? (
                       <>
-                        <td>
+                        <td data-label="From Office">
                           <strong>{item.office || item.location || "—"}</strong>
                           {item.student && <span>From: {item.student}</span>}
                         </td>
-                        <td>
+                        <td data-label="Our Signature">
                           <span
                             className={`status-pill ${
                               isSigned ? "status-done" : "status-waiting"
@@ -91,7 +96,7 @@ function DashboardRecentTable({
                             {signature}
                           </span>
                         </td>
-                        <td>
+                        <td data-label="Status / Sent Out To">
                           <div className="dashboard-incoming-status">
                             <StatusPill status={getRequestStatus(item.status)} />
                             {forwarded && (
@@ -104,11 +109,13 @@ function DashboardRecentTable({
                       </>
                     ) : (
                       <>
-                        <td>{item.student || "—"}</td>
-                        <td>
+                        <td data-label="Requested by">{item.student || "—"}</td>
+                        <td data-label="Status">
                           <StatusPill status={getRequestStatus(item.status)} />
                         </td>
-                        <td>{item.office || item.location || "—"}</td>
+                        <td data-label="Office">
+                          {item.office || item.location || "—"}
+                        </td>
                       </>
                     )}
                   </tr>

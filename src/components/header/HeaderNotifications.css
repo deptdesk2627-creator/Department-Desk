@@ -48,6 +48,17 @@
   z-index: 200;
 }
 
+@media (max-width: 520px) {
+  .app-header__notification-panel {
+    left: 12px;
+    right: 12px;
+    top: 62px;
+    position: fixed;
+    width: auto;
+    max-height: min(74dvh, 460px);
+  }
+}
+
 .app-header__notification-heading {
   align-items: center;
   border-bottom: 1px solid #edf0f4;

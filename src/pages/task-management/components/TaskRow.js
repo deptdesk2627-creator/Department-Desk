@@ -21,7 +21,7 @@ function TaskRow({
       className={`${isDone ? "row-completed" : ""} ${showStatus && isOverdue ? "row-overdue" : ""}`.trim()}
     >
       {showSelection && (
-        <td>
+        <td data-label="Select">
           <input
             type="checkbox"
             checked={isSelected}
@@ -30,7 +30,10 @@ function TaskRow({
           />
         </td>
       )}
-      <td style={!showSelection ? { width: "30px" } : undefined}>
+      <td
+        data-label="Done"
+        style={!showSelection ? { width: "30px" } : undefined}
+      >
         <input
           type="checkbox"
           className="deptdesk-checkbox"
@@ -39,7 +42,7 @@ function TaskRow({
           aria-label={`Mark ${taskLabel} as ${isDone ? "not done" : "done"}`}
         />
       </td>
-      <td>
+      <td className="mobile-card-primary" data-label="Task Title">
         <input
           type="text"
           className="inline-text-edit"
@@ -51,7 +54,7 @@ function TaskRow({
           }
         />
       </td>
-      <td>
+      <td data-label="Priority">
         <select
           className={`deptdesk-badge priority-${(task.priority || "medium").toLowerCase()}`}
           value={task.priority || "Medium"}
@@ -68,7 +71,7 @@ function TaskRow({
         </select>
       </td>
       {showStatus && (
-        <td>
+        <td data-label="Status">
           <select
             className={`deptdesk-badge status-${(task.status || "not started").toLowerCase().replace(/\s+/g, "-")}`}
             value={task.status || "Not started"}
@@ -88,7 +91,7 @@ function TaskRow({
           </select>
         </td>
       )}
-      <td>
+      <td data-label="Due Date">
         <div className="due-date-wrapper">
           <input
             type="date"
@@ -102,7 +105,11 @@ function TaskRow({
           {isOverdue && <span className="overdue-tag">Overdue</span>}
         </div>
       </td>
-      <td style={!showSelection ? { width: "30px" } : undefined}>
+      <td
+        className="mobile-card-actions"
+        data-label="Actions"
+        style={!showSelection ? { width: "30px" } : undefined}
+      >
         <button
           className="btn-icon-delete"
           type="button"

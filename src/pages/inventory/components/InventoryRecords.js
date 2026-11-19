@@ -90,7 +90,7 @@ function InventoryRecords({
       )}
       {records.length ? (
         <div className="inventory-table-wrap">
-          <table className="request-table inventory-record-table inventory-transactions-table">
+          <table className="request-table inventory-record-table inventory-transactions-table mobile-stack-table">
             <thead>
               <tr>
                 <th>ID No.</th>
@@ -114,31 +114,40 @@ function InventoryRecords({
                     record.person.toLowerCase();
                 return (
                   <tr key={record.id}>
-                    <td>
+                    <td data-label="ID No.">
                       <strong className="record-id-text">{record.id}</strong>
                     </td>
-                    <td className="record-date-cell">
+                    <td className="record-date-cell" data-label="Date & Time">
                       {formatDateTime(record.dateTime)}
                     </td>
-                    <td className="record-person-cell">
+                    <td className="record-person-cell" data-label="Name">
                       {record.person || "—"}
                       {hasRep ? ` (via ${record.returnedBy})` : ""}
                     </td>
-                    <td className="record-product-id-cell">
+                    <td
+                      className="record-product-id-cell"
+                      data-label="Product-ID No."
+                    >
                       {record.productId}
                     </td>
-                    <td className="record-product-name-cell">
+                    <td
+                      className="record-product-name-cell"
+                      data-label="Product Name"
+                    >
                       {record.productName}
                     </td>
-                    <td className="record-quantity-cell">
+                    <td className="record-quantity-cell" data-label="Quantity">
                       <strong>
                         {record.quantity} {record.unit}
                       </strong>
                     </td>
-                    <td className="record-remarks-cell">
+                    <td
+                      className="record-remarks-cell"
+                      data-label="Remark / Purpose"
+                    >
                       {record.remarks || "—"}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <div className="inventory-record-status-cell">
                         <span className={`status-pill ${statusDisplay.className}`}>
                           {statusDisplay.label}
@@ -150,7 +159,10 @@ function InventoryRecords({
                         )}
                       </div>
                     </td>
-                    <td className="inventory-status-col">
+                    <td
+                      className="inventory-status-col mobile-card-actions"
+                      data-label="Receipt"
+                    >
                       <div className="inventory-record-actions">
                         {!readOnly &&
                           record.status === PENDING_RETURN_STATUS &&

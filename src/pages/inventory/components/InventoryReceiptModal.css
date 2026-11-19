@@ -360,12 +360,25 @@
   color: var(--ink);
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
+  .inventory-receipt {
+    padding: 16px 14px;
+  }
+
   .inventory-receipt__dates-grid,
   .inventory-receipt__details-grid,
   .inventory-receipt__return-lines,
   .inventory-receipt__signatures {
     grid-template-columns: 1fr;
+  }
+
+  .inventory-receipt__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .inventory-receipt__actions button {
+    width: 100%;
   }
 }
 
