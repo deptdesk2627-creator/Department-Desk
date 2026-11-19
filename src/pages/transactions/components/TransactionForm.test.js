@@ -67,7 +67,7 @@ test("searches offices and offers to add a missing office for an incoming reques
   fireEvent.change(officeInput, { target: { value: "Research Office" } });
   fireEvent.click(
     dialog.getByRole("button", {
-      name: 'Add "Research Office" to database',
+      name: "Add a new office: Research Office",
     }),
   );
 
