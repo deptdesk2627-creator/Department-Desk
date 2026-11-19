@@ -289,9 +289,10 @@
 
   .request-filter-list {
     flex-wrap: nowrap;
-    margin: 0 -16px;
+    margin: 0;
     overflow-x: auto;
-    padding: 0 16px 4px;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 2px 8px;
   }
 
   .request-filter {
@@ -315,30 +316,31 @@
   }
 
   .request-view-toggle {
-    display: grid;
-    gap: 2px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    padding: 3px;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 4px 8px;
     width: 100%;
   }
 
   .request-view-toggle button {
-    font-size: 11px;
-    gap: 4px;
+    flex: 1 0 auto;
+    font-size: 12.5px;
+    gap: 6px;
     justify-content: center;
     line-height: 1.2;
-    min-width: 0;
-    overflow: hidden;
-    padding: 7px 4px;
+    min-width: max-content;
+    padding: 8px 12px;
     text-align: center;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .request-view-toggle button svg {
     flex-shrink: 0;
-    height: 12px;
-    width: 12px;
+    height: 14px;
+    width: 14px;
   }
 
   .request-filter-dropdowns {
@@ -352,12 +354,6 @@
   .request-filter-reset-btn {
     max-width: 100%;
     width: 100%;
-  }
-}
-
-@media (max-width: 390px) {
-  .request-view-toggle button svg {
-    display: none;
   }
 }
 
