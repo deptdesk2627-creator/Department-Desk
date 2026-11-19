@@ -55,11 +55,15 @@
 }
 
 .inline-date-edit {
+  -webkit-appearance: none;
+  appearance: none;
   border: 1px solid transparent;
   border-bottom-color: var(--line-subtle);
   background: transparent;
   font-size: 13px;
   color: var(--ink-secondary);
+  max-width: 100%;
+  min-width: 0;
   padding: 5px 8px;
   border-radius: 6px;
   transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
@@ -177,6 +181,27 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 6px;
+    width: 100%;
+  }
+
+  .inline-date-edit {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    background: var(--surface-subtle, #f8fafc);
+    border-color: var(--line);
+    padding: 8px 10px;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .inline-date-edit::-webkit-date-and-time-value {
+    text-align: left;
+  }
+
+  .overdue-tag {
+    margin-left: 0;
   }
 
   .inline-text-edit {
@@ -186,7 +211,8 @@
     font-size: 14px;
   }
 
-  :root[data-theme="dark"] .inline-text-edit {
+  :root[data-theme="dark"] .inline-text-edit,
+  :root[data-theme="dark"] .inline-date-edit {
     background: #0f172a;
     border-color: #334155;
   }

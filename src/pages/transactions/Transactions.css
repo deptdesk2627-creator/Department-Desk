@@ -209,7 +209,9 @@
   cursor: pointer;
   display: block;
   font: inherit;
-  padding: 9px 12px;
+  line-height: 1.35;
+  min-height: 44px;
+  padding: 11px 12px;
   text-align: left;
   width: 100%;
 }
@@ -224,6 +226,7 @@
   border-top: 1px solid var(--line-subtle);
   color: var(--purple);
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .transaction-office-picker__add:disabled {
@@ -287,6 +290,14 @@
 
   .transaction-form {
     grid-template-columns: 1fr;
+  }
+
+  .transaction-office-picker__menu {
+    box-shadow: none;
+    margin-top: 6px;
+    max-height: min(32vh, 220px);
+    max-height: min(32dvh, 220px);
+    position: static;
   }
 
   .transaction-form .transaction-description,
