@@ -37,6 +37,62 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.action-form__person-picker {
+  min-width: 0;
+  position: relative;
+}
+
+.action-form__person-picker > label {
+  color: var(--ink-secondary);
+  display: grid;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.action-form__person-control {
+  position: relative;
+}
+
+.action-form__person-options {
+  background: var(--surface, #fff);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: 0 10px 24px rgb(15 23 42 / 14%);
+  left: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+}
+
+.action-form__person-options button {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  padding: 9px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.action-form__person-options button:hover,
+.action-form__person-options button.is-active {
+  background: var(--surface-subtle, #f1f5f9);
+}
+
+.action-form__person-empty {
+  color: var(--muted);
+  display: block;
+  font-size: 13px;
+  padding: 9px 12px;
+}
+
 .action-form__remarks {
   grid-column: 1 / -1;
 }

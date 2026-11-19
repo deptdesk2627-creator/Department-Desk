@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import "./StockActionModal.css";
 import { Modal } from "../../../components/ui";
 
@@ -38,6 +39,19 @@ function StockActionModal({
   onSubmit,
   onClose,
 }) {
+  const [isPersonListOpen, setIsPersonListOpen] = useState(false);
+  const [activePersonIndex, setActivePersonIndex] = useState(0);
+  const isBorrowerSearch =
+    action?.type === "Borrow" &&
+    !lockPersonToOptions &&
+    personOptions.length > 0;
+  const filteredPersonOptions = useMemo(() => {
+    const query = String(personName || "").trim().toLowerCase();
+    return personOptions.filter((person) =>
+      String(person.username || "").toLowerCase().includes(query),
+    );
+  }, [personName, personOptions]);
+
   if (!action) return null;
 
   const isReturn = action.type === "Return";
@@ -52,6 +66,34 @@ function StockActionModal({
       ? matchedBorrower.balance
       : getBorrowedBalance(action.item)
     : action.item.quantity;
+  const selectedPersonIndex = Math.min(
+    activePersonIndex,
+    filteredPersonOptions.length - 1,
+  );
+
+  function handlePersonKeyDown(event) {
+    if (event.key === "ArrowDown" && filteredPersonOptions.length > 0) {
+      event.preventDefault();
+      setIsPersonListOpen(true);
+      setActivePersonIndex((index) =>
+        Math.min(index + 1, filteredPersonOptions.length - 1),
+      );
+    } else if (event.key === "ArrowUp" && filteredPersonOptions.length > 0) {
+      event.preventDefault();
+      setIsPersonListOpen(true);
+      setActivePersonIndex((index) => Math.max(index - 1, 0));
+    } else if (
+      event.key === "Enter" &&
+      isPersonListOpen &&
+      selectedPersonIndex >= 0
+    ) {
+      event.preventDefault();
+      setPersonName?.(filteredPersonOptions[selectedPersonIndex].username);
+      setIsPersonListOpen(false);
+    } else if (event.key === "Escape") {
+      setIsPersonListOpen(false);
+    }
+  }
 
   return (
     <Modal
@@ -100,26 +142,111 @@ function StockActionModal({
       )}
 
       <form className="module-form action-form" onSubmit={onSubmit}>
-        <label>
-          {PERSON_LABEL[action.type] || "Name"}
-          <input
-            autoFocus
-            required
-            type="text"
-            placeholder="Enter name (e.g. Prof. Juan Dela Cruz)"
-            list={personOptions.length ? "inventory-transaction-users" : undefined}
-            value={personName}
-            readOnly={lockPersonToOptions}
-            onChange={(event) => setPersonName?.(event.target.value)}
-          />
-          {personOptions.length > 0 && (
-            <datalist id="inventory-transaction-users">
-              {personOptions.map((person) => (
-                <option key={person.user_id} value={person.username} />
-              ))}
-            </datalist>
-          )}
-        </label>
+        {isBorrowerSearch ? (
+          <div className="action-form__person-picker">
+            <label htmlFor="inventory-borrower-search">
+              {PERSON_LABEL[action.type] || "Name"}
+            </label>
+            <div className="action-form__person-control">
+              <input
+                autoFocus
+                id="inventory-borrower-search"
+                required
+                type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={isPersonListOpen}
+                aria-controls="inventory-borrower-options"
+                aria-activedescendant={
+                  isPersonListOpen && selectedPersonIndex >= 0
+                    ? `inventory-borrower-option-${selectedPersonIndex}`
+                    : undefined
+                }
+                placeholder="Type to search usernames"
+                value={personName}
+                onFocus={() => {
+                  setIsPersonListOpen(true);
+                  setActivePersonIndex(0);
+                }}
+                onChange={(event) => {
+                  setPersonName?.(event.target.value);
+                  setIsPersonListOpen(true);
+                  setActivePersonIndex(0);
+                }}
+                onKeyDown={handlePersonKeyDown}
+                onBlur={(event) => {
+                  if (
+                    !event.currentTarget.parentElement.contains(
+                      event.relatedTarget,
+                    )
+                  ) {
+                    setIsPersonListOpen(false);
+                  }
+                }}
+              />
+              {isPersonListOpen && (
+                <div
+                  className="action-form__person-options"
+                  id="inventory-borrower-options"
+                  role="listbox"
+                  aria-label="Database usernames"
+                >
+                  {filteredPersonOptions.length > 0 ? (
+                    filteredPersonOptions.map((person, index) => (
+                      <button
+                        key={person.user_id}
+                        id={`inventory-borrower-option-${index}`}
+                        type="button"
+                        role="option"
+                        aria-selected={index === selectedPersonIndex}
+                        className={
+                          index === selectedPersonIndex
+                            ? "is-active"
+                            : undefined
+                        }
+                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() => setActivePersonIndex(index)}
+                        onClick={() => {
+                          setPersonName?.(person.username);
+                          setIsPersonListOpen(false);
+                        }}
+                      >
+                        {person.username}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="action-form__person-empty">
+                      No matching usernames
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <label>
+            {PERSON_LABEL[action.type] || "Name"}
+            <input
+              autoFocus
+              required
+              type="text"
+              placeholder="Enter name (e.g. Prof. Juan Dela Cruz)"
+              list={
+                personOptions.length ? "inventory-transaction-users" : undefined
+              }
+              value={personName}
+              readOnly={lockPersonToOptions}
+              onChange={(event) => setPersonName?.(event.target.value)}
+            />
+            {personOptions.length > 0 && (
+              <datalist id="inventory-transaction-users">
+                {personOptions.map((person) => (
+                  <option key={person.user_id} value={person.username} />
+                ))}
+              </datalist>
+            )}
+          </label>
+        )}
         <label>
           Quantity ({action.item.unit})
           <input
