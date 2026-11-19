@@ -74,18 +74,57 @@ export function useTransactionManager({
     }
   }, [defaultView]);
 
+  const [customOffices, setCustomOffices] = useState([]);
+
+  const mergedOffices = useMemo(() => {
+    const base = Array.isArray(officeOptions) ? officeOptions.filter(Boolean) : [];
+    const withoutOther = base.filter(
+      (item) => !["other", "others"].includes(String(item).trim().toLowerCase()),
+    );
+    const extras = customOffices.filter(
+      (extra) =>
+        !withoutOther.some(
+          (item) =>
+            String(item).trim().toLowerCase() ===
+            String(extra).trim().toLowerCase(),
+        ),
+    );
+    return [...withoutOther, ...extras, "Other"];
+  }, [customOffices, officeOptions]);
+
+  const mergedForwardedOptions = useMemo(() => {
+    const base = Array.isArray(forwardedOptions)
+      ? forwardedOptions.filter(Boolean)
+      : [];
+    const withoutOther = base.filter(
+      (item) => !["other", "others"].includes(String(item).trim().toLowerCase()),
+    );
+    const extras = customOffices.filter(
+      (extra) =>
+        !withoutOther.some(
+          (item) =>
+            String(item).trim().toLowerCase() ===
+            String(extra).trim().toLowerCase(),
+        ),
+    );
+    return [...withoutOther, ...extras, "Other"];
+  }, [customOffices, forwardedOptions]);
+
   useEffect(() => {
     if (!officeOptions.length) return;
-    setForm((current) =>
-      officeOptions.some(
+    setForm((current) => {
+      const currentVal = String(current.office || "").trim().toLowerCase();
+      if (currentVal === "other" || currentVal === "others") {
+        return current;
+      }
+      return mergedOffices.some(
         (office) =>
-          String(office).trim().toLowerCase() ===
-          String(current.office).trim().toLowerCase(),
+          String(office).trim().toLowerCase() === currentVal,
       )
         ? current
-        : { ...current, office: officeOptions[0] },
-    );
-  }, [form.office, officeOptions]);
+        : { ...current, office: officeOptions[0] };
+    });
+  }, [form.office, mergedOffices, officeOptions]);
 
   const statuses =
     activeTab === "incoming" ? incomingStatuses : outgoingStatuses;
@@ -266,18 +305,70 @@ export function useTransactionManager({
       setFormError("Enter a requester and form name before adding the request.");
       return false;
     }
-    setFormError("");
-    const submittedAt = Date.now();
     const isIncoming = form.direction === "incoming";
+    const isOtherOffice = ["other", "others"].includes(
+      String(form.office || "").trim().toLowerCase(),
+    );
+    const resolvedOffice = isOtherOffice
+      ? String(form.customOffice || "").trim()
+      : String(form.office || "").trim();
+    if (!resolvedOffice) {
+      setFormError(
+        isIncoming
+          ? "Please type the origin office name for Other."
+          : "Please type the destination office name for Other.",
+      );
+      return false;
+    }
+
+    const isOtherForwarded =
+      isIncoming &&
+      ["other", "others"].includes(
+        String(form.forwardedTo || "").trim().toLowerCase(),
+      );
+    const resolvedForwarded = isIncoming
+      ? isOtherForwarded
+        ? String(form.customForwardedTo || "").trim()
+        : form.forwardedTo || "Not sent out"
+      : undefined;
+    if (isIncoming && isOtherForwarded && !resolvedForwarded) {
+      setFormError("Please type the office name where this document is sent out.");
+      return false;
+    }
+
+    setFormError("");
+    if (isOtherOffice && !["other", "others"].includes(resolvedOffice.toLowerCase())) {
+      setCustomOffices((current) =>
+        current.some(
+          (item) => item.toLowerCase() === resolvedOffice.toLowerCase(),
+        )
+          ? current
+          : [...current, resolvedOffice],
+      );
+    }
+    if (
+      isOtherForwarded &&
+      resolvedForwarded &&
+      !["other", "others", "not sent out", "returned to sender"].includes(
+        resolvedForwarded.toLowerCase(),
+      )
+    ) {
+      setCustomOffices((current) =>
+        current.some(
+          (item) => item.toLowerCase() === resolvedForwarded.toLowerCase(),
+        )
+          ? current
+          : [...current, resolvedForwarded],
+      );
+    }
+
+    const submittedAt = Date.now();
     const prefix = isIncoming ? "INC" : "REQ";
     const resolvedStatus = getRequestStatus(
       form.status || (isIncoming ? "Received" : "Pending"),
     );
     const resolvedSigned = isIncoming
       ? form.signedByOffice || "Unsigned"
-      : undefined;
-    const resolvedForwarded = isIncoming
-      ? form.forwardedTo || "Not sent out"
       : undefined;
     const resolvedFileLocation = form.fileLocation || UNFILED_LOCATION;
 
@@ -287,9 +378,9 @@ export function useTransactionManager({
         status: resolvedStatus,
         location: isIncoming
           ? resolvedForwarded && resolvedForwarded !== "Not sent out"
-            ? `${form.office} → ${resolvedForwarded}`
-            : `From ${form.office}`
-          : form.office,
+            ? `${resolvedOffice} → ${resolvedForwarded}`
+            : `From ${resolvedOffice}`
+          : resolvedOffice,
         dateTime: nowIso,
       },
       ...(resolvedFileLocation !== UNFILED_LOCATION
@@ -305,6 +396,7 @@ export function useTransactionManager({
 
     const request = {
       ...form,
+      office: resolvedOffice,
       direction: isIncoming ? "incoming" : "outgoing",
       status: resolvedStatus,
       fileLocation: resolvedFileLocation,
@@ -315,7 +407,7 @@ export function useTransactionManager({
           }
         : {}),
       id: `${prefix}-${new Date(submittedAt).getFullYear()}-${submittedAt.toString().slice(-6)}`,
-      location: form.office,
+      location: resolvedOffice,
       notes: form.description,
       history: initialHistory,
     };
@@ -453,12 +545,12 @@ export function useTransactionManager({
     filters,
     form,
     formError,
-    forwardedDestinations: forwardedOptions,
+    forwardedDestinations: mergedForwardedOptions,
     hasActiveFilters,
     incomingCount: incomingRequests.length,
     incomingStatuses,
     officeFilter,
-    offices: officeOptions,
+    offices: mergedOffices,
     outgoingCount: outgoingRequests.length,
     outgoingStatuses,
     requestCategory,

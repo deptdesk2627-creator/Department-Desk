@@ -1,6 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Modal } from "../../../components/ui";
 import { cabinetGroups, UNFILED_LOCATION } from "../constants";
+
+function ensureOtherOption(list = []) {
+  const items = Array.isArray(list) ? list.filter(Boolean) : [];
+  const hasOther = items.some((item) =>
+    ["other", "others"].includes(String(item).trim().toLowerCase()),
+  );
+  return hasOther ? items : [...items, "Other"];
+}
 
 function TransactionForm({
   isOpen = true,
@@ -11,7 +19,6 @@ function TransactionForm({
   onSubmit,
   onCancel,
   offices = [],
-  onAddOffice,
   categories = [],
   statuses = [],
   outgoingStatuses = [],
@@ -24,24 +31,17 @@ function TransactionForm({
   ],
   forwardedDestinations = ["Not sent out", "Returned to Sender"],
 }) {
-  const [isOfficeListOpen, setIsOfficeListOpen] = useState(false);
-  const [isAddingOffice, setIsAddingOffice] = useState(false);
-  const [activeOfficeIndex, setActiveOfficeIndex] = useState(0);
-  const [officeError, setOfficeError] = useState("");
   const isIncoming = form.direction === "incoming";
-  const filteredOffices = useMemo(() => {
-    const query = String(form.office || "").trim().toLowerCase();
-    return offices.filter((office) =>
-      String(office || "").toLowerCase().includes(query),
-    );
-  }, [form.office, offices]);
-  const officeName = String(form.office || "").trim();
-  const hasExactOffice = offices.some(
-    (office) => String(office).trim().toLowerCase() === officeName.toLowerCase(),
+  const officeChoices = useMemo(() => ensureOtherOption(offices), [offices]);
+  const forwardedChoices = useMemo(
+    () => ensureOtherOption(forwardedDestinations),
+    [forwardedDestinations],
   );
-  const selectedOfficeIndex = Math.min(
-    activeOfficeIndex,
-    filteredOffices.length - 1,
+  const isOtherOffice = ["other", "others"].includes(
+    String(form.office || "").trim().toLowerCase(),
+  );
+  const isOtherForwarded = ["other", "others"].includes(
+    String(form.forwardedTo || "").trim().toLowerCase(),
   );
   const activeStatuses = isIncoming
     ? incomingStatuses.length
@@ -57,49 +57,6 @@ function TransactionForm({
       direction: nextDirection,
       status: nextDirection === "incoming" ? "Received" : "Pending",
     });
-  }
-
-  async function handleAddOffice() {
-    if (!officeName || !onAddOffice) return;
-    setIsAddingOffice(true);
-    setOfficeError("");
-    try {
-      const savedOffice = await onAddOffice(officeName);
-      if (!savedOffice) throw new Error("The new office could not be saved.");
-      setForm((current) => ({ ...current, office: savedOffice }));
-      setIsOfficeListOpen(false);
-    } catch (error) {
-      setOfficeError(error.message || "Could not save this office.");
-    } finally {
-      setIsAddingOffice(false);
-    }
-  }
-
-  function handleOfficeKeyDown(event) {
-    if (event.key === "ArrowDown" && filteredOffices.length > 0) {
-      event.preventDefault();
-      setIsOfficeListOpen(true);
-      setActiveOfficeIndex((index) =>
-        Math.min(index + 1, filteredOffices.length - 1),
-      );
-    } else if (event.key === "ArrowUp" && filteredOffices.length > 0) {
-      event.preventDefault();
-      setIsOfficeListOpen(true);
-      setActiveOfficeIndex((index) => Math.max(index - 1, 0));
-    } else if (
-      event.key === "Enter" &&
-      isOfficeListOpen &&
-      selectedOfficeIndex >= 0
-    ) {
-      event.preventDefault();
-      setForm((current) => ({
-        ...current,
-        office: filteredOffices[selectedOfficeIndex],
-      }));
-      setIsOfficeListOpen(false);
-    } else if (event.key === "Escape") {
-      setIsOfficeListOpen(false);
-    }
   }
 
   return (
@@ -180,108 +137,50 @@ function TransactionForm({
             }
           />
         </label>
-        <div className="transaction-office-picker">
-          <label htmlFor="transaction-office-search">
-            {isIncoming ? "From office (Origin)" : "Office"}
-          </label>
-          <div className="transaction-office-picker__control">
-            <input
-              id="transaction-office-search"
-              required
-              type="text"
-              role="combobox"
-              aria-autocomplete="list"
-              aria-expanded={isOfficeListOpen}
-              aria-controls="transaction-office-options"
-              aria-activedescendant={
-                isOfficeListOpen && selectedOfficeIndex >= 0
-                  ? `transaction-office-option-${selectedOfficeIndex}`
-                  : undefined
-              }
-              placeholder="Type to search offices"
+        <div className="transaction-office-field">
+          <label>
+            {isIncoming ? "From office (Origin)" : "Office (Where to go)"}
+            <select
               value={form.office}
-              onFocus={() => {
-                setIsOfficeListOpen(true);
-                setActiveOfficeIndex(0);
-              }}
-              onChange={(event) => {
-                setForm((current) => ({
-                  ...current,
+              onChange={(event) =>
+                setForm({
+                  ...form,
                   office: event.target.value,
-                }));
-                setOfficeError("");
-                setIsOfficeListOpen(true);
-                setActiveOfficeIndex(0);
-              }}
-              onKeyDown={handleOfficeKeyDown}
-              onBlur={(event) => {
-                if (
-                  !event.currentTarget.parentElement.contains(
-                    event.relatedTarget,
-                  )
-                ) {
-                  setIsOfficeListOpen(false);
+                  customOffice:
+                    ["other", "others"].includes(
+                      event.target.value.trim().toLowerCase(),
+                    )
+                      ? form.customOffice || ""
+                      : "",
+                })
+              }
+            >
+              {officeChoices.map((office) => (
+                <option key={office} value={office}>
+                  {office}
+                </option>
+              ))}
+            </select>
+          </label>
+          {isOtherOffice && (
+            <label className="transaction-other-office-input">
+              {isIncoming
+                ? "Specify origin office"
+                : "Specify destination office"}
+              <input
+                required
+                type="text"
+                value={form.customOffice || ""}
+                onChange={(event) =>
+                  setForm({ ...form, customOffice: event.target.value })
                 }
-              }}
-            />
-            {isOfficeListOpen && (
-              <div className="transaction-office-picker__menu">
-                {filteredOffices.length > 0 ? (
-                  <div
-                    className="transaction-office-picker__options"
-                    id="transaction-office-options"
-                    role="listbox"
-                    aria-label="Existing offices"
-                  >
-                    {filteredOffices.map((office, index) => (
-                      <button
-                        key={office}
-                        id={`transaction-office-option-${index}`}
-                        type="button"
-                        role="option"
-                        aria-selected={
-                          index === selectedOfficeIndex
-                        }
-                        className={
-                          index === selectedOfficeIndex ? "is-active" : undefined
-                        }
-                        onMouseEnter={() => setActiveOfficeIndex(index)}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => {
-                          setForm((current) => ({ ...current, office }));
-                          setOfficeError("");
-                          setIsOfficeListOpen(false);
-                        }}
-                      >
-                        {office}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="transaction-office-picker__empty">
-                    No matching offices found.
-                  </p>
-                )}
-                {officeName && !hasExactOffice && onAddOffice && (
-                  <button
-                    className="transaction-office-picker__add"
-                    type="button"
-                    disabled={isAddingOffice}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={handleAddOffice}
-                  >
-                    {isAddingOffice
-                      ? "Adding office..."
-                      : `Add a new office: ${officeName}`}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          {officeError && (
-            <p className="transaction-office-picker__error" role="alert">
-              {officeError}
-            </p>
+                placeholder={
+                  isIncoming
+                    ? "Type the office this document came from..."
+                    : "Type the office where this request will go..."
+                }
+              />
+            </label>
           )}
         </div>
         <label>
@@ -348,21 +247,48 @@ function TransactionForm({
                 ))}
               </select>
             </label>
-            <label>
-              Sent out / Forwarded to
-              <select
-                value={form.forwardedTo || "Not sent out"}
-                onChange={(event) =>
-                  setForm({ ...form, forwardedTo: event.target.value })
-                }
-              >
-                {forwardedDestinations.map((destination) => (
-                  <option key={destination} value={destination}>
-                    {destination}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="transaction-office-field">
+              <label>
+                Sent out / Forwarded to
+                <select
+                  value={form.forwardedTo || "Not sent out"}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      forwardedTo: event.target.value,
+                      customForwardedTo: ["other", "others"].includes(
+                        event.target.value.trim().toLowerCase(),
+                      )
+                        ? form.customForwardedTo || ""
+                        : "",
+                    })
+                  }
+                >
+                  {forwardedChoices.map((destination) => (
+                    <option key={destination} value={destination}>
+                      {destination}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {isOtherForwarded && (
+                <label className="transaction-other-office-input">
+                  Specify destination office
+                  <input
+                    required
+                    type="text"
+                    value={form.customForwardedTo || ""}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        customForwardedTo: event.target.value,
+                      })
+                    }
+                    placeholder="Type the office where this is sent out..."
+                  />
+                </label>
+              )}
+            </div>
           </>
         )}
         <label className="transaction-description">
@@ -394,7 +320,7 @@ function TransactionForm({
           <button
             className="primary-button"
             type="submit"
-            disabled={isSubmitting || isAddingOffice}
+            disabled={isSubmitting}
           >
             {isSubmitting
               ? "Saving transaction..."

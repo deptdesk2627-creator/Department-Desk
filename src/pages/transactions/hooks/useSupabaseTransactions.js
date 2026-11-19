@@ -323,14 +323,22 @@ export function useSupabaseTransactions({ setRequests }) {
     };
   }, [reloadToken, setRequests]);
 
-  const officeNames = useMemo(
-    () => officeRows.map((office) => office.name).filter(Boolean),
-    [officeRows],
-  );
+  const officeNames = useMemo(() => {
+    const names = officeRows
+      .map((office) => office.name)
+      .filter(
+        (name) =>
+          Boolean(name) &&
+          !["other", "others"].includes(normalized(name)),
+      );
+    return names.length ? [...names, "Other"] : [];
+  }, [officeRows]);
   const forwardedOptions = useMemo(
     () => [
       ...defaultForwardedDestinations.slice(0, 2),
-      ...officeNames.filter((office) => !["Not sent out", "Returned to Sender"].includes(office)),
+      ...officeNames.filter(
+        (office) => !["Not sent out", "Returned to Sender"].includes(office),
+      ),
     ],
     [officeNames],
   );
@@ -368,17 +376,44 @@ export function useSupabaseTransactions({ setRequests }) {
     [officeRows],
   );
 
-  const resolveOfficeId = useCallback(
-    (name) => {
-      const office = officeRows.find(
-        (row) => normalized(row.name) === normalized(name),
-      );
-      if (!office) {
-        throw new Error(
-          `The office "${name}" is not available in public.offices.`,
-        );
+  const resolveOrCreateOfficeId = useCallback(
+    async (name) => {
+      const officeName = String(name || "").trim();
+      if (!officeName) {
+        throw new Error("Enter an office name.");
       }
-      return Number(office.office_id);
+      const existingOffice = officeRows.find(
+        (row) => normalized(row.name) === normalized(officeName),
+      );
+      if (existingOffice) {
+        return {
+          officeId: Number(existingOffice.office_id),
+          officeRow: existingOffice,
+        };
+      }
+
+      const { data, error: insertError } = await supabase
+        .from("offices")
+        .insert({ name: officeName })
+        .select("office_id, name")
+        .single();
+      if (insertError) throw insertError;
+      if (!data?.office_id || !data?.name) {
+        throw new Error(`Could not save the office "${officeName}".`);
+      }
+
+      setOfficeRows((current) => {
+        const alreadyAdded = current.some(
+          (office) => normalized(office.name) === normalized(data.name),
+        );
+        return alreadyAdded
+          ? current
+          : [...current, data].sort((a, b) => a.name.localeCompare(b.name));
+      });
+      return {
+        officeId: Number(data.office_id),
+        officeRow: data,
+      };
     },
     [officeRows],
   );
@@ -450,20 +485,43 @@ export function useSupabaseTransactions({ setRequests }) {
     [saveHistory],
   );
 
+  const resolveOfficeId = useCallback(
+    (name) => {
+      const office = officeRows.find(
+        (row) => normalized(row.name) === normalized(name),
+      );
+      if (!office) {
+        throw new Error(
+          `The office "${name}" is not available in public.offices.`,
+        );
+      }
+      return Number(office.office_id);
+    },
+    [officeRows],
+  );
+
   const persistAdd = useCallback(
     async (request) => {
       if (!user?.user_id) throw new Error("Your account is not linked in public.users.");
       const isIncoming = request.direction === "incoming";
       const table = TABLE_BY_DIRECTION[isIncoming ? "incoming" : "outgoing"];
-      const officeId = resolveOfficeId(request.office);
+      const { officeId, officeRow } = await resolveOrCreateOfficeId(
+        request.office,
+      );
       const internalOfficeId = resolveOfficeId("Secretary's Office");
       const locationId = await resolveFileLocationId(request.fileLocation);
       let forwardedToId = null;
+      let forwardedOfficeRow = null;
       if (isIncoming && request.forwardedTo !== "Not sent out") {
-        forwardedToId =
-          request.forwardedTo === "Returned to Sender"
-            ? officeId
-            : resolveOfficeId(request.forwardedTo);
+        if (request.forwardedTo === "Returned to Sender") {
+          forwardedToId = officeId;
+        } else {
+          const resolvedForwarded = await resolveOrCreateOfficeId(
+            request.forwardedTo,
+          );
+          forwardedToId = resolvedForwarded.officeId;
+          forwardedOfficeRow = resolvedForwarded.officeRow;
+        }
       }
 
       const now = new Date().toISOString();
@@ -506,16 +564,23 @@ export function useSupabaseTransactions({ setRequests }) {
       if (locationId && !locationMap.has(locationId)) {
         locationMap.set(locationId, request.fileLocation);
       }
+      const nextOfficeMap = new Map(
+        officeRows.map((office) => [Number(office.office_id), office]),
+      );
+      if (officeRow) {
+        nextOfficeMap.set(Number(officeRow.office_id), officeRow);
+      }
+      if (forwardedOfficeRow) {
+        nextOfficeMap.set(
+          Number(forwardedOfficeRow.office_id),
+          forwardedOfficeRow,
+        );
+      }
       const saved = {
         ...mapTransactionRow(
           data,
           isIncoming ? "incoming" : "outgoing",
-          new Map(
-            officeRows.map((office) => [
-              Number(office.office_id),
-              office,
-            ]),
-          ),
+          nextOfficeMap,
           locationMap,
           [],
         ),
@@ -536,6 +601,7 @@ export function useSupabaseTransactions({ setRequests }) {
       persistHistorySafely,
       resolveFileLocationId,
       resolveOfficeId,
+      resolveOrCreateOfficeId,
       user,
     ],
   );

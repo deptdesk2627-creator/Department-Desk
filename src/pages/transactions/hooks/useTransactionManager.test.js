@@ -204,3 +204,39 @@ test("places a transaction in a CICT cabinet drawer, logs history, and filters b
   );
   expect(result.current.visibleRequests).toEqual([storedRequests[1]]);
 });
+
+test("resolves typed custom office and forwarded destination when Other is selected and adds them to office options", () => {
+  const setRequests = jest.fn();
+  const { result } = renderHook(() =>
+    useTransactionManager({ requests: [], setRequests, search: "" }),
+  );
+  const preventDefault = jest.fn();
+
+  act(() => {
+    result.current.setForm({
+      ...result.current.form,
+      direction: "incoming",
+      student: "Registrar Messenger",
+      document: "Academic Council Memo",
+      office: "Other",
+      customOffice: "Alumni Relations Office",
+      forwardedTo: "Other",
+      customForwardedTo: "Quality Assurance Office",
+    });
+  });
+
+  act(() => {
+    result.current.addRequest({ preventDefault });
+  });
+
+  expect(result.current.formError).toBe("");
+  expect(setRequests).toHaveBeenCalledTimes(1);
+  const updater = setRequests.mock.calls[0][0];
+  const [saved] = updater([]);
+  expect(saved.office).toBe("Alumni Relations Office");
+  expect(saved.forwardedTo).toBe("Quality Assurance Office");
+  expect(result.current.offices).toContain("Alumni Relations Office");
+  expect(result.current.forwardedDestinations).toContain(
+    "Quality Assurance Office",
+  );
+});

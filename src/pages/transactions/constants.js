@@ -101,9 +101,11 @@ export const emptyForm = (direction = "outgoing") => ({
   document: "",
   student: "",
   office: "Registrar",
+  customOffice: "",
   type: "Document",
   status: direction === "incoming" ? "Received" : "Pending",
   signedByOffice: "Unsigned",
   forwardedTo: "Not sent out",
+  customForwardedTo: "",
   fileLocation: UNFILED_LOCATION,
 });
