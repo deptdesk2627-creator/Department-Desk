@@ -272,7 +272,7 @@ function TransactionForm({
                   >
                     {isAddingOffice
                       ? "Adding office..."
-                      : `Add "${officeName}" to database`}
+                      : `Add a new office: ${officeName}`}
                   </button>
                 )}
               </div>
