@@ -335,6 +335,39 @@ export function useSupabaseTransactions({ setRequests }) {
     [officeNames],
   );
 
+  const addOffice = useCallback(
+    async (name) => {
+      const officeName = String(name || "").trim();
+      if (!officeName) throw new Error("Enter an office name.");
+
+      const existingOffice = officeRows.find(
+        (office) => normalized(office.name) === normalized(officeName),
+      );
+      if (existingOffice) return existingOffice.name;
+
+      const { data, error: insertError } = await supabase
+        .from("offices")
+        .insert({ name: officeName })
+        .select("office_id, name")
+        .single();
+      if (insertError) throw insertError;
+      if (!data?.office_id || !data?.name) {
+        throw new Error("Supabase did not return the saved office.");
+      }
+
+      setOfficeRows((current) => {
+        const alreadyAdded = current.some(
+          (office) => normalized(office.name) === normalized(data.name),
+        );
+        return alreadyAdded
+          ? current
+          : [...current, data].sort((a, b) => a.name.localeCompare(b.name));
+      });
+      return data.name;
+    },
+    [officeRows],
+  );
+
   const resolveOfficeId = useCallback(
     (name) => {
       const office = officeRows.find(
@@ -610,6 +643,7 @@ export function useSupabaseTransactions({ setRequests }) {
     forwardedOptions,
     isReady,
     isLoading,
+    addOffice,
     officeNames,
     persistAdd,
     persistDelete,
