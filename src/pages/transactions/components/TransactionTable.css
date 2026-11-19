@@ -256,11 +256,21 @@
   }
 
   .request-tracker-table .request-status-select,
-  .request-tracker-table--incoming .request-status-select {
-    max-width: 210px;
+  .request-tracker-table--incoming .request-status-select,
+  .request-tracker-table .request-status-badge,
+  .request-tracker-table--incoming .request-status-badge {
+    flex: 0 1 auto;
+    font-size: 12px;
+    max-width: 58% !important;
     min-height: 34px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .request-tracker-table .request-status-select,
+  .request-tracker-table--incoming .request-status-select {
     padding: 6px 26px 6px 11px;
-    font-size: 12.5px;
   }
 
   .request-tracker-table .request-icon-button {

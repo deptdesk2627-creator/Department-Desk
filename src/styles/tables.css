@@ -127,38 +127,51 @@
   .deptdesk-table.mobile-stack-table,
   .inventory-master-table.mobile-stack-table,
   .inventory-transactions-table.mobile-stack-table {
-    display: block;
+    display: block !important;
     min-width: 0 !important;
     width: 100% !important;
   }
 
-  .mobile-stack-table thead {
-    clip: rect(0, 0, 0, 0);
-    clip-path: inset(50%);
-    height: 1px;
-    overflow: hidden;
-    position: absolute;
-    white-space: nowrap;
-    width: 1px;
+  .mobile-stack-table thead,
+  .request-tracker-table.mobile-stack-table thead,
+  .inventory-master-table.mobile-stack-table thead,
+  .inventory-transactions-table.mobile-stack-table thead,
+  .deptdesk-table.mobile-stack-table thead {
+    clip: rect(0, 0, 0, 0) !important;
+    clip-path: inset(50%) !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    white-space: nowrap !important;
+    width: 1px !important;
   }
 
-  .mobile-stack-table tbody {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
+  .mobile-stack-table tbody,
+  .request-tracker-table.mobile-stack-table tbody,
+  .inventory-master-table.mobile-stack-table tbody,
+  .inventory-transactions-table.mobile-stack-table tbody,
+  .deptdesk-table.mobile-stack-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
   }
 
-  .mobile-stack-table tbody tr {
+  .mobile-stack-table tbody tr,
+  .request-tracker-table.mobile-stack-table tbody tr,
+  .inventory-master-table.mobile-stack-table tbody tr,
+  .inventory-transactions-table.mobile-stack-table tbody tr,
+  .deptdesk-table.mobile-stack-table tbody tr {
     background: var(--surface, #ffffff);
     border: 1px solid var(--line, #e2e8f0);
     border-radius: 14px;
     box-shadow: var(--shadow-xs, 0 1px 3px rgba(15, 23, 42, 0.04));
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    padding: 12px 14px;
-    width: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    padding: 12px 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   :root[data-theme="dark"] .mobile-stack-table tbody tr {
@@ -166,19 +179,24 @@
     border-color: #334155;
   }
 
-  .mobile-stack-table tbody td {
-    align-items: center;
+  .mobile-stack-table tbody td,
+  .request-tracker-table.mobile-stack-table tbody td,
+  .inventory-master-table.mobile-stack-table tbody td,
+  .inventory-transactions-table.mobile-stack-table tbody td,
+  .deptdesk-table.mobile-stack-table tbody td {
+    align-items: center !important;
     border: 0 !important;
     border-bottom: 1px dashed var(--line-subtle, #f1f5f9) !important;
-    display: flex;
-    gap: 12px;
-    justify-content: space-between;
-    max-width: none !important;
+    display: flex !important;
+    gap: 12px !important;
+    justify-content: space-between !important;
+    max-width: 100% !important;
     min-width: 0 !important;
     padding: 9px 0 !important;
-    text-align: right;
+    text-align: right !important;
     white-space: normal !important;
     width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   :root[data-theme="dark"] .mobile-stack-table tbody td {
@@ -197,28 +215,47 @@
   .mobile-stack-table tbody td[data-label]::before {
     color: var(--muted, #64748b);
     content: attr(data-label);
-    flex: 0 0 auto;
+    flex: 0 0 38%;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.05em;
-    max-width: 44%;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+    max-width: 38%;
+    overflow-wrap: break-word;
     text-align: left;
     text-transform: uppercase;
   }
 
-  .mobile-stack-table tbody td.mobile-card-primary {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
-    text-align: left;
+  .mobile-stack-table tbody td > * {
+    min-width: 0;
+    max-width: 60%;
+  }
+
+  .mobile-stack-table tbody td.mobile-card-primary > *,
+  .mobile-stack-table tbody td.mobile-card-actions > * {
+    max-width: 100%;
+  }
+
+  .mobile-stack-table tbody td.mobile-card-primary,
+  .request-tracker-table.mobile-stack-table tbody td.mobile-card-primary,
+  .inventory-master-table.mobile-stack-table tbody td.mobile-card-primary,
+  .deptdesk-table.mobile-stack-table tbody td.mobile-card-primary {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    text-align: left !important;
   }
 
   .mobile-stack-table tbody td.mobile-card-primary::before {
     max-width: 100%;
   }
 
-  .mobile-stack-table tbody td.mobile-card-actions {
-    justify-content: flex-end;
+  .mobile-stack-table tbody td.mobile-card-actions,
+  .request-tracker-table.mobile-stack-table tbody td.mobile-card-actions,
+  .inventory-master-table.mobile-stack-table tbody td.mobile-card-actions,
+  .inventory-transactions-table.mobile-stack-table tbody td.mobile-card-actions,
+  .deptdesk-table.mobile-stack-table tbody td.mobile-card-actions {
+    justify-content: flex-end !important;
     padding-top: 10px !important;
   }
 

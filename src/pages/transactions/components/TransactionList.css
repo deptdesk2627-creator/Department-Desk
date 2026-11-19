@@ -299,25 +299,65 @@
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
+  .request-toolbar {
+    padding: 16px 14px 14px;
+  }
+
   .request-toolbar-heading {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
-    gap: 13px;
+    gap: 12px;
+  }
+
+  .request-toolbar-heading > div:first-child {
+    min-width: 0;
   }
 
   .request-view-toggle {
+    display: grid;
+    gap: 2px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 3px;
     width: 100%;
   }
 
   .request-view-toggle button {
-    flex: 1;
+    font-size: 11px;
+    gap: 4px;
     justify-content: center;
+    line-height: 1.2;
+    min-width: 0;
+    overflow: hidden;
+    padding: 7px 4px;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .request-view-toggle button svg {
+    flex-shrink: 0;
+    height: 12px;
+    width: 12px;
+  }
+
+  .request-filter-dropdowns {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
   }
 
   .request-filter-select,
   .request-filter-reset-btn {
+    max-width: 100%;
     width: 100%;
+  }
+}
+
+@media (max-width: 390px) {
+  .request-view-toggle button svg {
+    display: none;
   }
 }
 

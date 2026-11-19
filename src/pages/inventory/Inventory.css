@@ -530,28 +530,66 @@
 }
 
 @media (max-width: 640px) {
+  .inventory-workspace {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .inventory-tabs-bar {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .inventory-folder-tabs {
     display: flex;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
+    flex-wrap: wrap;
+    gap: 6px;
     width: 100%;
-    padding-bottom: 1px;
+    min-width: 0;
   }
 
   .inventory-folder-tab {
-    flex: 1 0 auto;
+    border-bottom: 1px solid var(--line);
+    border-radius: 12px;
+    flex: 1 1 calc(50% - 4px);
+    font-size: 12.5px;
     justify-content: center;
-    padding: 9px 14px;
-    font-size: 13px;
-    scroll-snap-align: start;
-    white-space: nowrap;
+    margin-bottom: 0;
+    min-height: 40px;
+    min-width: 0;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .inventory-folder-tab.is-active {
+    background: var(--purple-soft);
+    border: 1.5px solid var(--purple);
+    color: var(--purple);
+    margin-bottom: 0;
+    min-height: 40px;
   }
 
   .dashboard .card.inventory-folder-panel,
   .inventory-folder-panel {
-    border-radius: 0 0 16px 16px;
+    border-radius: 16px;
+    margin-top: 6px;
     padding: 16px 14px 20px;
+  }
+
+  .inventory-toolbar-controls {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .inventory-search-box {
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .inventory-filter-pill,
+  .inventory-filter-pill select {
+    width: 100%;
   }
 
   .inventory-form {

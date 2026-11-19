@@ -422,17 +422,52 @@
 }
 
 @media (max-width: 640px) {
+  .dashboard .metrics-grid.inventory-metrics,
   .inventory-metrics {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px;
+  }
+
+  .inventory-metrics .metric-card {
+    padding: 16px;
+    min-width: 0;
   }
 
   .inventory-records-metric,
   .inventory-usage-card {
-    grid-column: auto;
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+
+  .inventory-usage-card__top {
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .inventory-usage-card__body {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .inventory-usage-chart {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .inventory-usage-info {
+    width: 100%;
+  }
+
+  .inventory-usage-info .inventory-top-item {
+    font-size: 20px;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 380px) {
+  .dashboard .metrics-grid.inventory-metrics,
+  .inventory-metrics {
+    grid-template-columns: 1fr !important;
   }
 }
