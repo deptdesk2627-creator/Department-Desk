@@ -74,7 +74,7 @@ function StaffSupplyList({
       )}
       {items.length ? (
         <div className="table-scroll module-table-scroll">
-          <table className="request-table inventory-table">
+          <table className="request-table inventory-table mobile-stack-table">
             <thead>
               <tr>
                 <th>Product-ID No.</th>
@@ -99,12 +99,15 @@ function StaffSupplyList({
                 const allowUse = canUseItem(item);
                 return (
                   <tr key={item.id}>
-                    <td>
+                    <td data-label="Product-ID No.">
                       <span className="request-id-badge">
                         {item.item_id ?? getProductId(item)}
                       </span>
                     </td>
-                    <td>
+                    <td
+                      className="mobile-card-primary"
+                      data-label="Product name"
+                    >
                       <div className="inventory-item-name-cell">
                         <strong className="inventory-item-name">{item.name}</strong>
                         {(item.category || item.classification) && (
@@ -129,14 +132,14 @@ function StaffSupplyList({
                         )}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Available">
                       <span
                         className={`status-pill ${available > 0 ? "status-done" : "status-waiting"}`}
                       >
                         {available > 0 ? `${available} ${item.unit}` : "Out of stock"}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="I borrowed">
                       {borrowed > 0 ? (
                         <div className="staff-borrowed-cell">
                           <span className="status-pill status-started">
@@ -152,7 +155,10 @@ function StaffSupplyList({
                         "—"
                       )}
                     </td>
-                    <td>
+                    <td
+                      className="mobile-card-actions"
+                      data-label="Actions"
+                    >
                       <div className="stock-actions">
                         {allowBorrow && (
                           <button

@@ -15,7 +15,7 @@
 
 .row-overdue {
   background-color: #fff5f5;
-}
+} 
 
 .overdue-tag {
   background: #fee2e2;
@@ -159,4 +159,35 @@
 :root[data-theme="dark"] .inline-date-edit:focus-visible {
   background: #0f172a;
   border-color: var(--line);
+}
+
+@media (max-width: 640px) {
+  .table-card {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .status-group-card {
+    padding: 14px;
+  }
+
+  .due-date-wrapper {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .inline-text-edit {
+    background: var(--surface-subtle, #f8fafc);
+    border-color: var(--line);
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  :root[data-theme="dark"] .inline-text-edit {
+    background: #0f172a;
+    border-color: #334155;
+  }
 }

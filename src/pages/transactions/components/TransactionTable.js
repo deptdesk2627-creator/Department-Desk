@@ -31,7 +31,7 @@ function TransactionTable({
   return (
     <div className="request-table-wrap">
       <table
-        className={`request-tracker-table${
+        className={`request-tracker-table mobile-stack-table${
           isIncoming ? " request-tracker-table--incoming" : ""
         }`}
       >
@@ -76,18 +76,28 @@ function TransactionTable({
                 className="request-tracker-row"
                 onClick={() => onSelect(request)}
               >
-                <td>
+                <td data-label={isIncoming ? "Document ID" : "Request ID"}>
                   <span className="request-id-badge">{request.id}</span>
                 </td>
-                <td className="request-name-cell">
+                <td
+                  className="request-name-cell mobile-card-primary"
+                  data-label={isIncoming ? "Document & Sender" : "Form name"}
+                >
                   <strong>{requestName(request)}</strong>
                   <span>{request.student || "Sender not specified"}</span>
                 </td>
-                <td>{requestOffice(request)}</td>
-                <td>{formatDate(request.dateTime)}</td>
+                <td data-label={isIncoming ? "From Office" : "Office"}>
+                  {requestOffice(request)}
+                </td>
+                <td data-label={isIncoming ? "Date Received" : "Date submitted"}>
+                  {formatDate(request.dateTime)}
+                </td>
                 {isIncoming ? (
                   <>
-                    <td onClick={(event) => event.stopPropagation()}>
+                    <td
+                      data-label="Our Signature"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       {readOnly ? (
                         <span
                           className={`request-status-badge ${
@@ -117,7 +127,10 @@ function TransactionTable({
                         </select>
                       )}
                     </td>
-                    <td onClick={(event) => event.stopPropagation()}>
+                    <td
+                      data-label="Sent Out To"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       {readOnly ? (
                         <span
                           className={`request-status-badge ${
@@ -153,13 +166,16 @@ function TransactionTable({
                     </td>
                   </>
                 ) : (
-                  <td>
+                  <td data-label="Category">
                     <span className="request-category">
                       {requestCategory(request)}
                     </span>
                   </td>
                 )}
-                <td onClick={(event) => event.stopPropagation()}>
+                <td
+                  data-label="Cabinet / Drawer"
+                  onClick={(event) => event.stopPropagation()}
+                >
                   {readOnly ? (
                     <span
                       className={`request-status-badge ${
@@ -195,7 +211,10 @@ function TransactionTable({
                     </select>
                   )}
                 </td>
-                <td onClick={(event) => event.stopPropagation()}>
+                <td
+                  data-label="Status"
+                  onClick={(event) => event.stopPropagation()}
+                >
                   {readOnly ? (
                     <span
                       className={`request-status-badge ${statusClass(request.status)}`}
@@ -217,7 +236,11 @@ function TransactionTable({
                     </select>
                   )}
                 </td>
-                <td onClick={(event) => event.stopPropagation()}>
+                <td
+                  className="mobile-card-actions"
+                  data-label="Actions"
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <div className="request-actions">
                     <button
                       type="button"

@@ -18,3 +18,41 @@ test("Dean dashboard shows the open task count without exposing task details or 
   expect(screen.queryByText("Confidential task")).not.toBeInTheDocument();
   expect(screen.queryByText("Add To-Do List")).not.toBeInTheDocument();
 });
+
+test("Dashboard recent tables render mobile-stack-table and data-label attributes for mobile cards", () => {
+  const { container } = render(
+    <Dashboard
+      role={{ id: "secretary", can: { createRequests: true, manageInventory: true } }}
+      requests={[
+        {
+          id: "REQ-1001",
+          document: "Equipment Request",
+          student: "Alex Cruz",
+          office: "CICT Office",
+          status: "Pending",
+          direction: "outgoing",
+        },
+        {
+          id: "DOC-2001",
+          document: "Budget Memo",
+          student: "Dean Office",
+          office: "Registrar",
+          signedByOffice: "Signed by Dean",
+          status: "Approved",
+          direction: "incoming",
+        },
+      ]}
+      tasks={[]}
+      inventory={[]}
+    />,
+  );
+
+  const stackedTables = container.querySelectorAll("table.mobile-stack-table");
+  expect(stackedTables.length).toBe(2);
+  expect(
+    container.querySelector('td[data-label="Form / Request"]'),
+  ).toBeInTheDocument();
+  expect(
+    container.querySelector('td[data-label="Document / Request"]'),
+  ).toBeInTheDocument();
+});

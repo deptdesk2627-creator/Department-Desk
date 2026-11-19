@@ -42,7 +42,7 @@ function InventoryTable({
       )}
       {items.length ? (
         <div className="inventory-table-wrap">
-          <table className="request-table inventory-table inventory-master-table">
+          <table className="request-table inventory-table inventory-master-table mobile-stack-table">
             <thead>
               <tr>
                 <th>PRODUCT-ID NO.</th>
@@ -66,12 +66,15 @@ function InventoryTable({
                 );
                 return (
                   <tr key={item.id}>
-                    <td>
+                    <td data-label="Product-ID No.">
                       <span className="inventory-product-id-pill">
                         {getProductId(item)}
                       </span>
                     </td>
-                    <td>
+                    <td
+                      className="mobile-card-primary"
+                      data-label="Product Name"
+                    >
                       <div className="inventory-item-name-cell">
                         <button
                           type="button"
@@ -105,7 +108,7 @@ function InventoryTable({
                         )}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Quantity">
                       <div className="stock-quantity-cell">
                         <strong>
                           {item.quantity} {item.unit}
@@ -122,14 +125,17 @@ function InventoryTable({
                         </span>
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Stock Level">
                       <span
                         className={`status-pill ${lowStock ? "status-waiting" : "status-done"}`}
                       >
                         {lowStock ? "Low stock" : "In stock"}
                       </span>
                     </td>
-                    <td className="inventory-actions-col">
+                    <td
+                      className="inventory-actions-col mobile-card-actions"
+                      data-label="Actions"
+                    >
                       {readOnly && !canRecord ? (
                         <span className="status-pill status-started">
                           View only

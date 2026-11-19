@@ -49,6 +49,7 @@ function Header({
     closeNotifications,
     closeMenu,
     isMenuOpen,
+    isMobileSearchOpen,
     isSearchOpen,
     notificationButtonRef,
     notificationRef,
@@ -57,9 +58,12 @@ function Header({
     searchInputRef,
     searchRef,
     setIsSearchOpen,
+    toggleMobileSearch,
     toggleNotifications,
     toggleProfileMenu,
   } = useHeader();
+  const hasSearchQuery = Boolean(String(search || "").trim());
+  const isMobileSearchExpanded = isMobileSearchOpen || hasSearchQuery;
   // Faculty & Staff must not see documents, requests, or tasks in search.
   const searchResults = getSearchResults(
     isStaff ? [] : requests,
@@ -69,7 +73,11 @@ function Header({
   );
 
   return (
-    <header className="app-header">
+    <header
+      className={`app-header${
+        isMobileSearchExpanded ? " app-header--mobile-search-open" : ""
+      }`}
+    >
       <div className="app-header__mobile-bar">
         <button
           className="app-header__menu-button"
@@ -104,11 +112,16 @@ function Header({
               className="app-header__brand-img"
             />
           </span>
+          <span className="app-header__brand-text" aria-hidden="true">
+            <strong>Dept</strong>
+            <span>Desk</span>
+          </span>
         </button>
       </div>
 
       <HeaderSearch
         isOpen={isSearchOpen}
+        isMobileExpanded={isMobileSearchExpanded}
         onClose={setIsSearchOpen}
         onNavigate={onNavigate}
         onSearchChange={onSearchChange}
@@ -118,6 +131,31 @@ function Header({
         searchRef={searchRef}
       />
       <div className="app-header__actions">
+        <button
+          type="button"
+          className={`app-header__mobile-search-toggle${
+            isMobileSearchExpanded ? " is-active" : ""
+          }`}
+          onClick={toggleMobileSearch}
+          aria-label={
+            isMobileSearchExpanded ? "Hide search bar" : "Show search bar"
+          }
+          title={isMobileSearchExpanded ? "Hide search bar" : "Show search bar"}
+          aria-expanded={isMobileSearchExpanded}
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+        </button>
         {role && (
           <span
             className={`app-header__role-badge app-header__role-badge--${role.id}`}

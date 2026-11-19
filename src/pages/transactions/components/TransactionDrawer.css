@@ -246,9 +246,32 @@
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
+  .request-drawer {
+    bottom: 0;
+    border-radius: 20px 20px 0 0;
+    height: 92vh;
+    height: 92dvh;
+    left: 0;
+    max-width: 100%;
+    padding: 20px 16px 26px;
+    right: 0;
+    top: auto;
+    width: 100%;
+  }
+
   .request-summary-grid {
     grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .request-drawer-actions {
+    justify-content: stretch;
+  }
+
+  .request-pdf-button {
+    justify-content: center;
+    width: 100%;
   }
 }
 

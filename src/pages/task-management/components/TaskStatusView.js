@@ -34,7 +34,7 @@ function TaskStatusView({
               </span>
               <span className="count-pill">{groupTasks.length} tasks</span>
             </div>
-            <table className="deptdesk-table">
+            <table className="deptdesk-table mobile-stack-table">
               <tbody>
                 {groupTasks.map((task) => (
                   <TaskRow

@@ -75,6 +75,31 @@ function App() {
     setIsSidebarOpen(settings?.sidebarDefault !== "collapsed");
   }, [settings?.sidebarDefault]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    function handleViewportChange(event) {
+      if (event.matches) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(settings?.sidebarDefault !== "collapsed");
+      }
+    }
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleViewportChange);
+      return () => mediaQuery.removeEventListener("change", handleViewportChange);
+    }
+    if (typeof mediaQuery.addListener === "function") {
+      mediaQuery.addListener(handleViewportChange);
+      return () => mediaQuery.removeListener(handleViewportChange);
+    }
+    return undefined;
+  }, [settings?.sidebarDefault]);
+
   // Saved profile edits for the signed-in role, merged over role defaults.
   const storedProfile = profiles?.[role.id];
   const profile = useMemo(

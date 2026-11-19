@@ -180,11 +180,22 @@
 
 @media (max-width: 768px) {
   .app-header__search-container {
+    display: none;
     flex: 1 0 100%;
     max-width: 100%;
     order: 3;
     width: 100%;
-    margin-top: 2px;
+    margin-top: 4px;
+  }
+
+  .app-header__search-container--mobile-open,
+  .app-header__search-container:focus-within {
+    display: block;
+  }
+
+  .app-header__search input {
+    min-height: 38px;
+    font-size: 13.5px;
   }
 
   .app-header__search-kbd {

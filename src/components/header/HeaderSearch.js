@@ -2,6 +2,7 @@ import "./HeaderSearch.css";
 
 function HeaderSearch({
   isOpen,
+  isMobileExpanded = false,
   onClose,
   onNavigate,
   onSearchChange,
@@ -30,7 +31,12 @@ function HeaderSearch({
   }
 
   return (
-    <div className="app-header__search-container" ref={searchRef}>
+    <div
+      className={`app-header__search-container${
+        isMobileExpanded ? " app-header__search-container--mobile-open" : ""
+      }`}
+      ref={searchRef}
+    >
       <label className="app-header__search">
         <svg
           aria-hidden="true"
