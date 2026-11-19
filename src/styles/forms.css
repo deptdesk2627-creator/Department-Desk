@@ -33,6 +33,24 @@
   width: 100%;
 }
 
+.module-form input[type="date"],
+.module-form input[type="datetime-local"],
+.module-form input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.module-form input[type="date"]::-webkit-date-and-time-value,
+.module-form input[type="datetime-local"]::-webkit-date-and-time-value,
+.module-form input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 .module-form input:hover,
 .module-form select:hover,
 .module-form textarea:hover {
