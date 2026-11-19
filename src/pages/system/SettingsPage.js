@@ -10,6 +10,17 @@ import "./SettingsPage.css";
 
 const NOTIFICATION_OPTIONS = [
   {
+    key: "notifySound",
+    label: "Notification sound",
+    badge: "Sound on",
+    mutedBadge: "Muted",
+    icon: "volume",
+    mutedIcon: "volumeOff",
+    description:
+      "Play an audio alert when a new notification arrives. Turn off to mute notification sound.",
+    roles: ["secretary", "dean", "staff"],
+  },
+  {
     key: "notifyRequests",
     label: "Requests needing action",
     badge: "Recommended",
@@ -167,7 +178,8 @@ function SettingsPage({
               <div>
                 <h2>Notification preferences</h2>
                 <p>
-                  Choose which alerts appear in the top-bar notification bell.
+                  Choose which alerts appear in the top-bar notification bell and
+                  whether to play a notification sound.
                 </p>
               </div>
             </div>
@@ -179,18 +191,22 @@ function SettingsPage({
           <div className="system-switch-list">
             {visibleNotificationOptions.map((item) => {
               const checked = safeSettings[item.key] !== false;
+              const iconName =
+                !checked && item.mutedIcon ? item.mutedIcon : item.icon;
+              const badgeText =
+                !checked && item.mutedBadge ? item.mutedBadge : item.badge;
               return (
                 <label key={item.key} className="system-switch-row">
                   <span className="system-switch-row__left">
                     <span className="system-switch-row__icon">
-                      <SystemIcon name={item.icon} size={17} />
+                      <SystemIcon name={iconName} size={17} />
                     </span>
                     <span className="system-switch-row__text">
                       <span className="system-switch-row__title">
                         {item.label}
-                        {item.badge && (
+                        {badgeText && (
                           <span className="system-inline-pill">
-                            {item.badge}
+                            {badgeText}
                           </span>
                         )}
                       </span>
@@ -204,9 +220,19 @@ function SettingsPage({
                       type="checkbox"
                       role="switch"
                       checked={checked}
-                      onChange={(event) =>
-                        updateSettings({ [item.key]: event.target.checked })
-                      }
+                      onChange={(event) => {
+                        const nextChecked = event.target.checked;
+                        const feedbackText =
+                          item.key === "notifySound"
+                            ? nextChecked
+                              ? "Notification sound enabled."
+                              : "Notification sound muted."
+                            : undefined;
+                        updateSettings(
+                          { [item.key]: nextChecked },
+                          feedbackText,
+                        );
+                      }}
                     />
                     <span className="system-switch__track" aria-hidden="true" />
                   </span>

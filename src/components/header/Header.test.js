@@ -73,6 +73,69 @@ test("plays the notification sound when a new alert arrives", () => {
   audioSpy.mockRestore();
 });
 
+test("mutes the notification sound when notifySound is false in settings and unmutes when re-enabled", () => {
+  const play = jest.fn().mockResolvedValue(undefined);
+  const audioSpy = jest
+    .spyOn(window, "Audio")
+    .mockImplementation(() => ({ play }));
+  const { rerender } = render(<Header settings={{ notifySound: false }} />);
+
+  rerender(
+    <Header
+      settings={{ notifySound: false }}
+      requests={[
+        {
+          id: "DOC-1",
+          student: "Alex",
+          document: "Transcript",
+          status: "Waiting",
+        },
+      ]}
+    />,
+  );
+
+  expect(audioSpy).not.toHaveBeenCalled();
+  expect(play).not.toHaveBeenCalled();
+
+  rerender(
+    <Header
+      settings={{ notifySound: true }}
+      requests={[
+        {
+          id: "DOC-1",
+          student: "Alex",
+          document: "Transcript",
+          status: "Waiting",
+        },
+      ]}
+    />,
+  );
+  expect(play).not.toHaveBeenCalled();
+
+  rerender(
+    <Header
+      settings={{ notifySound: true }}
+      requests={[
+        {
+          id: "DOC-1",
+          student: "Alex",
+          document: "Transcript",
+          status: "Waiting",
+        },
+        {
+          id: "DOC-2",
+          student: "Sam",
+          document: "Form 137",
+          status: "Waiting",
+        },
+      ]}
+    />,
+  );
+
+  expect(play).toHaveBeenCalledTimes(1);
+  audioSpy.mockRestore();
+});
+
 test("marking all alerts read removes the unread indicator", () => {
   render(
     <Header

@@ -225,8 +225,18 @@ test("applies sidebar, table density, and default view buttons in Settings immed
     await screen.findByRole("button", { name: /by status/i }),
   ).toHaveClass("active");
 
-  // Return to Settings and test Clear all office data
+  // Return to Settings and test Notification sound mute switch
   fireEvent.click(screen.getByRole("button", { name: /^settings$/i }));
+  const soundSwitch = await screen.findByRole("switch", {
+    name: /notification sound/i,
+  });
+  expect(soundSwitch).toBeChecked();
+  fireEvent.click(soundSwitch);
+  expect(soundSwitch).not.toBeChecked();
+  expect(screen.getByText("Notification sound muted.")).toBeInTheDocument();
+  expect(screen.getByText("Muted")).toBeInTheDocument();
+
+  // Test Clear all office data
   fireEvent.click(screen.getByRole("button", { name: /^clear data$/i }));
   fireEvent.click(
     screen.getByRole("button", { name: /yes, clear everything/i }),

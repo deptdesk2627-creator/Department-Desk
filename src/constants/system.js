@@ -24,6 +24,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   tableDensity: "comfortable",
   defaultRequestView: "table",
   defaultTaskView: "table",
+  notifySound: true,
   notifyRequests: true,
   notifyPendingReturns: true,
   notifyLowStock: true,

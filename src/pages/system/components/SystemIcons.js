@@ -173,6 +173,22 @@ export function SystemIcon({ name, size = 18, className = "" }) {
           <path d="M3 12h4l2.5-6 5 12 2.5-6h4" />
         </svg>
       );
+    case "volume":
+      return (
+        <svg {...props}>
+          <path d="M11 5 6 9H2v6h4l5 4V5Z" />
+          <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+          <path d="M19 5a10 10 0 0 1 0 14" />
+        </svg>
+      );
+    case "volumeOff":
+      return (
+        <svg {...props}>
+          <path d="M11 5 6 9H2v6h4l5 4V5Z" />
+          <path d="m22 9-6 6" />
+          <path d="m16 9 6 6" />
+        </svg>
+      );
     default:
       return (
         <svg {...props}>

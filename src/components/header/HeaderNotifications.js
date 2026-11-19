@@ -56,6 +56,9 @@ function HeaderNotifications({
   );
   const [confirmingIds, setConfirmingIds] = useState(() => new Set());
   const [actionError, setActionError] = useState("");
+  const isSoundMuted =
+    settings?.notifySound === false ||
+    settings?.muteNotificationSound === true;
 
   useEffect(() => {
     if (lastStorageKeyRef.current === storageKey) return;
@@ -103,6 +106,7 @@ function HeaderNotifications({
 
     if (
       previousIds &&
+      !isSoundMuted &&
       notifications.some(
         (notification) => !previousIds.has(notification.id),
       )
@@ -116,7 +120,7 @@ function HeaderNotifications({
     }
 
     previousNotificationIds.current = currentNotificationIds;
-  }, [isReady, notifications]);
+  }, [isReady, isSoundMuted, notifications]);
   const unreadCount = notifications.filter(
     (notification) => !readNotificationIds.has(notification.id),
   ).length;
