@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Modal } from "../../../components/ui";
 import { cabinetGroups, UNFILED_LOCATION } from "../constants";
 
@@ -10,6 +11,7 @@ function TransactionForm({
   onSubmit,
   onCancel,
   offices = [],
+  onAddOffice,
   categories = [],
   statuses = [],
   outgoingStatuses = [],
@@ -22,7 +24,25 @@ function TransactionForm({
   ],
   forwardedDestinations = ["Not sent out", "Returned to Sender"],
 }) {
+  const [isOfficeListOpen, setIsOfficeListOpen] = useState(false);
+  const [isAddingOffice, setIsAddingOffice] = useState(false);
+  const [activeOfficeIndex, setActiveOfficeIndex] = useState(0);
+  const [officeError, setOfficeError] = useState("");
   const isIncoming = form.direction === "incoming";
+  const filteredOffices = useMemo(() => {
+    const query = String(form.office || "").trim().toLowerCase();
+    return offices.filter((office) =>
+      String(office || "").toLowerCase().includes(query),
+    );
+  }, [form.office, offices]);
+  const officeName = String(form.office || "").trim();
+  const hasExactOffice = offices.some(
+    (office) => String(office).trim().toLowerCase() === officeName.toLowerCase(),
+  );
+  const selectedOfficeIndex = Math.min(
+    activeOfficeIndex,
+    filteredOffices.length - 1,
+  );
   const activeStatuses = isIncoming
     ? incomingStatuses.length
       ? incomingStatuses
@@ -37,6 +57,49 @@ function TransactionForm({
       direction: nextDirection,
       status: nextDirection === "incoming" ? "Received" : "Pending",
     });
+  }
+
+  async function handleAddOffice() {
+    if (!officeName || !onAddOffice) return;
+    setIsAddingOffice(true);
+    setOfficeError("");
+    try {
+      const savedOffice = await onAddOffice(officeName);
+      if (!savedOffice) throw new Error("The new office could not be saved.");
+      setForm((current) => ({ ...current, office: savedOffice }));
+      setIsOfficeListOpen(false);
+    } catch (error) {
+      setOfficeError(error.message || "Could not save this office.");
+    } finally {
+      setIsAddingOffice(false);
+    }
+  }
+
+  function handleOfficeKeyDown(event) {
+    if (event.key === "ArrowDown" && filteredOffices.length > 0) {
+      event.preventDefault();
+      setIsOfficeListOpen(true);
+      setActiveOfficeIndex((index) =>
+        Math.min(index + 1, filteredOffices.length - 1),
+      );
+    } else if (event.key === "ArrowUp" && filteredOffices.length > 0) {
+      event.preventDefault();
+      setIsOfficeListOpen(true);
+      setActiveOfficeIndex((index) => Math.max(index - 1, 0));
+    } else if (
+      event.key === "Enter" &&
+      isOfficeListOpen &&
+      selectedOfficeIndex >= 0
+    ) {
+      event.preventDefault();
+      setForm((current) => ({
+        ...current,
+        office: filteredOffices[selectedOfficeIndex],
+      }));
+      setIsOfficeListOpen(false);
+    } else if (event.key === "Escape") {
+      setIsOfficeListOpen(false);
+    }
   }
 
   return (
@@ -117,22 +180,110 @@ function TransactionForm({
             }
           />
         </label>
-        <label>
-          {isIncoming ? "From office (Origin)" : "Office"}
-          <select
-            required
-            value={form.office}
-            onChange={(event) =>
-              setForm({ ...form, office: event.target.value })
-            }
-          >
-            {offices.map((office) => (
-              <option key={office} value={office}>
-                {office}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="transaction-office-picker">
+          <label htmlFor="transaction-office-search">
+            {isIncoming ? "From office (Origin)" : "Office"}
+          </label>
+          <div className="transaction-office-picker__control">
+            <input
+              id="transaction-office-search"
+              required
+              type="text"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={isOfficeListOpen}
+              aria-controls="transaction-office-options"
+              aria-activedescendant={
+                isOfficeListOpen && selectedOfficeIndex >= 0
+                  ? `transaction-office-option-${selectedOfficeIndex}`
+                  : undefined
+              }
+              placeholder="Type to search offices"
+              value={form.office}
+              onFocus={() => {
+                setIsOfficeListOpen(true);
+                setActiveOfficeIndex(0);
+              }}
+              onChange={(event) => {
+                setForm((current) => ({
+                  ...current,
+                  office: event.target.value,
+                }));
+                setOfficeError("");
+                setIsOfficeListOpen(true);
+                setActiveOfficeIndex(0);
+              }}
+              onKeyDown={handleOfficeKeyDown}
+              onBlur={(event) => {
+                if (
+                  !event.currentTarget.parentElement.contains(
+                    event.relatedTarget,
+                  )
+                ) {
+                  setIsOfficeListOpen(false);
+                }
+              }}
+            />
+            {isOfficeListOpen && (
+              <div className="transaction-office-picker__menu">
+                {filteredOffices.length > 0 ? (
+                  <div
+                    className="transaction-office-picker__options"
+                    id="transaction-office-options"
+                    role="listbox"
+                    aria-label="Existing offices"
+                  >
+                    {filteredOffices.map((office, index) => (
+                      <button
+                        key={office}
+                        id={`transaction-office-option-${index}`}
+                        type="button"
+                        role="option"
+                        aria-selected={
+                          index === selectedOfficeIndex
+                        }
+                        className={
+                          index === selectedOfficeIndex ? "is-active" : undefined
+                        }
+                        onMouseEnter={() => setActiveOfficeIndex(index)}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setForm((current) => ({ ...current, office }));
+                          setOfficeError("");
+                          setIsOfficeListOpen(false);
+                        }}
+                      >
+                        {office}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="transaction-office-picker__empty">
+                    No matching offices found.
+                  </p>
+                )}
+                {officeName && !hasExactOffice && onAddOffice && (
+                  <button
+                    className="transaction-office-picker__add"
+                    type="button"
+                    disabled={isAddingOffice}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={handleAddOffice}
+                  >
+                    {isAddingOffice
+                      ? "Adding office..."
+                      : `Add "${officeName}" to database`}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          {officeError && (
+            <p className="transaction-office-picker__error" role="alert">
+              {officeError}
+            </p>
+          )}
+        </div>
         <label>
           Category
           <select
@@ -240,7 +391,11 @@ function TransactionForm({
               Cancel
             </button>
           )}
-          <button className="primary-button" type="submit" disabled={isSubmitting}>
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={isSubmitting || isAddingOffice}
+          >
             {isSubmitting
               ? "Saving transaction..."
               : isIncoming

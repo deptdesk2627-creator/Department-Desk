@@ -45,6 +45,12 @@ function createQuery(table) {
           error: null,
         });
       }
+      if (table === "offices") {
+        return Promise.resolve({
+          data: { office_id: 44, ...inserted },
+          error: null,
+        });
+      }
       const row = Array.isArray(inserted) ? inserted[0] : inserted;
       return Promise.resolve({
         data: { ...row, request_id: 101 },
@@ -147,6 +153,28 @@ test("creates outgoing and incoming records with their database lookups and hist
       forwarded_to: 1,
     }),
   );
+});
+
+test("adds a missing office to the database and updates the office options", async () => {
+  const { result } = renderHook(() => useSupabaseTransactions({ setRequests }));
+  await waitFor(() => expect(result.current.isReady).toBe(true));
+
+  let savedOffice;
+  await act(async () => {
+    savedOffice = await result.current.addOffice("Research Office");
+  });
+
+  expect(savedOffice).toBe("Research Office");
+  expect(queries.offices.insert).toHaveBeenCalledWith({
+    name: "Research Office",
+  });
+  expect(result.current.officeNames).toContain("Research Office");
+
+  await act(async () => {
+    savedOffice = await result.current.addOffice(" research office ");
+  });
+  expect(savedOffice).toBe("Research Office");
+  expect(queries.offices.insert).toHaveBeenCalledTimes(1);
 });
 
 test("persists incoming status, signature, forwarding, and delete changes", async () => {
