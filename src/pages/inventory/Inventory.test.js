@@ -1137,3 +1137,65 @@ test("lets the secretary decline a pending return and hides confirm controls in 
   });
   expect(within(transactionSection).getByText("Return Declined")).toBeInTheDocument();
 });
+
+test("requires confirmation before deleting a product from the master list", async () => {
+  const archivedRow = { item_id: 1 };
+  const itemLoadQuery = createTableQuery({
+    rows: [
+      {
+        item_id: 1,
+        item_name: "Folders",
+        stock_onhand: 32,
+        unit: "Boxes",
+        min_stock: 5,
+        category: "Usable",
+        classification: "Item",
+        archived_at: null,
+        created_at: "2026-10-12",
+      },
+    ],
+  });
+  const itemArchiveQuery = createTableQuery({ maybeSingleRow: archivedRow });
+  let itemCalls = 0;
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") {
+      itemCalls += 1;
+      return itemCalls === 1 ? itemLoadQuery : itemArchiveQuery;
+    }
+    if (table === "users") return createTableQuery({ rows: [] });
+    if (table === "inventory_transactions") return createTableQuery({ rows: [] });
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(<InventoryWithState inventory={[]} records={[]} />);
+  });
+
+  expect(await screen.findByText("Folders")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Delete Folders" }));
+  const confirmDialog = within(screen.getByRole("dialog"));
+  expect(
+    confirmDialog.getByRole("heading", { name: 'Delete "Folders"?' }),
+  ).toBeInTheDocument();
+
+  fireEvent.click(confirmDialog.getByRole("button", { name: "Cancel" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(itemArchiveQuery.update).not.toHaveBeenCalled();
+  expect(screen.getByText("Folders")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Delete Folders" }));
+  const secondDialog = within(screen.getByRole("dialog"));
+  await act(async () => {
+    fireEvent.click(
+      secondDialog.getByRole("button", { name: "Yes, delete product" }),
+    );
+  });
+
+  expect(itemArchiveQuery.update).toHaveBeenCalledWith({
+    archived_at: expect.any(String),
+  });
+  expect(itemArchiveQuery.eq).toHaveBeenCalledWith("item_id", 1);
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.queryByText("Folders")).not.toBeInTheDocument();
+});

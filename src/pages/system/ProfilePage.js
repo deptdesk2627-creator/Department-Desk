@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { PageHeader } from "../../components/ui";
+import { ConfirmModal, PageHeader } from "../../components/ui";
 import {
   AVAILABILITY_OPTIONS,
   getDefaultProfile,
@@ -61,6 +61,7 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordStatus, setPasswordStatus] = useState(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
 
   useEffect(() => {
     setDraft(profile);
@@ -172,6 +173,7 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
     onSave?.(defaults);
     setError("");
     setSavedNotice(true);
+    setIsConfirmingReset(false);
   }
 
   return (
@@ -467,13 +469,26 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
             <button
               type="button"
               className="system-danger-outline-btn"
-              onClick={handleReset}
+              onClick={() => setIsConfirmingReset(true)}
             >
               Reset to default
             </button>
           </div>
         </div>
       </section>
+
+      <ConfirmModal
+        isOpen={isConfirmingReset}
+        onClose={() => setIsConfirmingReset(false)}
+        onConfirm={handleReset}
+        eyebrow="SYSTEM · PROFILE RESET"
+        title="Reset profile to defaults?"
+        titleId="confirm-reset-profile-title"
+        message={`Are you sure you want to restore your display name, title, availability, and contact fields to the default values for the ${role?.label || "current"} role?`}
+        confirmLabel="Yes, reset profile"
+        cancelLabel="Cancel"
+        danger
+      />
     </div>
   );
 }

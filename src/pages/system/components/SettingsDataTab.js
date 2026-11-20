@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { ConfirmModal } from "../../../components/ui";
 import {
   CLEARED_AT_KEY,
   CLEARED_ITEMS_KEY,
@@ -444,40 +445,22 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
               Clear data
             </button>
           </div>
-
-          {isConfirmingClear && (
-            <div
-              className="system-confirm system-confirm--danger"
-              style={{ marginBottom: "8px" }}
-              role="alert"
-            >
-              <p>
-                This cannot be undone. Download a backup first if you might need
-                this data again.
-              </p>
-              <div className="system-actions">
-                <span className="system-actions__spacer" />
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={isClearing}
-                  onClick={() => setIsConfirmingClear(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="system-danger-button"
-                  disabled={isClearing}
-                  onClick={confirmClear}
-                >
-                  {isClearing ? "Clearing..." : "Yes, clear everything"}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </section>
+
+      <ConfirmModal
+        isOpen={isConfirmingClear}
+        onClose={() => setIsConfirmingClear(false)}
+        onConfirm={confirmClear}
+        eyebrow="DANGER ZONE · IRREVERSIBLE ACTION"
+        title="Clear all office data?"
+        titleId="confirm-clear-data-title"
+        message="This will permanently delete every request, task, and supply record stored in this workspace. This cannot be undone. Download a backup first if you might need this data again."
+        confirmLabel={isClearing ? "Clearing..." : "Yes, clear everything"}
+        cancelLabel="Cancel"
+        danger
+        disabled={isClearing}
+      />
     </>
   );
 }

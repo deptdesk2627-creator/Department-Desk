@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import "./Inventory.css";
-import { PageHeader } from "../../components/ui";
+import { ConfirmModal, PageHeader } from "../../components/ui";
 import { isItemCleared, isRecordCleared } from "../../constants/system";
+import { getProductId } from "../../hooks/useInventoryActions";
 import { supabase } from "../../supabase/supabaseClient";
 import InventoryForm from "./components/InventoryForm";
 import InventoryMetrics from "./components/InventoryMetrics";
@@ -53,6 +54,8 @@ function Inventory({
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState(null);
+  const [itemPendingDelete, setItemPendingDelete] = useState(null);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
   const [inventoryLoading, setInventoryLoading] = useState(true);
   const [inventoryLoadError, setInventoryLoadError] = useState("");
   const [transactionsLoading, setTransactionsLoading] = useState(true);
@@ -294,6 +297,24 @@ function Inventory({
     }
   }
 
+  function requestDeleteItem(id) {
+    const target = inventoryItems.find((item) => item?.id === id);
+    if (target) {
+      setItemPendingDelete(target);
+    }
+  }
+
+  async function handleConfirmDeleteItem() {
+    if (!itemPendingDelete || isDeletingItem) return;
+    setIsDeletingItem(true);
+    try {
+      await deleteItem(itemPendingDelete.id);
+      setItemPendingDelete(null);
+    } finally {
+      setIsDeletingItem(false);
+    }
+  }
+
   return (
     <div className="dashboard module-page inventory-page">
       <PageHeader
@@ -464,7 +485,7 @@ function Inventory({
             loadError={inventoryLoadError || inventoryError}
             onOpenAction={stockActions.openAction}
             getBorrowedBalance={stockActions.getBorrowedBalance}
-            onDelete={deleteItem}
+            onDelete={requestDeleteItem}
             onViewDetails={setSelectedInventoryItem}
             readOnly={readOnly}
             canRecord={canRecordInventory}
@@ -537,6 +558,28 @@ function Inventory({
         inventory={inventoryItems}
         records={recordItems}
         onClose={stockActions.closeReceipt}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(itemPendingDelete)}
+        onClose={() => setItemPendingDelete(null)}
+        onConfirm={handleConfirmDeleteItem}
+        eyebrow="SUPPLY & INVENTORY · MASTER LIST"
+        title={
+          itemPendingDelete
+            ? `Delete "${itemPendingDelete.name}"?`
+            : "Delete product?"
+        }
+        titleId="confirm-delete-product-title"
+        message={
+          itemPendingDelete
+            ? `Are you sure you want to remove "${itemPendingDelete.name}" (${getProductId(itemPendingDelete)}) from the active inventory masterlist? This will archive the product.`
+            : ""
+        }
+        confirmLabel={isDeletingItem ? "Deleting..." : "Yes, delete product"}
+        cancelLabel="Cancel"
+        danger
+        disabled={isDeletingItem}
       />
     </div>
   );

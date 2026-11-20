@@ -11,11 +11,12 @@ function ConfirmModal({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   danger = false,
+  disabled = false,
 }) {
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={disabled ? undefined : onClose}
       eyebrow={eyebrow}
       title={title}
       titleId={titleId}
@@ -26,6 +27,7 @@ function ConfirmModal({
           type="button"
           className="text-button confirm-modal__cancel"
           onClick={onClose}
+          disabled={disabled}
         >
           {cancelLabel}
         </button>
@@ -33,6 +35,7 @@ function ConfirmModal({
           type="button"
           className={`primary-button${danger ? " confirm-modal__danger" : ""}`}
           onClick={onConfirm}
+          disabled={disabled}
         >
           {confirmLabel}
         </button>
