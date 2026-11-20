@@ -238,23 +238,28 @@ export function useOfficeData({
 
     let channel = null;
     if (typeof supabase?.channel === "function") {
-      channel = supabase
-        .channel(`office-data-sync-${roleId}`)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "transactions_ongoing" },
-          scheduleSync,
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "transactions_incoming" },
-          scheduleSync,
-        )
-        .on(
+      channel = supabase.channel(`office-data-sync-${roleId}`);
+      if (roleId !== "staff") {
+        channel = channel
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "transactions_ongoing" },
+            scheduleSync,
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "transactions_incoming" },
+            scheduleSync,
+          );
+      }
+      if (roleId !== "dean") {
+        channel = channel.on(
           "postgres_changes",
           { event: "*", schema: "public", table: "tasks" },
           scheduleSync,
-        )
+        );
+      }
+      channel = channel
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "items_masterlist" },

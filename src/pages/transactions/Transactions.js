@@ -158,7 +158,6 @@ function Transactions({
           onSubmit={handleFormSubmit}
           onCancel={() => setIsFormOpen(false)}
           offices={manager.offices}
-          onAddOffice={persistence.addOffice}
           categories={manager.categories}
           outgoingStatuses={manager.outgoingStatuses}
           incomingStatuses={manager.incomingStatuses}

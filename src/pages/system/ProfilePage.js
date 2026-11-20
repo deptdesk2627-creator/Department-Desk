@@ -260,7 +260,10 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
                 {field.tag && (
                   <span className="system-field__tag">{field.tag}</span>
                 )}
-                {field.verified && draft[field.key] && (
+                {field.verified &&
+                  draft[field.key] &&
+                  String(draft[field.key]).trim().toLowerCase() ===
+                    String(profile?.[field.key] || "").trim().toLowerCase() && (
                   <span className="system-field__tag system-field__tag--verified">
                     <SystemIcon name="check" size={13} /> Verified
                   </span>

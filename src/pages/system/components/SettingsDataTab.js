@@ -149,11 +149,16 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
     event.target.value = "";
     if (!file) return;
     try {
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error("Backup file exceeds maximum allowed size (5 MB).");
+      }
       const parsed = JSON.parse(await file.text());
       const keys = ["requests", "tasks", "inventory", "inventoryRecords"];
       if (
         parsed?.app !== "DeptDesk" ||
-        !keys.every((k) => Array.isArray(parsed[k]))
+        !keys.every(
+          (k) => Array.isArray(parsed[k]) && parsed[k].every(isPlainObject),
+        )
       ) {
         throw new Error("Invalid backup");
       }
@@ -235,7 +240,7 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
       }
 
       await Promise.allSettled([
-        supabase.from("transaction_history").delete().gte("record_id", 0),
+        supabase.from("transaction_history").delete().gte("request_id", 0),
         supabase.from("transactions_ongoing").delete().gte("request_id", 0),
         supabase.from("transactions_incoming").delete().gte("request_id", 0),
         supabase.from("tasks").delete().gte("task_id", 0),

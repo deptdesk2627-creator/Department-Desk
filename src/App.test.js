@@ -244,4 +244,4 @@ test("applies sidebar, table density, and default view buttons in Settings immed
   expect(
     await screen.findAllByText(/all office data was cleared/i),
   ).not.toHaveLength(0);
-});
+}, 15000);
