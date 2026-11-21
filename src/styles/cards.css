@@ -121,24 +121,28 @@
 
 .status-started,
 .status-in-progress,
-.status-under-review {
+.status-under-review,
+.status-signed-by-office {
   background: #fff7ed;
   color: #c2410c;
 }
 
 .status-waiting,
-.status-pending {
+.status-pending,
+.status-received {
   background: #fffbeb;
   color: #b45309;
 }
 
 .status-done,
-.status-approved {
+.status-approved,
+.status-sent-out {
   background: #dcfce7;
   color: #15803d;
 }
 
-.status-action-needed {
+.status-action-needed,
+.status-for-signature {
   background: #fef2f2;
   color: #b91c1c;
 }

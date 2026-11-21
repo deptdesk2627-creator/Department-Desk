@@ -4,6 +4,7 @@ import {
   canUseItem,
   getItemUsageType,
   PENDING_RETURN_STATUS,
+  reconcileBorrowReturnState,
 } from "../utils/inventory";
 
 const STATUS_BY_ACTION = {
@@ -109,7 +110,10 @@ export function useInventoryActions({
       };
       if (record.status === "Borrowed") {
         existing.balance += amount;
-      } else if (record.status === "Returned") {
+      } else if (
+        record.status === "Returned" ||
+        record.status === PENDING_RETURN_STATUS
+      ) {
         existing.balance = Math.max(0, existing.balance - amount);
       }
       balancesByPerson.set(key, existing);
@@ -210,21 +214,18 @@ export function useInventoryActions({
     const personPendingBalance = trimmedPerson
       ? getPendingReturnBalance(item, trimmedPerson)
       : getPendingReturnBalance(item);
-    const effectiveMaxReturn = requireReturnConfirmation
-      ? personBorrowedBalance > 0 || trimmedPerson
+    const effectiveMaxReturn =
+      personBorrowedBalance > 0 || trimmedPerson
         ? personReturnableBalance
-        : totalItemReturnableBalance
-      : personBorrowedBalance > 0
-        ? personBorrowedBalance
-        : totalItemBorrowedBalance;
+        : totalItemReturnableBalance;
 
     if (action.type === "Return" && amount > effectiveMaxReturn) {
-      if (
-        requireReturnConfirmation &&
-        effectiveMaxReturn === 0 &&
-        personPendingBalance > 0
-      ) {
-        setError("Your return is already pending secretary confirmation.");
+      if (effectiveMaxReturn === 0 && personPendingBalance > 0) {
+        setError(
+          requireReturnConfirmation
+            ? "Your return is already pending secretary confirmation."
+            : "This borrower already has a return pending secretary confirmation.",
+        );
       } else {
         setError(returnLimitMessage);
       }
@@ -381,27 +382,61 @@ export function useInventoryActions({
         : {}),
     };
 
+    const normalizedBorrower = String(
+      trimmedPerson || matchedBorrowRecord?.person || "",
+    )
+      .trim()
+      .toLowerCase();
+    const openLoansForReturn =
+      action.type === "Return"
+        ? scopedRecords.filter(
+            (existing) =>
+              existing.productId === id &&
+              existing.status === "Borrowed" &&
+              Number(existing.returnedQuantity || 0) <
+                Number(existing.quantity || 0) &&
+              (!normalizedBorrower ||
+                !existing.person ||
+                String(existing.person).toLowerCase() === normalizedBorrower),
+          )
+        : [];
+    const hasMultipleOpenLoans = openLoansForReturn.length > 1;
+
     function commitRecord(savedRecord) {
       if (!isPendingReturn) {
         setInventory((current) =>
-          (Array.isArray(current) ? current : []).map((stock) =>
-            stock?.id === item.id
-              ? {
-                  ...stock,
-                  productId: id,
-                  quantity:
-                    Number(stock.quantity) +
-                    (action.type === "Return" ? amount : -amount),
-                  usedThisYear:
-                    Number(stock.usedThisYear || 0) +
-                    (action.type === "Use" ? amount : 0),
-                }
-              : stock,
-          ),
+          (Array.isArray(current) ? current : []).map((stock) => {
+            if (stock?.id !== item.id) return stock;
+            const nextQuantity =
+              Number(stock.quantity) +
+              (action.type === "Return" ? amount : -amount);
+            return {
+              ...stock,
+              productId: id,
+              quantity: nextQuantity,
+              stock_onhand: nextQuantity,
+              usedThisYear:
+                Number(stock.usedThisYear || 0) +
+                (action.type === "Use" ? amount : 0),
+            };
+          }),
         );
+      }
+      let nextReceiptRecord = savedRecord;
+      if (hasMultipleOpenLoans) {
+        const reconciledSaved = reconcileBorrowReturnState([
+          savedRecord,
+          ...recordItems,
+        ]).find((entry) => entry?.id === savedRecord.id);
+        if (reconciledSaved) {
+          nextReceiptRecord = reconciledSaved;
+        }
       }
       setRecords((current) => {
         const existingList = Array.isArray(current) ? current : [];
+        if (hasMultipleOpenLoans) {
+          return reconcileBorrowReturnState([savedRecord, ...existingList]);
+        }
         const updatedList =
           action.type === "Return" && matchedBorrowRecord
             ? existingList.map((entry) =>
@@ -428,7 +463,7 @@ export function useInventoryActions({
             : existingList;
         return [savedRecord, ...updatedList];
       });
-      setReceiptRecord(savedRecord);
+      setReceiptRecord(nextReceiptRecord);
       closeAction();
     }
 

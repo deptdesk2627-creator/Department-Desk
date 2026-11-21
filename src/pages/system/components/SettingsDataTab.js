@@ -8,8 +8,36 @@ import {
   isPlainObject,
 } from "../../../constants/system";
 import { supabase } from "../../../supabase/supabaseClient";
+import { cabinetGroups, UNFILED_LOCATION } from "../../transactions/constants";
 import { csvValue } from "../../transactions/utils/transactionHelpers";
 import { SystemIcon } from "./SystemIcons";
+
+function resolveLocationLabel(row) {
+  const normalize = (val) => String(val || "").trim().toLowerCase();
+  const cabinet = normalize(row.cabinet);
+  const group = cabinetGroups.find(
+    (candidate) =>
+      normalize(candidate.title) === cabinet ||
+      (candidate.id === "cabinet-3-staff" &&
+        cabinet === "cict cabinet 3 (college staff)") ||
+      (candidate.id === "cabinet-4-sec" &&
+        cabinet === "cict cabinet 4 (college sec)") ||
+      (candidate.id === "cabinet-dean" && cabinet === "college dean cabinet"),
+  );
+  if (!group) return UNFILED_LOCATION;
+  if (group.id === "cabinet-dean") {
+    const drawerLabel = normalize(row.drawer || row.section);
+    return (
+      group.drawers.find(
+        (drawer) =>
+          normalize(drawer.id.slice("College Dean - ".length)) === drawerLabel,
+      )?.id || UNFILED_LOCATION
+    );
+  }
+  const drawerNumber = normalize(row.drawer).match(/^cab[34]\s+d([1-4])$/)?.[1];
+  const drawerIndex = Number(drawerNumber) - 1;
+  return group.drawers[drawerIndex]?.id || UNFILED_LOCATION;
+}
 
 function triggerDownload(filename, content, mimeType) {
   const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
@@ -255,7 +283,12 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
               }
             }
 
-            // Restore tasks for the current user
+            // Replace existing tasks for the current user
+            await supabase
+              .from("tasks")
+              .delete()
+              .eq("tasks_user_id", currentUserId);
+
             if (backup.tasks.length > 0) {
               const taskRows = backup.tasks
                 .filter((task) => String(task?.title || "").trim())
@@ -279,14 +312,28 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
               }
             }
 
-            // Restore outgoing and incoming requests
+            // Replace existing outgoing and incoming requests
+            await Promise.all([
+              supabase.from("transaction_history").delete().gte("request_id", 0),
+              supabase.from("transactions_ongoing").delete().gte("request_id", 0),
+              supabase.from("transactions_incoming").delete().gte("request_id", 0),
+            ]);
+
             if (backup.requests.length > 0) {
-              const officesRes = await supabase
-                .from("offices")
-                .select("office_id, name");
+              const [officesRes, locationsRes] = await Promise.all([
+                supabase.from("offices").select("office_id, name"),
+                supabase
+                  .from("file_location")
+                  .select("location_id, drawer, cabinet, section"),
+              ]);
               const officesByName = new Map(
                 (Array.isArray(officesRes?.data) ? officesRes.data : []).map(
                   (o) => [String(o.name || "").trim().toLowerCase(), Number(o.office_id)],
+                ),
+              );
+              const locationsByLabel = new Map(
+                (Array.isArray(locationsRes?.data) ? locationsRes.data : []).map(
+                  (loc) => [resolveLocationLabel(loc).toLowerCase(), Number(loc.location_id)],
                 ),
               );
               const internalOfficeId =
@@ -313,6 +360,43 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
                   }
                   const resolvedOfficeId = targetOfficeId || internalOfficeId;
                   const isIncoming = req.direction === "incoming";
+                  const fileLocLabel = String(req.fileLocation || "").trim();
+                  const resolvedLocationId =
+                    fileLocLabel && fileLocLabel !== UNFILED_LOCATION
+                      ? locationsByLabel.get(fileLocLabel.toLowerCase()) || null
+                      : null;
+
+                  let resolvedForwardedId = null;
+                  const forwardedLabel = String(req.forwardedTo || "").trim();
+                  if (
+                    isIncoming &&
+                    forwardedLabel &&
+                    forwardedLabel !== "Not sent out"
+                  ) {
+                    if (forwardedLabel === "Returned to Sender") {
+                      resolvedForwardedId = resolvedOfficeId;
+                    } else {
+                      resolvedForwardedId =
+                        officesByName.get(forwardedLabel.toLowerCase()) || null;
+                      if (!resolvedForwardedId) {
+                        const insertedFwdOffice = await supabase
+                          .from("offices")
+                          .insert({ name: forwardedLabel })
+                          .select("office_id, name")
+                          .single();
+                        if (insertedFwdOffice?.data?.office_id) {
+                          resolvedForwardedId = Number(
+                            insertedFwdOffice.data.office_id,
+                          );
+                          officesByName.set(
+                            forwardedLabel.toLowerCase(),
+                            resolvedForwardedId,
+                          );
+                        }
+                      }
+                    }
+                  }
+
                   const parsedDate = new Date(req.dateTime || nowIso).getTime();
                   const unixDate = Number.isFinite(parsedDate)
                     ? Math.floor(parsedDate / 1000)
@@ -328,7 +412,7 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
                     notes: req.notes || req.description || null,
                     released_date: null,
                     req_user_id: currentUserId,
-                    file_location: null,
+                    file_location: resolvedLocationId,
                     created_at: nowIso,
                     updated_at: nowIso,
                   };
@@ -336,7 +420,7 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
                     await supabase.from("transactions_incoming").insert({
                       ...baseRow,
                       signature_status: req.signedByOffice || "Unsigned",
-                      forwarded_to: null,
+                      forwarded_to: resolvedForwardedId,
                     });
                   } else {
                     await supabase.from("transactions_ongoing").insert(baseRow);

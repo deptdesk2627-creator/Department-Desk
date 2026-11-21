@@ -194,3 +194,42 @@
     width: 100%;
   }
 }
+
+:root[data-theme="dark"] .inventory-detail-summary,
+:root[data-theme="dark"] .inventory-detail-usage,
+:root[data-theme="dark"] .inventory-detail-remarks {
+  background: #0f172a;
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .inventory-detail-field,
+:root[data-theme="dark"] .inventory-detail-remarks-list li {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .inventory-detail-field span,
+:root[data-theme="dark"] .inventory-detail-section-header span,
+:root[data-theme="dark"] .inventory-detail-remarks-list small {
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .inventory-detail-remarks-list p {
+  color: var(--ink-secondary);
+}
+
+:root[data-theme="dark"] .inventory-remark-header span {
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+
+:root[data-theme="dark"] .inventory-detail-edit-field input {
+  background: #0f172a;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .inventory-detail-edit-field input:focus {
+  background: #131c31;
+  border-color: var(--purple);
+}

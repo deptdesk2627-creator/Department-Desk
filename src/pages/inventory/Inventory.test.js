@@ -1199,3 +1199,78 @@ test("requires confirmation before deleting a product from the master list", asy
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.queryByText("Folders")).not.toBeInTheDocument();
 });
+
+test("Dean inventory view preserves other staff borrower names while locking the Dean action modal", async () => {
+  const item = {
+    item_id: 17,
+    item_name: "Projector",
+    stock_onhand: 5,
+    unit: "pieces",
+    min_stock: 1,
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const deanUser = { user_id: 42, username: "Ma'am Beth" };
+  const staffUser = { user_id: 77, username: "Prof. Staff Member" };
+  const staffBorrowTx = {
+    transaction_id: 95,
+    item_id: 17,
+    is_issued_to: staffUser.user_id,
+    purpose: "Lab session",
+    quantity: 1,
+    action_type: "Borrow",
+    return_date: null,
+    borrow_date: "2026-11-15",
+    status: "Borrowed",
+    unit: "pieces",
+    created_at: "2026-11-15T09:00:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+
+  let usersQueryCallCount = 0;
+  const deanOnlyQuery = createTableQuery({ rows: [deanUser] });
+  const directoryUsersQuery = createTableQuery({ rows: [deanUser, staffUser] });
+
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") {
+      return createTableQuery({ rows: [item] });
+    }
+    if (table === "users") {
+      usersQueryCallCount += 1;
+      return usersQueryCallCount === 1 ? deanOnlyQuery : directoryUsersQuery;
+    }
+    if (table === "inventory_transactions") {
+      return createTableQuery({ rows: [staffBorrowTx] });
+    }
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        readOnly
+        canRecordInventory
+        recordInventoryForCurrentUserOnly
+        userName={deanUser.username}
+      />,
+    );
+  });
+
+  fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
+  const transactionSection = screen.getByRole("region", {
+    name: "Transaction records",
+  });
+  expect(
+    await within(transactionSection).findByText("Prof. Staff Member"),
+  ).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("tab", { name: /master list/i }));
+  fireEvent.click(screen.getByRole("button", { name: /^borrow$/i }));
+  const actionDialog = within(screen.getByRole("dialog"));
+  const personInput = actionDialog.getByLabelText(/borrowed by/i);
+  expect(personInput).toHaveValue(deanUser.username);
+  expect(personInput).toHaveAttribute("readonly");
+});

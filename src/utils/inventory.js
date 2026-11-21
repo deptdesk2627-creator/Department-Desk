@@ -411,6 +411,8 @@ export function reconcileBorrowReturnState(records) {
     const matchedLoans = [];
     const returnEvents = [];
 
+    let excessPending = 0;
+
     for (const loan of account.loans) {
       if (quantityToAllocate <= 0) break;
       if (loan.remaining <= 0) continue;
@@ -420,6 +422,11 @@ export function reconcileBorrowReturnState(records) {
       quantityToAllocate -= returnedFromLoan;
       loan.record.returnedQuantity =
         Number(loan.record.returnedQuantity) + returnedFromLoan;
+      if (loan.pending > loan.remaining) {
+        excessPending += loan.pending - loan.remaining;
+        loan.pending = loan.remaining;
+        loan.record.pendingReturnQuantity = loan.pending;
+      }
       firstMatchedLoan ||= loan;
       matchedLoans.push(loan);
 
@@ -436,6 +443,18 @@ export function reconcileBorrowReturnState(records) {
       loan.record.returnEvents = [...(loan.record.returnEvents || []), event];
       if (loan.remaining === 0) {
         loan.record.returnedAt = record.returnDate || record.dateTime;
+      }
+    }
+
+    if (excessPending > 0) {
+      for (const loan of account.loans) {
+        if (excessPending <= 0) break;
+        const availablePendingRoom = Math.max(0, loan.remaining - loan.pending);
+        if (availablePendingRoom <= 0) continue;
+        const shifted = Math.min(excessPending, availablePendingRoom);
+        loan.pending += shifted;
+        excessPending -= shifted;
+        loan.record.pendingReturnQuantity = loan.pending;
       }
     }
 

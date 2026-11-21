@@ -200,11 +200,19 @@ export function useTransactionManager({
         categoryFilter === "All Categories" ||
         categoryFilter === "All" ||
         category === categoryFilter;
+      const matchedCabinetGroup = cabinetGroups.find(
+        (group) => group.title === cabinetFilter || group.id === cabinetFilter,
+      );
       const matchesCabinet =
         cabinetFilter === "All Cabinets" ||
         cabinetFilter === "All" ||
         fileLocation === cabinetFilter ||
-        fileLocation.startsWith(`${cabinetFilter} - `);
+        fileLocation.startsWith(`${cabinetFilter} - `) ||
+        Boolean(
+          matchedCabinetGroup?.drawers.some(
+            (drawer) => drawer.id === fileLocation,
+          ),
+        );
 
       const searchableValues = [
         request.id,
@@ -258,14 +266,27 @@ export function useTransactionManager({
   function appendRequest(request) {
     setRequests((current) => {
       const currentRequests = Array.isArray(current) ? current : [];
+      const direction = requestDirection(request);
+      if (typeof request.id === "number") {
+        const alreadyPresent = currentRequests.some(
+          (item) =>
+            item?.id === request.id && requestDirection(item) === direction,
+        );
+        if (alreadyPresent) {
+          return currentRequests.map((item) =>
+            item?.id === request.id && requestDirection(item) === direction
+              ? request
+              : item,
+          );
+        }
+        return [request, ...currentRequests];
+      }
       const baseId = request.id;
       let id = baseId;
       let suffix = 1;
       const existingIds = new Set(
         currentRequests
-          .filter(
-            (item) => requestDirection(item) === requestDirection(request),
-          )
+          .filter((item) => requestDirection(item) === direction)
           .map((item) => item?.id),
       );
       while (existingIds.has(id)) {

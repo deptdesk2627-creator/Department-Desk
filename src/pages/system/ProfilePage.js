@@ -35,7 +35,8 @@ const PROFILE_INPUTS = [
     type: "email",
     icon: "mail",
     verified: true,
-    helper: "Used for account sign-in and office notifications.",
+    readOnly: true,
+    helper: "Managed by your sign-in account and used for office notifications.",
   },
   {
     key: "phone",
@@ -277,6 +278,7 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
                 </span>
                 <input
                   required={field.required}
+                  readOnly={Boolean(field.readOnly)}
                   type={field.type || "text"}
                   value={draft[field.key] || ""}
                   placeholder={field.placeholder}

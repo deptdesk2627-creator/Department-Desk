@@ -156,11 +156,19 @@ function TransactionTable({
                             })
                           }
                         >
-                          {forwardedDestinations.map((dest) => (
-                            <option key={dest} value={dest}>
-                              {dest}
-                            </option>
-                          ))}
+                          {forwardedDestinations
+                            .filter(
+                              (dest) =>
+                                dest === forwardedValue ||
+                                !["other", "others"].includes(
+                                  String(dest).trim().toLowerCase(),
+                                ),
+                            )
+                            .map((dest) => (
+                              <option key={dest} value={dest}>
+                                {dest}
+                              </option>
+                            ))}
                         </select>
                       )}
                     </td>

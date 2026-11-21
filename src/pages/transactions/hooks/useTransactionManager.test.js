@@ -240,3 +240,69 @@ test("resolves typed custom office and forwarded destination when Other is selec
     "Quality Assurance Office",
   );
 });
+
+test("matches College Dean Cabinet group filter and deduplicates numeric database IDs on add", async () => {
+  let storedRequests = [
+    {
+      id: 10,
+      direction: "outgoing",
+      student: "Maria Clara",
+      document: "Research proposal",
+      office: "Dean's Office",
+      type: "Document",
+      status: "Approved",
+      fileLocation: "College Dean - Research & Extension",
+      history: [],
+    },
+  ];
+  const setRequests = jest.fn((updater) => {
+    storedRequests =
+      typeof updater === "function" ? updater(storedRequests) : updater;
+  });
+
+  const savedFromDb = {
+    id: 15,
+    direction: "outgoing",
+    student: "Jordan Lee",
+    document: "Lab memo",
+    office: "Registrar",
+    type: "Document",
+    status: "Pending",
+    fileLocation: "In Process (Not yet filed)",
+    history: [],
+  };
+
+  const { result } = renderHook(() =>
+    useTransactionManager({
+      requests: storedRequests,
+      setRequests,
+      search: "",
+      onRequestAdd: async () => {
+        // Simulate Realtime inserting id 15 before addRequest resolves
+        storedRequests = [savedFromDb, ...storedRequests];
+        return savedFromDb;
+      },
+    }),
+  );
+
+  act(() => result.current.setCabinetFilter("College Dean Cabinet"));
+  expect(result.current.visibleRequests).toEqual([storedRequests[0]]);
+
+  act(() => {
+    result.current.setForm({
+      ...result.current.form,
+      student: "Jordan Lee",
+      document: "Lab memo",
+    });
+  });
+
+  await act(async () => {
+    await result.current.addRequest({ preventDefault: jest.fn() });
+  });
+
+  const matchingEntries = storedRequests.filter(
+    (entry) => String(entry.id).startsWith("15"),
+  );
+  expect(matchingEntries).toHaveLength(1);
+  expect(matchingEntries[0].id).toBe(15);
+});

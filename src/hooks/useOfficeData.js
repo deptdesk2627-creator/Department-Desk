@@ -184,7 +184,9 @@ export function useOfficeData({
         })(),
       );
 
-      if (roleId !== "staff" && linkedUser?.user_id) {
+      if (roleId === "staff") {
+        setRequests([]);
+      } else if (linkedUser?.user_id) {
         loaders.push(
           (async () => {
             const snapshot = await fetchTransactionsSnapshot();

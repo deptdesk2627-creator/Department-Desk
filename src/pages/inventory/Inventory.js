@@ -163,7 +163,21 @@ function Inventory({
         usersQuery.eq("auth_user_id", authResult.data.user.id);
       }
 
-      const [itemsResult, usersResult, transactionsResult] = await Promise.all([
+      const directoryUsersPromise = recordInventoryForCurrentUserOnly
+        ? Promise.resolve(
+            supabase
+              .from("users")
+              .select("user_id, username")
+              .order("username"),
+          ).catch(() => ({ data: [], error: null }))
+        : Promise.resolve({ data: [], error: null });
+
+      const [
+        itemsResult,
+        usersResult,
+        transactionsResult,
+        directoryUsersResult,
+      ] = await Promise.all([
         supabase
           .from("items_masterlist")
           .select(MASTERLIST_COLUMNS)
@@ -174,6 +188,7 @@ function Inventory({
           .from("inventory_transactions")
           .select(INVENTORY_TRANSACTION_COLUMNS)
           .order("created_at", { ascending: false }),
+        directoryUsersPromise,
       ]);
 
       if (!isMounted) return;
@@ -222,8 +237,16 @@ function Inventory({
             .map(mapMasterlistItem)
             .map((item) => [Number(item.item_id), item]),
         );
+        const directoryUsers = Array.isArray(directoryUsersResult?.data)
+          ? directoryUsersResult.data.filter(
+              (user) => user?.user_id && user?.username,
+            )
+          : [];
         const usersById = new Map(
-          users.map((user) => [Number(user.user_id), user]),
+          [...directoryUsers, ...users].map((user) => [
+            Number(user.user_id),
+            user,
+          ]),
         );
         const activeTransactions = (
           Array.isArray(transactionsResult.data) ? transactionsResult.data : []
@@ -485,6 +508,7 @@ function Inventory({
             loadError={inventoryLoadError || inventoryError}
             onOpenAction={stockActions.openAction}
             getBorrowedBalance={stockActions.getBorrowedBalance}
+            getReturnableBalance={stockActions.getReturnableBalance}
             onDelete={requestDeleteItem}
             onViewDetails={setSelectedInventoryItem}
             readOnly={readOnly}
