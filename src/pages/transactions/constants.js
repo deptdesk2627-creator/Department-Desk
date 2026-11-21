@@ -94,9 +94,14 @@ export const cabinetLocations = [
   ...cabinetGroups.flatMap((group) => group.drawers.map((drawer) => drawer.id)),
 ];
 
+function formatLocalDateTime(date = new Date()) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
 export const emptyForm = (direction = "outgoing") => ({
   direction,
-  dateTime: new Date().toISOString().slice(0, 16),
+  dateTime: formatLocalDateTime(),
   description: "",
   document: "",
   student: "",

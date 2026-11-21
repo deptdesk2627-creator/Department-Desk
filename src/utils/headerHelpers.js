@@ -117,13 +117,20 @@ export function getNotifications(
   ];
 }
 
-export function getSearchResults(requests, tasks, inventory, search) {
+export function getSearchResults(
+  requests,
+  tasks,
+  inventory,
+  search,
+  roleId = "secretary",
+) {
   const query = normalizeQuery(search);
   if (!query) {
     return [];
   }
 
   const matchesFields = (...fields) => matchesQuery(query, ...fields);
+  const inventoryPage = roleId === "staff" ? "staff-inventory" : "inventory";
 
   return [
     ...(Array.isArray(requests) ? requests : [])
@@ -155,7 +162,7 @@ export function getSearchResults(requests, tasks, inventory, search) {
         type: "inventory",
         title: item.name || "Supply",
         subtitle: `Supply · ${item.productId || item.id || "No ID"} · ${item.quantity ?? 0} ${item.unit || "units"}`,
-        page: "inventory",
+        page: inventoryPage,
       })),
   ].slice(0, 6);
 }

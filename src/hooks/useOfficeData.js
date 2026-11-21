@@ -73,7 +73,7 @@ export function useOfficeData({
 
       const loaders = [];
 
-      if (roleId !== "dean" && linkedUser?.user_id) {
+      if (linkedUser?.user_id) {
         loaders.push(
           (async () => {
             const tasksQuery = supabase
@@ -252,14 +252,12 @@ export function useOfficeData({
             scheduleSync,
           );
       }
-      if (roleId !== "dean") {
-        channel = channel.on(
+      channel = channel
+        .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "tasks" },
           scheduleSync,
-        );
-      }
-      channel = channel
+        )
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "items_masterlist" },
