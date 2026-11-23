@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./Login.css";
 import { ROLE_LIST } from "../../constants/roles";
 import { supabase } from "../../supabase/supabaseClient";
 import LoginBrandPanel from "./components/LoginBrandPanel";
+
+const OTP_LENGTH = 8;
+const EMPTY_OTP = Array(OTP_LENGTH).fill("");
+const RESEND_COOLDOWN_SECONDS = 60;
 
 function Login({ onLogin, theme = "light" }) {
   const [mode, setMode] = useState("login");
@@ -11,6 +15,9 @@ function Login({ onLogin, theme = "light" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [otpDigits, setOtpDigits] = useState(EMPTY_OTP);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,6 +25,15 @@ function Login({ onLogin, theme = "light" }) {
   const [isLoadingSignupRoles, setIsLoadingSignupRoles] = useState(false);
   const [signupRoleAvailabilityError, setSignupRoleAvailabilityError] =
     useState("");
+  const otpInputRefs = useRef([]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timerId = window.setInterval(() => {
+      setResendCooldown((seconds) => (seconds > 1 ? seconds - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(timerId);
+  }, [resendCooldown]);
 
   async function loadSignupRoleAvailability() {
     setIsLoadingSignupRoles(true);
@@ -59,8 +75,119 @@ function Login({ onLogin, theme = "light" }) {
     setMode(nextMode);
     setError("");
     setMessage("");
+    setOtpDigits(EMPTY_OTP);
     if (nextMode === "signup") {
       loadSignupRoleAvailability();
+    }
+  }
+
+  function focusOtpBox(index) {
+    const targetIndex = Math.max(0, Math.min(OTP_LENGTH - 1, index));
+    otpInputRefs.current[targetIndex]?.focus();
+  }
+
+  function handleOtpChange(index, rawValue) {
+    const digitsOnly = String(rawValue || "").replace(/\D/g, "");
+    if (!digitsOnly) {
+      setOtpDigits((current) => {
+        const next = [...current];
+        next[index] = "";
+        return next;
+      });
+      return;
+    }
+
+    if (digitsOnly.length > 1) {
+      const chars = digitsOnly.slice(0, OTP_LENGTH - index).split("");
+      setOtpDigits((current) => {
+        const next = [...current];
+        chars.forEach((digit, offset) => {
+          next[index + offset] = digit;
+        });
+        return next;
+      });
+      focusOtpBox(Math.min(OTP_LENGTH - 1, index + chars.length));
+      return;
+    }
+
+    setOtpDigits((current) => {
+      const next = [...current];
+      next[index] = digitsOnly;
+      return next;
+    });
+    if (index < OTP_LENGTH - 1) {
+      focusOtpBox(index + 1);
+    }
+  }
+
+  function handleOtpKeyDown(index, event) {
+    if (event.key === "Backspace") {
+      if (otpDigits[index]) {
+        setOtpDigits((current) => {
+          const next = [...current];
+          next[index] = "";
+          return next;
+        });
+      } else if (index > 0) {
+        event.preventDefault();
+        setOtpDigits((current) => {
+          const next = [...current];
+          next[index - 1] = "";
+          return next;
+        });
+        focusOtpBox(index - 1);
+      }
+    } else if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      focusOtpBox(index - 1);
+    } else if (event.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+      event.preventDefault();
+      focusOtpBox(index + 1);
+    }
+  }
+
+  function handleOtpPaste(index, event) {
+    const pastedDigits = String(
+      event.clipboardData?.getData("text") || "",
+    ).replace(/\D/g, "");
+    if (!pastedDigits) return;
+    event.preventDefault();
+    const startIndex = index;
+    const chars = pastedDigits.slice(0, OTP_LENGTH - startIndex).split("");
+    setOtpDigits((current) => {
+      const next = [...current];
+      chars.forEach((digit, offset) => {
+        next[startIndex + offset] = digit;
+      });
+      return next;
+    });
+    focusOtpBox(Math.min(OTP_LENGTH - 1, startIndex + chars.length - 1));
+  }
+
+  async function handleResendOtp() {
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || isResendingOtp || resendCooldown > 0) return;
+    setError("");
+    setMessage("");
+    setIsResendingOtp(true);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: trimmedEmail,
+      });
+      if (resendError) throw resendError;
+      setOtpDigits(EMPTY_OTP);
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      setMessage(
+        `A new 8-digit verification code has been sent to ${trimmedEmail}.`,
+      );
+      focusOtpBox(0);
+    } catch (resendError) {
+      setError(
+        resendError.message || "Could not resend verification code. Try again.",
+      );
+    } finally {
+      setIsResendingOtp(false);
     }
   }
 
@@ -70,6 +197,76 @@ function Login({ onLogin, theme = "light" }) {
     setMessage("");
 
     const trimmedEmail = email.trim().toLowerCase();
+    if (mode === "verify-otp") {
+      const token = otpDigits.join("");
+      if (token.length !== OTP_LENGTH) {
+        setError(`Enter all ${OTP_LENGTH} digits of your verification code.`);
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        let verifyResult = await supabase.auth.verifyOtp({
+          email: trimmedEmail,
+          token,
+          type: "signup",
+        });
+
+        if (
+          verifyResult.error &&
+          /expired|invalid/i.test(verifyResult.error.message || "")
+        ) {
+          const fallbackResult = await supabase.auth.verifyOtp({
+            email: trimmedEmail,
+            token,
+            type: "email",
+          });
+          if (!fallbackResult.error) {
+            verifyResult = fallbackResult;
+          }
+        }
+
+        if (verifyResult.error) throw verifyResult.error;
+        const { data } = verifyResult;
+
+        if (data?.session) {
+          const { data: claimsData } = await supabase.auth.getClaims();
+          const userRole =
+            claimsData?.claims?.app_metadata?.role ||
+            data.user?.app_metadata?.role ||
+            data.user?.user_metadata?.role;
+          if (ROLE_LIST.some((item) => item.id === userRole)) {
+            onLogin?.({
+              ...data.user,
+              app_metadata: {
+                ...data.user?.app_metadata,
+                role: userRole,
+              },
+            });
+            return;
+          }
+        }
+
+        setMode("login");
+        setOtpDigits(EMPTY_OTP);
+        setPassword("");
+        setConfirmPassword("");
+        setResendCooldown(0);
+        setMessage("Email verified! You can now sign in to your account.");
+      } catch (verifyError) {
+        const rawMessage = verifyError.message || "";
+        setError(
+          /expired|invalid/i.test(rawMessage)
+            ? "That code has expired or was replaced by a newer email. Check your latest email or click Resend OTP code."
+            : rawMessage ||
+                "Invalid or expired verification code. Please try again.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (mode === "signup") {
       if (password !== confirmPassword) {
         setError("Passwords do not match.");
@@ -108,16 +305,36 @@ function Login({ onLogin, theme = "light" }) {
         });
         if (signUpError) throw signUpError;
 
-        if (data.session) {
-          const { error: signOutError } = await supabase.auth.signOut();
-          if (signOutError) throw signOutError;
+        const isExistingOrConfirmedUser =
+          Array.isArray(data?.user?.identities) &&
+          data.user.identities.length === 0;
+        if (isExistingOrConfirmedUser) {
+          setMode("login");
+          setPassword("");
+          setConfirmPassword("");
+          setError(
+            "An account with this email already exists. Please sign in with your password.",
+          );
+          return;
         }
 
-        setMode("login");
+        if (data?.session) {
+          const { error: signOutError } = await supabase.auth.signOut();
+          if (signOutError) throw signOutError;
+          setMode("login");
+          setPassword("");
+          setConfirmPassword("");
+          setMessage("Account created. You can now sign in.");
+          return;
+        }
+
+        setMode("verify-otp");
+        setOtpDigits(EMPTY_OTP);
         setPassword("");
         setConfirmPassword("");
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
         setMessage(
-          "Account created. If email confirmation is enabled, verify your address, then sign in.",
+          `We sent an 8-digit verification code to ${trimmedEmail}. Enter it below to verify your account.`,
         );
         return;
       }
@@ -127,7 +344,26 @@ function Login({ onLogin, theme = "light" }) {
           email: trimmedEmail,
           password,
         });
-      if (signInError) throw signInError;
+      if (signInError) {
+        if (/email not confirmed/i.test(signInError.message || "")) {
+          if (typeof supabase.auth.resend === "function") {
+            await supabase.auth
+              .resend({
+                type: "signup",
+                email: trimmedEmail,
+              })
+              .catch(() => {});
+          }
+          setMode("verify-otp");
+          setOtpDigits(EMPTY_OTP);
+          setResendCooldown(RESEND_COOLDOWN_SECONDS);
+          setMessage(
+            `Your email is not verified yet. We sent a fresh 8-digit verification code to ${trimmedEmail}.`,
+          );
+          return;
+        }
+        throw signInError;
+      }
 
       const { data: claimsData, error: claimsError } =
         await supabase.auth.getClaims();
@@ -164,6 +400,7 @@ function Login({ onLogin, theme = "light" }) {
   }
 
   const isSignup = mode === "signup";
+  const isVerifyOtp = mode === "verify-otp";
   const signupRoles = signupRoleAvailabilityError
     ? ROLE_LIST.filter((item) => item.id === "staff")
     : ROLE_LIST.filter((item) => signupRoleAvailability[item.id] === true);
@@ -180,135 +417,207 @@ function Login({ onLogin, theme = "light" }) {
         <div className="login-form-container">
           <div className="login-form-header">
             <h2 id="login-heading" className="login-form-title">
-              {isSignup ? "Create your account" : "Sign in to DeptDesk"}
+              {isVerifyOtp
+                ? "Verify your email"
+                : isSignup
+                  ? "Create your account"
+                  : "Sign in to DeptDesk"}
             </h2>
             <p className="login-form-subtitle">
-              {isSignup
-                ? "Enter your details to create a DeptDesk account."
-                : "Enter your account credentials to continue."}
+              {isVerifyOtp
+                ? `Enter the 8-digit verification code sent to ${email.trim().toLowerCase() || "your email"}.`
+                : isSignup
+                  ? "Enter your details to create a DeptDesk account."
+                  : "Enter your account credentials to continue."}
             </p>
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
-            {isSignup && (
+            {isVerifyOtp ? (
+              <div className="login-otp-section">
+                <div
+                  className="login-otp-grid"
+                  role="group"
+                  aria-label="8-digit verification code"
+                >
+                  {otpDigits.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => {
+                        otpInputRefs.current[index] = el;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={OTP_LENGTH}
+                      autoFocus={index === 0}
+                      autoComplete={index === 0 ? "one-time-code" : "off"}
+                      className="login-otp-box"
+                      aria-label={`Verification code digit ${index + 1}`}
+                      value={digit}
+                      onChange={(event) =>
+                        handleOtpChange(index, event.target.value)
+                      }
+                      onKeyDown={(event) => handleOtpKeyDown(index, event)}
+                      onPaste={(event) => handleOtpPaste(index, event)}
+                      disabled={isSubmitting}
+                    />
+                  ))}
+                </div>
+                <div className="login-otp-actions">
+                  <span>Didn&apos;t receive the code?</span>
+                  <button
+                    type="button"
+                    className="login-mode-toggle"
+                    onClick={handleResendOtp}
+                    disabled={
+                      isSubmitting || isResendingOtp || resendCooldown > 0
+                    }
+                  >
+                    {isResendingOtp
+                      ? "Sending code..."
+                      : resendCooldown > 0
+                        ? `Resend code in ${resendCooldown}s`
+                        : "Resend OTP code"}
+                  </button>
+                </div>
+              </div>
+            ) : (
               <>
+                {isSignup && (
+                  <>
+                    <div className="login-card-field">
+                      <div className="login-card-field__content">
+                        <label
+                          className="login-card-field__label"
+                          htmlFor="signup-name"
+                        >
+                          Full name
+                        </label>
+                        <input
+                          id="signup-name"
+                          className="login-card-field__input"
+                          type="text"
+                          value={name}
+                          onChange={(event) => setName(event.target.value)}
+                          autoComplete="name"
+                          required
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                    </div>
+                    <div className="login-card-field">
+                      <div className="login-card-field__content">
+                        <label
+                          className="login-card-field__label"
+                          htmlFor="signup-role"
+                        >
+                          Role
+                        </label>
+                        <div className="login-select-wrapper">
+                          <select
+                            id="signup-role"
+                            className="login-card-field__select"
+                            value={role}
+                            onChange={(event) => setRole(event.target.value)}
+                            disabled={isSubmitting || isLoadingSignupRoles}
+                          >
+                            {signupRoles.map((item) => (
+                              <option key={item.id} value={item.id}>
+                                {item.label}
+                              </option>
+                            ))}
+                          </select>
+                          <svg
+                            className="login-select-chevron"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M6 9l6 6 6-6" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="login-card-field">
                   <div className="login-card-field__content">
-                    <label className="login-card-field__label" htmlFor="signup-name">
-                      Full name
+                    <label
+                      className="login-card-field__label"
+                      htmlFor="login-email"
+                    >
+                      Email address
                     </label>
                     <input
-                      id="signup-name"
+                      id="login-email"
+                      type="email"
                       className="login-card-field__input"
-                      type="text"
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
-                      autoComplete="name"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="name@deptdesk.edu"
+                      autoComplete="email"
                       required
                       disabled={isSubmitting}
                     />
                   </div>
                 </div>
+
                 <div className="login-card-field">
                   <div className="login-card-field__content">
-                    <label className="login-card-field__label" htmlFor="signup-role">
-                      Role
+                    <label
+                      className="login-card-field__label"
+                      htmlFor="login-password"
+                    >
+                      Password
                     </label>
-                    <div className="login-select-wrapper">
-                      <select
-                        id="signup-role"
-                        className="login-card-field__select"
-                        value={role}
-                        onChange={(event) => setRole(event.target.value)}
-                        disabled={isSubmitting || isLoadingSignupRoles}
-                      >
-                        {signupRoles.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.label}
-                          </option>
-                        ))}
-                      </select>
-                      <svg
-                        className="login-select-chevron"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
-                    </div>
+                    <input
+                      id="login-password"
+                      type="password"
+                      className="login-card-field__input"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      autoComplete={
+                        isSignup ? "new-password" : "current-password"
+                      }
+                      required
+                      disabled={isSubmitting}
+                    />
                   </div>
                 </div>
+
+                {isSignup && (
+                  <div className="login-card-field">
+                    <div className="login-card-field__content">
+                      <label
+                        className="login-card-field__label"
+                        htmlFor="signup-confirm-password"
+                      >
+                        Confirm password
+                      </label>
+                      <input
+                        id="signup-confirm-password"
+                        type="password"
+                        className="login-card-field__input"
+                        value={confirmPassword}
+                        onChange={(event) =>
+                          setConfirmPassword(event.target.value)
+                        }
+                        autoComplete="new-password"
+                        required
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  </div>
+                )}
               </>
-            )}
-
-            <div className="login-card-field">
-              <div className="login-card-field__content">
-                <label className="login-card-field__label" htmlFor="login-email">
-                  Email address
-                </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  className="login-card-field__input"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="name@deptdesk.edu"
-                  autoComplete="email"
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
-
-            <div className="login-card-field">
-              <div className="login-card-field__content">
-                <label
-                  className="login-card-field__label"
-                  htmlFor="login-password"
-                >
-                  Password
-                </label>
-                <input
-                  id="login-password"
-                  type="password"
-                  className="login-card-field__input"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete={isSignup ? "new-password" : "current-password"}
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
-
-            {isSignup && (
-              <div className="login-card-field">
-                <div className="login-card-field__content">
-                  <label
-                    className="login-card-field__label"
-                    htmlFor="signup-confirm-password"
-                  >
-                    Confirm password
-                  </label>
-                  <input
-                    id="signup-confirm-password"
-                    type="password"
-                    className="login-card-field__input"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    autoComplete="new-password"
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
             )}
 
             {isSignup && signupRoleAvailabilityError && (
@@ -334,26 +643,38 @@ function Login({ onLogin, theme = "light" }) {
               disabled={isSubmitting || (isSignup && isLoadingSignupRoles)}
             >
               {isSubmitting
-                ? isSignup
-                  ? "Creating account..."
-                  : "Signing in..."
-                : isSignup
-                  ? "Create account"
-                  : "Sign in to workspace"}
+                ? isVerifyOtp
+                  ? "Verifying code..."
+                  : isSignup
+                    ? "Creating account..."
+                    : "Signing in..."
+                : isVerifyOtp
+                  ? "Verify code"
+                  : isSignup
+                    ? "Create account"
+                    : "Sign in to workspace"}
             </button>
           </form>
 
           <p className="login-not-member">
             <span>
-              {isSignup ? "Already have an account?" : "Not a member yet?"}
+              {isVerifyOtp
+                ? "Entered the wrong email?"
+                : isSignup
+                  ? "Already have an account?"
+                  : "Not a member yet?"}
             </span>
             <button
               type="button"
               className="login-mode-toggle"
-              onClick={() => changeMode(isSignup ? "login" : "signup")}
+              onClick={() => changeMode(isSignup ? "login" : isVerifyOtp ? "login" : "signup")}
               disabled={isSubmitting}
             >
-              {isSignup ? "Sign in" : "Create an account"}
+              {isVerifyOtp
+                ? "Back to sign in"
+                : isSignup
+                  ? "Sign in"
+                  : "Create an account"}
             </button>
           </p>
         </div>

@@ -403,6 +403,107 @@
   color: #fdba74;
 }
 
+.login-mode-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  text-decoration: none;
+}
+
+/* ==========================================================================
+   8-Digit OTP Verification Boxes & Resend Controls
+   ========================================================================== */
+.login-otp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.login-otp-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+.login-otp-box {
+  appearance: none;
+  background-color: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 11px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  color: #1e293b;
+  font-family: inherit;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  height: 50px;
+  outline: none;
+  padding: 0;
+  text-align: center;
+  transition:
+    background-color 180ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 180ms ease;
+  width: 100%;
+}
+
+.login-otp-box:focus {
+  border-color: #ea580c;
+  box-shadow:
+    0 0 0 3px rgba(234, 88, 12, 0.14),
+    0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.login-otp-box:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+[data-theme="dark"] .login-otp-box,
+.login-split-page[data-theme="dark"] .login-otp-box {
+  background-color: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .login-otp-box:focus,
+.login-split-page[data-theme="dark"] .login-otp-box:focus {
+  border-color: #f97316;
+  box-shadow:
+    0 0 0 3px rgba(249, 115, 22, 0.22),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.login-otp-actions {
+  align-items: center;
+  color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  gap: 6px;
+  justify-content: space-between;
+  padding: 2px 2px 0;
+}
+
+[data-theme="dark"] .login-otp-actions,
+.login-split-page[data-theme="dark"] .login-otp-actions {
+  color: #94a3b8;
+}
+
+@media (max-width: 480px) {
+  .login-otp-grid {
+    gap: 5px;
+  }
+
+  .login-otp-box {
+    border-radius: 9px;
+    font-size: 16px;
+    height: 44px;
+  }
+}
+
 .login-btn-workspace:disabled {
   cursor: wait;
   opacity: 0.7;

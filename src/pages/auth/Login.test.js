@@ -8,6 +8,8 @@ jest.mock("../../supabase/supabaseClient", () => ({
       signInWithPassword: jest.fn(),
       signUp: jest.fn(),
       signOut: jest.fn(),
+      verifyOtp: jest.fn(),
+      resend: jest.fn(),
       getClaims: jest.fn(),
     },
     rpc: jest.fn(),
@@ -29,6 +31,11 @@ beforeEach(() => {
     error: null,
   });
   supabase.auth.signOut.mockResolvedValue({ error: null });
+  supabase.auth.verifyOtp.mockResolvedValue({
+    data: { session: null },
+    error: null,
+  });
+  supabase.auth.resend.mockResolvedValue({ data: {}, error: null });
 });
 
 async function openSignupForm() {
@@ -108,12 +115,24 @@ test("rejects accounts without an allowed app_metadata.role JWT claim", async ()
   expect(onLogin).not.toHaveBeenCalled();
 });
 
-test("creates an account and returns to the sign-in form", async () => {
+test("creates an account, opens the 8-digit OTP verification step, verifies the OTP, and signs in directly when a session is returned", async () => {
+  const onLogin = jest.fn();
   supabase.auth.signUp.mockResolvedValue({
     data: { session: null },
     error: null,
   });
-  render(<Login onLogin={jest.fn()} />);
+  supabase.auth.verifyOtp.mockResolvedValue({
+    data: {
+      user: {
+        id: "user-1",
+        email: "alex@example.com",
+        app_metadata: { role: "staff" },
+      },
+      session: { access_token: "otp-session" },
+    },
+    error: null,
+  });
+  render(<Login onLogin={onLogin} />);
 
   await openSignupForm();
   fireEvent.change(screen.getByLabelText(/full name/i), {
@@ -133,17 +152,69 @@ test("creates an account and returns to the sign-in form", async () => {
   });
   fireEvent.click(screen.getByRole("button", { name: /create account/i }));
 
-  await waitFor(() => expect(supabase.auth.signUp).toHaveBeenCalledWith({
-    email: "alex@example.com",
-    password: "secure-password",
-    options: { data: { full_name: "Alex Staff", role: "staff" } },
-  }));
+  await waitFor(() =>
+    expect(supabase.auth.signUp).toHaveBeenCalledWith({
+      email: "alex@example.com",
+      password: "secure-password",
+      options: { data: { full_name: "Alex Staff", role: "staff" } },
+    }),
+  );
   expect(
-    await screen.findByRole("status"),
-  ).toHaveTextContent(/account created/i);
-  expect(
-    screen.getByRole("heading", { name: /sign in to deptdesk/i }),
+    await screen.findByRole("heading", { name: /verify your email/i }),
   ).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(
+    /8-digit verification code/i,
+  );
+
+  // Paste the 8-digit OTP code into the first box
+  const firstDigitBox = screen.getByLabelText(/verification code digit 1/i);
+  fireEvent.paste(firstDigitBox, {
+    clipboardData: { getData: () => "99288296" },
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: /verify code/i }));
+
+  await waitFor(() =>
+    expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
+      email: "alex@example.com",
+      token: "99288296",
+      type: "signup",
+    }),
+  );
+  expect(supabase.auth.signOut).not.toHaveBeenCalled();
+  expect(onLogin).toHaveBeenCalledWith(
+    expect.objectContaining({
+      email: "alex@example.com",
+      app_metadata: { role: "staff" },
+    }),
+  );
+});
+
+test("opens the 8-digit OTP screen and resends a code if an unconfirmed account attempts to sign in", async () => {
+  supabase.auth.signInWithPassword.mockResolvedValue({
+    data: { user: null, session: null },
+    error: new Error("Email not confirmed"),
+  });
+  render(<Login onLogin={jest.fn()} />);
+
+  fireEvent.change(screen.getByLabelText(/email address/i), {
+    target: { value: "pending@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText(/^password$/i), {
+    target: { value: "secure-password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /sign in to workspace/i }));
+
+  expect(
+    await screen.findByRole("heading", { name: /verify your email/i }),
+  ).toBeInTheDocument();
+  expect(supabase.auth.resend).toHaveBeenCalledWith({
+    type: "signup",
+    email: "pending@example.com",
+  });
+  expect(screen.getByRole("status")).toHaveTextContent(
+    /not verified yet/i,
+  );
 });
 
 test("hides secretary and dean signup choices when their slots are full", async () => {
