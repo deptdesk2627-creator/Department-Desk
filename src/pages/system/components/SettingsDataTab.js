@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { ConfirmModal } from "../../../components/ui";
 import {
   CLEARED_AT_KEY,
   CLEARED_ITEMS_KEY,
@@ -7,8 +8,36 @@ import {
   isPlainObject,
 } from "../../../constants/system";
 import { supabase } from "../../../supabase/supabaseClient";
+import { cabinetGroups, UNFILED_LOCATION } from "../../transactions/constants";
 import { csvValue } from "../../transactions/utils/transactionHelpers";
 import { SystemIcon } from "./SystemIcons";
+
+function resolveLocationLabel(row) {
+  const normalize = (val) => String(val || "").trim().toLowerCase();
+  const cabinet = normalize(row.cabinet);
+  const group = cabinetGroups.find(
+    (candidate) =>
+      normalize(candidate.title) === cabinet ||
+      (candidate.id === "cabinet-3-staff" &&
+        cabinet === "cict cabinet 3 (college staff)") ||
+      (candidate.id === "cabinet-4-sec" &&
+        cabinet === "cict cabinet 4 (college sec)") ||
+      (candidate.id === "cabinet-dean" && cabinet === "college dean cabinet"),
+  );
+  if (!group) return UNFILED_LOCATION;
+  if (group.id === "cabinet-dean") {
+    const drawerLabel = normalize(row.drawer || row.section);
+    return (
+      group.drawers.find(
+        (drawer) =>
+          normalize(drawer.id.slice("College Dean - ".length)) === drawerLabel,
+      )?.id || UNFILED_LOCATION
+    );
+  }
+  const drawerNumber = normalize(row.drawer).match(/^cab[34]\s+d([1-4])$/)?.[1];
+  const drawerIndex = Number(drawerNumber) - 1;
+  return group.drawers[drawerIndex]?.id || UNFILED_LOCATION;
+}
 
 function triggerDownload(filename, content, mimeType) {
   const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
@@ -24,6 +53,7 @@ function triggerDownload(filename, content, mimeType) {
 
 function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
   const [pendingImport, setPendingImport] = useState(null);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [localNotice, setLocalNotice] = useState(null);
@@ -149,11 +179,16 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
     event.target.value = "";
     if (!file) return;
     try {
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error("Backup file exceeds maximum allowed size (5 MB).");
+      }
       const parsed = JSON.parse(await file.text());
       const keys = ["requests", "tasks", "inventory", "inventoryRecords"];
       if (
         parsed?.app !== "DeptDesk" ||
-        !keys.every((k) => Array.isArray(parsed[k]))
+        !keys.every(
+          (k) => Array.isArray(parsed[k]) && parsed[k].every(isPlainObject),
+        )
       ) {
         throw new Error("Invalid backup");
       }
@@ -169,8 +204,9 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
     }
   }
 
-  function confirmImport() {
+  async function confirmImport() {
     const { backup } = pendingImport;
+    setIsRestoring(true);
     try {
       if (typeof window !== "undefined") {
         window.localStorage.removeItem(CLEARED_AT_KEY);
@@ -179,6 +215,228 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
     } catch {
       // Ignore storage errors
     }
+
+    let syncedToSupabase = false;
+    if (
+      typeof supabase?.auth?.getUser === "function" &&
+      typeof supabase?.from === "function"
+    ) {
+      try {
+        const authResult = await supabase.auth.getUser();
+        const authUserId = authResult?.data?.user?.id;
+        if (authUserId) {
+          const userResult = await supabase
+            .from("users")
+            .select("user_id")
+            .eq("auth_user_id", authUserId)
+            .maybeSingle();
+          const currentUserId = userResult?.data?.user_id;
+
+          if (currentUserId) {
+            const nowIso = new Date().toISOString();
+            const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
+
+            // Restore inventory items (unarchive or insert new)
+            const existingItemsRes = await supabase
+              .from("items_masterlist")
+              .select("item_id, item_name");
+            const existingByName = new Map(
+              (Array.isArray(existingItemsRes?.data)
+                ? existingItemsRes.data
+                : []
+              ).map((row) => [
+                String(row.item_name || "").trim().toLowerCase(),
+                row.item_id,
+              ]),
+            );
+
+            for (const item of backup.inventory) {
+              const name = String(item.name || item.item_name || "").trim();
+              if (!name) continue;
+              const existingId = existingByName.get(name.toLowerCase());
+              const stock = Math.max(0, Number(item.quantity ?? item.stock_onhand ?? 0) || 0);
+              const minStock = Math.max(0, Number(item.lowStockAt ?? item.min_stock ?? 0) || 0);
+              const usageType = item.usageType || item.category || "Usable";
+              if (existingId) {
+                await supabase
+                  .from("items_masterlist")
+                  .update({
+                    stock_onhand: stock,
+                    unit: String(item.unit || "units"),
+                    min_stock: minStock,
+                    archived_at: null,
+                  })
+                  .eq("item_id", existingId);
+              } else {
+                await supabase.from("items_masterlist").insert({
+                  item_name: name,
+                  stock_onhand: stock,
+                  unit: String(item.unit || "units"),
+                  min_stock: minStock,
+                  category: usageType,
+                  classification:
+                    item.classification ||
+                    (usageType === "Borrowable" ? "Equipment" : "Item"),
+                  archived_at: null,
+                  created_at: todayStr,
+                });
+              }
+            }
+
+            // Replace existing tasks for the current user
+            await supabase
+              .from("tasks")
+              .delete()
+              .eq("tasks_user_id", currentUserId);
+
+            if (backup.tasks.length > 0) {
+              const taskRows = backup.tasks
+                .filter((task) => String(task?.title || "").trim())
+                .map((task) => {
+                  const status =
+                    task.status || (task.done ? "Done" : "Not started");
+                  return {
+                    task_name: String(task.title).trim(),
+                    priority_level: task.priority || "Medium",
+                    status,
+                    due_date: task.due || todayStr,
+                    tasks_user_id: currentUserId,
+                    description: task.description || null,
+                    completed_at: status === "Done" ? nowIso : null,
+                    created_at: nowIso,
+                    updated_at: nowIso,
+                  };
+                });
+              if (taskRows.length > 0) {
+                await supabase.from("tasks").insert(taskRows);
+              }
+            }
+
+            // Replace existing outgoing and incoming requests
+            await Promise.all([
+              supabase.from("transaction_history").delete().gte("request_id", 0),
+              supabase.from("transactions_ongoing").delete().gte("request_id", 0),
+              supabase.from("transactions_incoming").delete().gte("request_id", 0),
+            ]);
+
+            if (backup.requests.length > 0) {
+              const [officesRes, locationsRes] = await Promise.all([
+                supabase.from("offices").select("office_id, name"),
+                supabase
+                  .from("file_location")
+                  .select("location_id, drawer, cabinet, section"),
+              ]);
+              const officesByName = new Map(
+                (Array.isArray(officesRes?.data) ? officesRes.data : []).map(
+                  (o) => [String(o.name || "").trim().toLowerCase(), Number(o.office_id)],
+                ),
+              );
+              const locationsByLabel = new Map(
+                (Array.isArray(locationsRes?.data) ? locationsRes.data : []).map(
+                  (loc) => [resolveLocationLabel(loc).toLowerCase(), Number(loc.location_id)],
+                ),
+              );
+              const internalOfficeId =
+                officesByName.get("secretary's office") ||
+                Array.from(officesByName.values())[0];
+
+              if (internalOfficeId) {
+                for (const req of backup.requests) {
+                  const docName = String(req.document || req.description || "").trim();
+                  const studentName = String(req.student || "").trim();
+                  if (!docName || !studentName) continue;
+                  const officeLabel = String(req.office || req.location || "").trim();
+                  let targetOfficeId = officesByName.get(officeLabel.toLowerCase());
+                  if (!targetOfficeId && officeLabel) {
+                    const insertedOffice = await supabase
+                      .from("offices")
+                      .insert({ name: officeLabel })
+                      .select("office_id, name")
+                      .single();
+                    if (insertedOffice?.data?.office_id) {
+                      targetOfficeId = Number(insertedOffice.data.office_id);
+                      officesByName.set(officeLabel.toLowerCase(), targetOfficeId);
+                    }
+                  }
+                  const resolvedOfficeId = targetOfficeId || internalOfficeId;
+                  const isIncoming = req.direction === "incoming";
+                  const fileLocLabel = String(req.fileLocation || "").trim();
+                  const resolvedLocationId =
+                    fileLocLabel && fileLocLabel !== UNFILED_LOCATION
+                      ? locationsByLabel.get(fileLocLabel.toLowerCase()) || null
+                      : null;
+
+                  let resolvedForwardedId = null;
+                  const forwardedLabel = String(req.forwardedTo || "").trim();
+                  if (
+                    isIncoming &&
+                    forwardedLabel &&
+                    forwardedLabel !== "Not sent out"
+                  ) {
+                    if (forwardedLabel === "Returned to Sender") {
+                      resolvedForwardedId = resolvedOfficeId;
+                    } else {
+                      resolvedForwardedId =
+                        officesByName.get(forwardedLabel.toLowerCase()) || null;
+                      if (!resolvedForwardedId) {
+                        const insertedFwdOffice = await supabase
+                          .from("offices")
+                          .insert({ name: forwardedLabel })
+                          .select("office_id, name")
+                          .single();
+                        if (insertedFwdOffice?.data?.office_id) {
+                          resolvedForwardedId = Number(
+                            insertedFwdOffice.data.office_id,
+                          );
+                          officesByName.set(
+                            forwardedLabel.toLowerCase(),
+                            resolvedForwardedId,
+                          );
+                        }
+                      }
+                    }
+                  }
+
+                  const parsedDate = new Date(req.dateTime || nowIso).getTime();
+                  const unixDate = Number.isFinite(parsedDate)
+                    ? Math.floor(parsedDate / 1000)
+                    : Math.floor(Date.now() / 1000);
+                  const baseRow = {
+                    request_name: docName,
+                    requested_by: studentName,
+                    request_date: unixDate,
+                    origin_office: isIncoming ? resolvedOfficeId : internalOfficeId,
+                    current_office: isIncoming ? internalOfficeId : resolvedOfficeId,
+                    category: req.category || req.type || "Document",
+                    status: req.status || (isIncoming ? "Received" : "Pending"),
+                    notes: req.notes || req.description || null,
+                    released_date: null,
+                    req_user_id: currentUserId,
+                    file_location: resolvedLocationId,
+                    created_at: nowIso,
+                    updated_at: nowIso,
+                  };
+                  if (isIncoming) {
+                    await supabase.from("transactions_incoming").insert({
+                      ...baseRow,
+                      signature_status: req.signedByOffice || "Unsigned",
+                      forwarded_to: resolvedForwardedId,
+                    });
+                  } else {
+                    await supabase.from("transactions_ongoing").insert(baseRow);
+                  }
+                }
+              }
+            }
+
+            syncedToSupabase = true;
+          }
+        }
+      } catch (restoreError) {
+        console.error("Could not sync restored backup to Supabase.", restoreError);
+      }
+    }
+
     data.setRequests(backup.requests);
     data.setTasks(backup.tasks);
     data.setInventory(backup.inventory);
@@ -187,55 +445,23 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
       onSettingsChange?.({ ...DEFAULT_SETTINGS, ...backup.settings });
     }
     setPendingImport(null);
-    showNotice({ type: "success", text: "Backup restored." });
+    setIsRestoring(false);
+    showNotice({
+      type: "success",
+      text: syncedToSupabase
+        ? "Backup restored and synced to Supabase."
+        : "Backup restored.",
+    });
   }
 
   async function confirmClear() {
     setIsClearing(true);
-    const today = new Date().toISOString().slice(0, 10);
-    const clearedAt = new Date().toISOString();
-    const existingItemIds = (data?.inventory || [])
-      .map((item) => Number(item?.item_id ?? item?.id))
-      .filter(Number.isFinite);
+    const today = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
 
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(CLEARED_AT_KEY, clearedAt);
-        window.localStorage.setItem(
-          CLEARED_ITEMS_KEY,
-          JSON.stringify(existingItemIds),
-        );
-      }
-    } catch {
-      // Ignore storage errors
-    }
-
+    let clearFailed = false;
     if (typeof supabase?.from === "function") {
-      try {
-        const itemsRes = await supabase
-          .from("items_masterlist")
-          .select("item_id")
-          .is("archived_at", null);
-        if (Array.isArray(itemsRes?.data)) {
-          itemsRes.data.forEach((row) => {
-            const id = Number(row?.item_id);
-            if (Number.isFinite(id) && !existingItemIds.includes(id)) {
-              existingItemIds.push(id);
-            }
-          });
-          if (typeof window !== "undefined") {
-            window.localStorage.setItem(
-              CLEARED_ITEMS_KEY,
-              JSON.stringify(existingItemIds),
-            );
-          }
-        }
-      } catch {
-        // Ignore query error
-      }
-
-      await Promise.allSettled([
-        supabase.from("transaction_history").delete().gte("record_id", 0),
+      const results = await Promise.allSettled([
+        supabase.from("transaction_history").delete().gte("request_id", 0),
         supabase.from("transactions_ongoing").delete().gte("request_id", 0),
         supabase.from("transactions_incoming").delete().gte("request_id", 0),
         supabase.from("tasks").delete().gte("task_id", 0),
@@ -248,15 +474,15 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
           .update({ archived_at: today })
           .is("archived_at", null),
       ]);
+      clearFailed = results.some(
+        (res) => res.status === "rejected" || res.value?.error,
+      );
     }
-
-    data.setRequests([]);
-    data.setTasks([]);
-    data.setInventory([]);
-    data.setInventoryRecords([]);
 
     try {
       if (typeof window !== "undefined") {
+        window.localStorage.removeItem(CLEARED_AT_KEY);
+        window.localStorage.removeItem(CLEARED_ITEMS_KEY);
         Object.values(DATA_KEYS).forEach((key) => {
           window.localStorage.setItem(key, "[]");
         });
@@ -265,9 +491,21 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
       // Ignore storage errors
     }
 
+    data.setRequests([]);
+    data.setTasks([]);
+    data.setInventory([]);
+    data.setInventoryRecords([]);
+
     setIsClearing(false);
     setIsConfirmingClear(false);
-    showNotice({ type: "success", text: "All office data was cleared." });
+    showNotice(
+      clearFailed
+        ? {
+            type: "error",
+            text: "Local workspace was cleared, but some database records could not be deleted. Check your permissions and try again.",
+          }
+        : { type: "success", text: "All office data was cleared." },
+    );
   }
 
   return (
@@ -394,6 +632,7 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
               <button
                 type="button"
                 className="secondary-button"
+                disabled={isRestoring}
                 onClick={() => setPendingImport(null)}
               >
                 Cancel
@@ -401,9 +640,10 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
               <button
                 type="button"
                 className="primary-button"
+                disabled={isRestoring}
                 onClick={confirmImport}
               >
-                Restore backup
+                {isRestoring ? "Restoring..." : "Restore backup"}
               </button>
             </div>
           </div>
@@ -439,40 +679,22 @@ function SettingsDataTab({ data, settings, onSettingsChange, onNotice }) {
               Clear data
             </button>
           </div>
-
-          {isConfirmingClear && (
-            <div
-              className="system-confirm system-confirm--danger"
-              style={{ marginBottom: "8px" }}
-              role="alert"
-            >
-              <p>
-                This cannot be undone. Download a backup first if you might need
-                this data again.
-              </p>
-              <div className="system-actions">
-                <span className="system-actions__spacer" />
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={isClearing}
-                  onClick={() => setIsConfirmingClear(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="system-danger-button"
-                  disabled={isClearing}
-                  onClick={confirmClear}
-                >
-                  {isClearing ? "Clearing..." : "Yes, clear everything"}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </section>
+
+      <ConfirmModal
+        isOpen={isConfirmingClear}
+        onClose={() => setIsConfirmingClear(false)}
+        onConfirm={confirmClear}
+        eyebrow="DANGER ZONE · IRREVERSIBLE ACTION"
+        title="Clear all office data?"
+        titleId="confirm-clear-data-title"
+        message="This will permanently delete every request, task, and supply record stored in this workspace. This cannot be undone. Download a backup first if you might need this data again."
+        confirmLabel={isClearing ? "Clearing..." : "Yes, clear everything"}
+        cancelLabel="Cancel"
+        danger
+        disabled={isClearing}
+      />
     </>
   );
 }

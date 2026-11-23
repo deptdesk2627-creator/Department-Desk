@@ -70,6 +70,7 @@ function Header({
     isStaff || isDean ? [] : tasks,
     inventory,
     search,
+    role?.id || "secretary",
   );
 
   return (

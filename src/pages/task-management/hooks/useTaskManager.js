@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { matchesQuery } from "../../../utils/search";
 
 function getTodayStr() {
-  return new Date().toISOString().split("T")[0];
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
 function createInitialForm() {

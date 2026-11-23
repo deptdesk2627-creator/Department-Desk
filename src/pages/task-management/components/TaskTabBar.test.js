@@ -1,6 +1,9 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import TaskManagement from "../TaskManagement";
 import TaskTabBar from "./TaskTabBar";
+
+const mockPersistTaskUpdate = jest.fn();
+const mockPersistTaskDelete = jest.fn();
 
 jest.mock("../hooks/useSupabaseTasks", () => ({
   useSupabaseTasks: () => ({
@@ -8,12 +11,16 @@ jest.mock("../hooks/useSupabaseTasks", () => ({
     isLoading: false,
     isReady: true,
     persistTaskAdd: jest.fn(),
-    persistTaskDelete: jest.fn(),
-    persistTaskUpdate: jest.fn(),
+    persistTaskDelete: mockPersistTaskDelete,
+    persistTaskUpdate: mockPersistTaskUpdate,
     reload: jest.fn(),
     reportAddError: jest.fn(),
   }),
 }));
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 test("switches views and triggers add task modal without list tabs", () => {
   const setView = jest.fn();
@@ -95,4 +102,54 @@ test("filters tasks by search, status, priority, and due date and clears filters
   expect(
     screen.queryByDisplayValue("Archive student files"),
   ).not.toBeInTheDocument();
+});
+
+test("commits inline task title edits on blur and requires confirmation before deleting a task", () => {
+  const setTasks = jest.fn();
+  const sampleTasks = [
+    {
+      id: "task-1",
+      title: "Prepare budget report",
+      priority: "High",
+      status: "In progress",
+      due: "2026-11-25",
+      done: false,
+    },
+  ];
+
+  render(<TaskManagement tasks={sampleTasks} setTasks={setTasks} />);
+
+  const titleInput = screen.getByDisplayValue("Prepare budget report");
+  fireEvent.change(titleInput, { target: { value: "Updated budget report" } });
+  expect(mockPersistTaskUpdate).not.toHaveBeenCalled();
+
+  fireEvent.blur(titleInput);
+  expect(mockPersistTaskUpdate).toHaveBeenCalledTimes(1);
+  expect(mockPersistTaskUpdate).toHaveBeenCalledWith("task-1", {
+    title: "Updated budget report",
+  });
+
+  // Delete requires confirmation modal
+  fireEvent.click(
+    screen.getByRole("button", { name: "Delete Prepare budget report" }),
+  );
+  const dialog = within(screen.getByRole("dialog"));
+  expect(
+    dialog.getByRole("heading", { name: 'Delete "Prepare budget report"?' }),
+  ).toBeInTheDocument();
+  expect(mockPersistTaskDelete).not.toHaveBeenCalled();
+
+  fireEvent.click(dialog.getByRole("button", { name: "Cancel" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(mockPersistTaskDelete).not.toHaveBeenCalled();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "Delete Prepare budget report" }),
+  );
+  fireEvent.click(
+    within(screen.getByRole("dialog")).getByRole("button", {
+      name: "Yes, delete task",
+    }),
+  );
+  expect(mockPersistTaskDelete).toHaveBeenCalledWith("task-1");
 });

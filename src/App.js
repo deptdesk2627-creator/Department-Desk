@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  DATA_KEYS,
   DEFAULT_SETTINGS,
   getInitials,
   getProfile,
@@ -41,6 +42,17 @@ function extractMetadataProfilePatch(user) {
 const EMPTY_PROFILES = {};
 const storedObjectOptions = { validate: isPlainObject };
 
+function clearCachedWorkspaceStorage() {
+  if (typeof window === "undefined") return;
+  try {
+    Object.values(DATA_KEYS).forEach((key) => {
+      window.localStorage.removeItem(key);
+    });
+  } catch (error) {
+    console.error("Could not clear cached workspace data.", error);
+  }
+}
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const taskOwnerAuthId = useRef(null);
@@ -67,8 +79,18 @@ function App() {
       : true,
   );
   const data = useOfficeData({ isAuthenticated, roleId: role.id });
-  const setTasks = data.setTasks;
+  const { setTasks, setRequests, setInventory, setInventoryRecords } = data;
   const safeSearch = typeof search === "string" ? search : "";
+
+  const clearSessionData = useCallback(() => {
+    taskOwnerAuthId.current = null;
+    setTasks([]);
+    setRequests([]);
+    setInventory([]);
+    setInventoryRecords([]);
+    setProfiles(EMPTY_PROFILES);
+    clearCachedWorkspaceStorage();
+  }, [setInventory, setInventoryRecords, setRequests, setTasks]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth <= 768) return;
@@ -167,16 +189,19 @@ function App() {
         !session ||
         !Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
       ) {
-        taskOwnerAuthId.current = null;
-        setTasks([]);
+        clearSessionData();
         setIsAuthenticated(false);
         return;
       }
 
       const sessionUserId = session.user.id || null;
       if (taskOwnerAuthId.current !== sessionUserId) {
+        if (taskOwnerAuthId.current) {
+          clearSessionData();
+        } else {
+          setTasks([]);
+        }
         taskOwnerAuthId.current = sessionUserId;
-        setTasks([]);
       }
       setRoleId(sessionRole);
       syncSessionProfile(session.user, sessionRole);
@@ -191,8 +216,7 @@ function App() {
 
         const session = data.session;
         if (!session) {
-          taskOwnerAuthId.current = null;
-          setTasks([]);
+          clearSessionData();
           setIsAuthenticated(false);
           return;
         }
@@ -205,13 +229,18 @@ function App() {
         if (Object.prototype.hasOwnProperty.call(ROLES, sessionRole)) {
           const sessionUserId = session.user.id || null;
           if (taskOwnerAuthId.current !== sessionUserId) {
+            if (taskOwnerAuthId.current) {
+              clearSessionData();
+            } else {
+              setTasks([]);
+            }
             taskOwnerAuthId.current = sessionUserId;
-            setTasks([]);
           }
           setRoleId(sessionRole);
           syncSessionProfile(session.user, sessionRole);
           setIsAuthenticated(true);
         } else {
+          clearSessionData();
           setIsAuthenticated(false);
         }
       })
@@ -223,7 +252,7 @@ function App() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setProfiles, setRoleId, setTasks]);
+  }, [clearSessionData, setProfiles, setRoleId, setTasks]);
 
   // Never show a page the current role is not allowed to open.
   const activePage = canAccessPage(role.id, page) ? page : getHomePage(role.id);
@@ -334,6 +363,19 @@ function App() {
         }),
       ).catch(() => {});
     }
+    const trimmedName = String(nextProfile?.name || "").trim();
+    if (
+      taskOwnerAuthId.current &&
+      trimmedName &&
+      typeof supabase?.from === "function"
+    ) {
+      Promise.resolve(
+        supabase
+          .from("users")
+          .update({ username: trimmedName })
+          .eq("auth_user_id", taskOwnerAuthId.current),
+      ).catch(() => {});
+    }
   }
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -347,8 +389,12 @@ function App() {
 
     const authUserId = user?.id || null;
     if (taskOwnerAuthId.current !== authUserId) {
+      if (taskOwnerAuthId.current) {
+        clearSessionData();
+      } else {
+        setTasks([]);
+      }
       taskOwnerAuthId.current = authUserId;
-      setTasks([]);
     }
     setRoleId(resolvedRole);
     const patch = extractMetadataProfilePatch(user);
@@ -374,8 +420,7 @@ function App() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setTimeout(() => {
-        taskOwnerAuthId.current = null;
-        setTasks([]);
+        clearSessionData();
         setIsAuthenticated(false);
         setIsLoggingOut(false);
       }, 220);

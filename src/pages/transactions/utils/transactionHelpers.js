@@ -32,7 +32,9 @@ export function requestFileLocation(request) {
 }
 
 export function csvValue(value) {
-  return `"${String(value || "").replaceAll('"', '""')}"`;
+  const raw = String(value ?? "");
+  const safe = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+  return `"${safe.replaceAll('"', '""')}"`;
 }
 
 export function exportRequest(request) {

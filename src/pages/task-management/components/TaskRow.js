@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 export const TASK_PRIORITIES = ["High", "Medium", "Low"];
 export const TASK_STATUSES = ["Not started", "In progress", "Waiting", "Done"];
 
@@ -12,9 +14,25 @@ function TaskRow({
   onUpdateTask,
   onDeleteTask,
 }) {
+  const [titleDraft, setTitleDraft] = useState(task.title || "");
   const isDone = task.status === "Done" || task.done;
   const isOverdue = Boolean(task.due && task.due < todayStr && !isDone);
   const taskLabel = task.title?.trim() || "untitled task";
+
+  useEffect(() => {
+    setTitleDraft(task.title || "");
+  }, [task.title]);
+
+  function commitTitle() {
+    const trimmed = titleDraft.trim();
+    if (!trimmed) {
+      setTitleDraft(task.title || "");
+      return;
+    }
+    if (trimmed !== (task.title || "")) {
+      onUpdateTask(task.id, { title: trimmed });
+    }
+  }
 
   return (
     <tr
@@ -46,12 +64,19 @@ function TaskRow({
         <input
           type="text"
           className="inline-text-edit"
-          value={task.title || ""}
+          value={titleDraft}
           placeholder="Task title"
           aria-label={`Task title for ${taskLabel}`}
-          onChange={(event) =>
-            onUpdateTask(task.id, { title: event.target.value })
-          }
+          onChange={(event) => setTitleDraft(event.target.value)}
+          onBlur={commitTitle}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.currentTarget.blur();
+            } else if (event.key === "Escape") {
+              setTitleDraft(task.title || "");
+              event.currentTarget.blur();
+            }
+          }}
         />
       </td>
       <td data-label="Priority">

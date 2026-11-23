@@ -114,4 +114,22 @@ test("returns searchable results with normalized request status", () => {
       page: "transactions",
     },
   ]);
+
+  expect(
+    getSearchResults(
+      [],
+      [],
+      [{ id: 4, productId: "PRD-0004", name: "Bond paper", quantity: 10, unit: "reams" }],
+      "bond",
+      "staff",
+    ),
+  ).toEqual([
+    {
+      id: "inventory:4",
+      type: "inventory",
+      title: "Bond paper",
+      subtitle: "Supply · PRD-0004 · 10 reams",
+      page: "staff-inventory",
+    },
+  ]);
 });

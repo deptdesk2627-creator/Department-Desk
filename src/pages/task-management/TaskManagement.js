@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./TaskManagement.css";
+import { ConfirmModal } from "../../components/ui";
 import TaskMetrics from "./components/TaskMetrics";
 import TaskQuickAdd from "./components/TaskQuickAdd";
 import TaskStatusView from "./components/TaskStatusView";
@@ -58,11 +59,33 @@ function TaskManagement({
   });
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [taskPendingDelete, setTaskPendingDelete] = useState(null);
+  const [isConfirmingBulkDelete, setIsConfirmingBulkDelete] = useState(false);
 
   async function handleAddTask(event) {
     if (await addTask(event)) {
       setIsTaskModalOpen(false);
     }
+  }
+
+  function requestDeleteTask(id) {
+    const target = (Array.isArray(tasks) ? tasks : []).find(
+      (task) => task?.id === id,
+    );
+    if (target) {
+      setTaskPendingDelete(target);
+    }
+  }
+
+  function handleConfirmDeleteTask() {
+    if (!taskPendingDelete) return;
+    deleteTask(taskPendingDelete.id);
+    setTaskPendingDelete(null);
+  }
+
+  function handleConfirmBulkDelete() {
+    bulkDelete();
+    setIsConfirmingBulkDelete(false);
   }
 
   if (taskPersistence.isLoading) {
@@ -121,7 +144,7 @@ function TaskManagement({
         onResetFilters={resetFilters}
         selectedCount={selectedTaskIds.length}
         onBulkComplete={bulkComplete}
-        onBulkDelete={bulkDelete}
+        onBulkDelete={() => setIsConfirmingBulkDelete(true)}
       />
       {view === "table" ? (
         <TaskTableView
@@ -133,7 +156,7 @@ function TaskManagement({
           onSelectOne={selectOne}
           onToggleDone={toggleDone}
           onUpdateTask={updateTask}
-          onDeleteTask={deleteTask}
+          onDeleteTask={requestDeleteTask}
         />
       ) : (
         <TaskStatusView
@@ -142,9 +165,41 @@ function TaskManagement({
           todayStr={todayStr}
           onToggleDone={toggleDone}
           onUpdateTask={updateTask}
-          onDeleteTask={deleteTask}
+          onDeleteTask={requestDeleteTask}
         />
       )}
+      <ConfirmModal
+        isOpen={Boolean(taskPendingDelete)}
+        onClose={() => setTaskPendingDelete(null)}
+        onConfirm={handleConfirmDeleteTask}
+        eyebrow="TASK MANAGEMENT"
+        title={
+          taskPendingDelete?.title
+            ? `Delete "${taskPendingDelete.title}"?`
+            : "Delete task?"
+        }
+        titleId="confirm-delete-task-title"
+        message={
+          taskPendingDelete?.title
+            ? `Are you sure you want to permanently delete "${taskPendingDelete.title}"? This cannot be undone.`
+            : "Are you sure you want to permanently delete this task? This cannot be undone."
+        }
+        confirmLabel="Yes, delete task"
+        cancelLabel="Cancel"
+        danger
+      />
+      <ConfirmModal
+        isOpen={isConfirmingBulkDelete}
+        onClose={() => setIsConfirmingBulkDelete(false)}
+        onConfirm={handleConfirmBulkDelete}
+        eyebrow="TASK MANAGEMENT · BULK DELETE"
+        title={`Delete ${selectedTaskIds.length} selected ${selectedTaskIds.length === 1 ? "task" : "tasks"}?`}
+        titleId="confirm-bulk-delete-tasks-title"
+        message={`Are you sure you want to permanently delete ${selectedTaskIds.length} selected ${selectedTaskIds.length === 1 ? "task" : "tasks"}? This cannot be undone.`}
+        confirmLabel="Yes, delete selected"
+        cancelLabel="Cancel"
+        danger
+      />
     </div>
   );
 }

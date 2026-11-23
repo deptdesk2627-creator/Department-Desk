@@ -17,6 +17,10 @@ function mapTask(row) {
   };
 }
 
+function getLocalDateStr(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 function toTaskRow(task, userId) {
   const status = task.status || "Not started";
   const now = new Date().toISOString();
@@ -24,7 +28,7 @@ function toTaskRow(task, userId) {
     task_name: String(task.title || "").trim(),
     priority_level: task.priority || "Medium",
     status,
-    due_date: task.due || now.slice(0, 10),
+    due_date: task.due || getLocalDateStr(),
     tasks_user_id: userId,
     description: task.description || null,
     completed_at: status === "Done" ? now : null,
@@ -42,7 +46,7 @@ function toTaskUpdate(changes) {
     update.priority_level = changes.priority;
   }
   if (Object.prototype.hasOwnProperty.call(changes, "due")) {
-    update.due_date = changes.due || new Date().toISOString().slice(0, 10);
+    update.due_date = changes.due || getLocalDateStr();
   }
   if (Object.prototype.hasOwnProperty.call(changes, "status")) {
     update.status = changes.status;

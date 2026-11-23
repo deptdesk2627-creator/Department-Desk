@@ -1,15 +1,10 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { emptyForm } from "../constants";
+import { csvValue } from "../utils/transactionHelpers";
 import TransactionForm from "./TransactionForm";
 
-function ControlledTransactionForm({ onAddOffice }) {
+function ControlledTransactionForm() {
   const [form, setForm] = useState(emptyForm("outgoing"));
   return (
     <TransactionForm
@@ -18,7 +13,6 @@ function ControlledTransactionForm({ onAddOffice }) {
       setForm={setForm}
       formError=""
       onSubmit={jest.fn()}
-      onAddOffice={onAddOffice}
       offices={["Finance Office", "Registrar"]}
       categories={["Document", "Request"]}
       outgoingStatuses={["Pending"]}
@@ -28,49 +22,70 @@ function ControlledTransactionForm({ onAddOffice }) {
   );
 }
 
-test("searches offices on the outgoing request form", () => {
-  render(<ControlledTransactionForm onAddOffice={jest.fn()} />);
+test("renders office select options and custom office input on outgoing request form", () => {
+  render(<ControlledTransactionForm />);
   const dialog = within(screen.getByRole("dialog"));
-  const officeInput = dialog.getByRole("combobox", { name: "Office" });
+  const officeSelect = dialog.getByRole("combobox", {
+    name: /office \(where to go\)/i,
+  });
 
-  fireEvent.change(officeInput, { target: { value: "Reg" } });
+  expect(
+    dialog.getByRole("option", { name: "Finance Office" }),
+  ).toBeInTheDocument();
   expect(
     dialog.getByRole("option", { name: "Registrar" }),
   ).toBeInTheDocument();
+  expect(dialog.getByRole("option", { name: "Other" })).toBeInTheDocument();
+
+  fireEvent.change(officeSelect, { target: { value: "Registrar" } });
+  expect(officeSelect).toHaveValue("Registrar");
   expect(
-    dialog.queryByRole("option", { name: "Finance Office" }),
+    dialog.queryByLabelText(/specify destination office/i),
   ).not.toBeInTheDocument();
+
+  fireEvent.change(officeSelect, { target: { value: "Other" } });
+  const customOfficeInput = dialog.getByLabelText(
+    /specify destination office/i,
+  );
+  fireEvent.change(customOfficeInput, { target: { value: "Research Office" } });
+  expect(customOfficeInput).toHaveValue("Research Office");
 });
 
-test("searches offices and offers to add a missing office for an incoming request", async () => {
-  const onAddOffice = jest.fn().mockResolvedValue("Research Office");
-  render(<ControlledTransactionForm onAddOffice={onAddOffice} />);
+test("renders origin and forwarded office selects with custom inputs for incoming requests", () => {
+  render(<ControlledTransactionForm />);
 
   fireEvent.click(
     screen.getByRole("button", { name: /incoming from other office/i }),
   );
   const dialog = within(screen.getByRole("dialog"));
-  const officeInput = dialog.getByRole("combobox", {
+  const originSelect = dialog.getByRole("combobox", {
     name: /from office \(origin\)/i,
   });
+  const forwardedSelect = dialog.getByRole("combobox", {
+    name: /sent out \/ forwarded to/i,
+  });
 
-  fireEvent.change(officeInput, { target: { value: "Finance" } });
-  expect(
-    dialog.getByRole("option", { name: "Finance Office" }),
-  ).toBeInTheDocument();
-  expect(
-    dialog.queryByRole("option", { name: "Registrar" }),
-  ).not.toBeInTheDocument();
-  fireEvent.click(dialog.getByRole("option", { name: "Finance Office" }));
-  expect(officeInput).toHaveValue("Finance Office");
+  fireEvent.change(originSelect, { target: { value: "Other" } });
+  const originCustomInput = dialog.getByLabelText(/specify origin office/i);
+  fireEvent.change(originCustomInput, { target: { value: "External Board" } });
+  expect(originCustomInput).toHaveValue("External Board");
 
-  fireEvent.change(officeInput, { target: { value: "Research Office" } });
-  fireEvent.click(
-    dialog.getByRole("button", {
-      name: "Add a new office: Research Office",
-    }),
+  fireEvent.change(forwardedSelect, { target: { value: "Other" } });
+  const forwardedCustomInput = dialog.getByLabelText(
+    /specify destination office/i,
   );
+  fireEvent.change(forwardedCustomInput, {
+    target: { value: "Legal Office" },
+  });
+  expect(forwardedCustomInput).toHaveValue("Legal Office");
+});
 
-  expect(onAddOffice).toHaveBeenCalledWith("Research Office");
-  await waitFor(() => expect(officeInput).toHaveValue("Research Office"));
+test("sanitizes spreadsheet formula prefixes and quotes in CSV cells", () => {
+  expect(csvValue("=CMD()")).toBe("\"'=CMD()\"");
+  expect(csvValue("+1234")).toBe("\"'+1234\"");
+  expect(csvValue("-1234")).toBe("\"'-1234\"");
+  expect(csvValue("@SUM(A1:A2)")).toBe("\"'@SUM(A1:A2)\"");
+  expect(csvValue("\tmalicious")).toBe("\"'\tmalicious\"");
+  expect(csvValue('He said "hello"')).toBe('"He said ""hello"""');
+  expect(csvValue(null)).toBe('""');
 });

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./InventoryItemModal.css";
 import { Modal } from "../../../components/ui";
 import { getProductId } from "../../../hooks/useInventoryActions";
+import { formatDate } from "../../../utils/formatters";
 import { getItemUsageType } from "../../../utils/inventory";
 
 function buildMonthlyUsage(records = [], itemId) {
@@ -354,7 +355,7 @@ function InventoryItemModal({
                   </div>
                   <p>{entry.remark}</p>
                   <small>
-                    {entry.quantity} {item.unit || "units"} · {new Date(entry.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    {entry.quantity} {item.unit || "units"} · {formatDate(entry.date)}
                   </small>
                 </li>
               ))}

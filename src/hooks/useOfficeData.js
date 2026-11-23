@@ -73,7 +73,7 @@ export function useOfficeData({
 
       const loaders = [];
 
-      if (roleId !== "dean" && linkedUser?.user_id) {
+      if (linkedUser?.user_id) {
         loaders.push(
           (async () => {
             const tasksQuery = supabase
@@ -184,7 +184,9 @@ export function useOfficeData({
         })(),
       );
 
-      if (roleId !== "staff" && linkedUser?.user_id) {
+      if (roleId === "staff") {
+        setRequests([]);
+      } else if (linkedUser?.user_id) {
         loaders.push(
           (async () => {
             const snapshot = await fetchTransactionsSnapshot();
@@ -238,18 +240,21 @@ export function useOfficeData({
 
     let channel = null;
     if (typeof supabase?.channel === "function") {
-      channel = supabase
-        .channel(`office-data-sync-${roleId}`)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "transactions_ongoing" },
-          scheduleSync,
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "transactions_incoming" },
-          scheduleSync,
-        )
+      channel = supabase.channel(`office-data-sync-${roleId}`);
+      if (roleId !== "staff") {
+        channel = channel
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "transactions_ongoing" },
+            scheduleSync,
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "transactions_incoming" },
+            scheduleSync,
+          );
+      }
+      channel = channel
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "tasks" },

@@ -390,3 +390,60 @@ test("defers stock restoration when requireReturnConfirmation is enabled and blo
     "Your return is already pending secretary confirmation.",
   );
 });
+
+test("keeps stock_onhand synchronized with quantity across consecutive borrow, use, and return actions", () => {
+  let inventory = [
+    {
+      id: 17,
+      item_id: 17,
+      productId: "PRD-0017",
+      name: "HDMI Adapter",
+      quantity: 10,
+      stock_onhand: 10,
+      unit: "pcs",
+    },
+  ];
+  let records = [];
+  const setInventory = jest.fn((update) => {
+    inventory = update(inventory);
+  });
+  const setRecords = jest.fn((update) => {
+    records = update(records);
+  });
+
+  const { result, rerender } = renderHook(() =>
+    useInventoryActions({
+      inventory,
+      records,
+      setInventory,
+      setRecords,
+      requireRemarks: true,
+    }),
+  );
+
+  act(() => result.current.openAction(inventory[0], "Borrow"));
+  act(() => result.current.setPersonName("Prof. Clara"));
+  act(() => result.current.setQuantity("3"));
+  act(() => result.current.setRemarks("Lecture"));
+  act(() => result.current.submitAction({ preventDefault: jest.fn() }));
+  expect(inventory[0].quantity).toBe(7);
+  expect(inventory[0].stock_onhand).toBe(7);
+
+  rerender();
+  act(() => result.current.openAction(inventory[0], "Use"));
+  act(() => result.current.setPersonName("Prof. Clara"));
+  act(() => result.current.setQuantity("2"));
+  act(() => result.current.setRemarks("Seminar"));
+  act(() => result.current.submitAction({ preventDefault: jest.fn() }));
+  expect(inventory[0].quantity).toBe(5);
+  expect(inventory[0].stock_onhand).toBe(5);
+
+  rerender();
+  act(() => result.current.openAction(inventory[0], "Return"));
+  act(() => result.current.setPersonName("Prof. Clara"));
+  act(() => result.current.setQuantity("2"));
+  act(() => result.current.setRemarks("Returned after class"));
+  act(() => result.current.submitAction({ preventDefault: jest.fn() }));
+  expect(inventory[0].quantity).toBe(7);
+  expect(inventory[0].stock_onhand).toBe(7);
+});

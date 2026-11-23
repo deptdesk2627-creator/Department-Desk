@@ -15,6 +15,7 @@ function InventoryTable({
   loadError = "",
   onOpenAction,
   getBorrowedBalance,
+  getReturnableBalance,
   onDelete,
   onViewDetails,
   readOnly = false,
@@ -187,7 +188,9 @@ function InventoryTable({
                               disabled={
                                 actionsDisabled ||
                                 recordingDisabled ||
-                                getBorrowedBalance(item) <= 0
+                                (getReturnableBalance || getBorrowedBalance)(
+                                  item,
+                                ) <= 0
                               }
                             >
                               Return

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./Transactions.css";
-import { PageHeader } from "../../components/ui";
+import { ConfirmModal, PageHeader } from "../../components/ui";
 import TransactionDrawer from "./components/TransactionDrawer";
 import TransactionForm from "./components/TransactionForm";
 import TransactionList from "./components/TransactionList";
@@ -36,8 +36,26 @@ function Transactions({
   });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [requestPendingDelete, setRequestPendingDelete] = useState(null);
   const appliedNavKeyRef = useRef(null);
   const { setActiveTab } = manager;
+
+  function requestDeleteTransaction(id) {
+    const target = (Array.isArray(requests) ? requests : []).find(
+      (item) =>
+        item?.id === id &&
+        manager.requestDirection(item) === manager.activeTab,
+    );
+    if (target) {
+      setRequestPendingDelete(target);
+    }
+  }
+
+  function handleConfirmDeleteTransaction() {
+    if (!requestPendingDelete) return;
+    manager.deleteRequest(requestPendingDelete.id);
+    setRequestPendingDelete(null);
+  }
 
   useEffect(() => {
     if (
@@ -158,7 +176,6 @@ function Transactions({
           onSubmit={handleFormSubmit}
           onCancel={() => setIsFormOpen(false)}
           offices={manager.offices}
-          onAddOffice={persistence.addOffice}
           categories={manager.categories}
           outgoingStatuses={manager.outgoingStatuses}
           incomingStatuses={manager.incomingStatuses}
@@ -237,7 +254,7 @@ function Transactions({
           onUpdateFileLocation={manager.updateFileLocation}
           onSelect={manager.setSelectedTransaction}
           onExport={manager.exportRequest}
-          onDelete={manager.deleteRequest}
+          onDelete={requestDeleteTransaction}
         />
       </div>
 
@@ -250,6 +267,27 @@ function Transactions({
         requestCategory={manager.requestCategory}
         statusClass={manager.statusClass}
         onClose={() => manager.setSelectedTransaction(null)}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(requestPendingDelete)}
+        onClose={() => setRequestPendingDelete(null)}
+        onConfirm={handleConfirmDeleteTransaction}
+        eyebrow="REQUEST TRACKER"
+        title={
+          requestPendingDelete
+            ? `Delete "${manager.requestName(requestPendingDelete)}"?`
+            : "Delete request?"
+        }
+        titleId="confirm-delete-transaction-title"
+        message={
+          requestPendingDelete
+            ? `Are you sure you want to permanently delete "${manager.requestName(requestPendingDelete)}" (${requestPendingDelete.id}) and its history? This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Yes, delete record"
+        cancelLabel="Cancel"
+        danger
       />
     </div>
   );
