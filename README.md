@@ -4,9 +4,13 @@ A React and Supabase web application for department office operations—tracking
 
 ## Preview
 
-| Sign In | Role-Based Sign Up |
+| Dashboard (Secretary) | Transactions & Requests |
 | :---: | :---: |
-| ![DeptDesk Sign In](assets/preview/login.png) | ![DeptDesk Sign Up](assets/preview/signup.png) |
+| ![Secretary Dashboard](assets/preview/secretary-dashboard.png) | ![Transactions & Requests](assets/preview/secretary-transactions.png) |
+
+| Supply & Inventory (Secretary) | Office Supplies (Faculty & Staff) |
+| :---: | :---: |
+| ![Supply & Inventory](assets/preview/secretary-inventory.png) | ![Staff Inventory Portal](assets/preview/staff-inventory.png) |
 
 ## Features
 
