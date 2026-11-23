@@ -54,15 +54,67 @@ const PROFILE_INPUTS = [
   },
 ];
 
+const PASSWORD_RULES = [
+  { id: "length", label: "At least 8 characters", test: (v) => v.length >= 8 },
+  { id: "upper", label: "One uppercase letter (A–Z)", test: (v) => /[A-Z]/.test(v) },
+  { id: "lower", label: "One lowercase letter (a–z)", test: (v) => /[a-z]/.test(v) },
+  { id: "number", label: "One number (0–9)", test: (v) => /\d/.test(v) },
+  {
+    id: "special",
+    label: "One special character (!@#$…)",
+    test: (v) => /[^A-Za-z0-9]/.test(v),
+  },
+];
+
+function evaluatePasswordStrength(password) {
+  const results = PASSWORD_RULES.map((rule) => ({
+    ...rule,
+    met: rule.test(password),
+  }));
+  const passedCount = results.filter((rule) => rule.met).length;
+  const isStrong = passedCount === PASSWORD_RULES.length;
+
+  let level = "empty";
+  let label = "";
+  if (password.length > 0) {
+    if (passedCount <= 2) {
+      level = "weak";
+      label = "Weak";
+    } else if (passedCount === 3) {
+      level = "fair";
+      label = "Fair";
+    } else if (passedCount === 4) {
+      level = "good";
+      label = "Good";
+    } else {
+      level = "strong";
+      label = "Strong";
+    }
+  }
+
+  return { results, passedCount, isStrong, level, label };
+}
+
 function ProfilePage({ role, profile, onSave, data, onNavigate }) {
   const [draft, setDraft] = useState(profile);
   const [error, setError] = useState("");
   const [savedNotice, setSavedNotice] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
   const [passwordStatus, setPasswordStatus] = useState(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
+
+  const passwordStrength = useMemo(
+    () => evaluatePasswordStrength(newPassword),
+    [newPassword],
+  );
 
   useEffect(() => {
     setDraft(profile);
@@ -127,12 +179,33 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
     saveProfileDraft();
   }
 
+  function togglePasswordVisibility(field) {
+    setShowPasswords((current) => ({
+      ...current,
+      [field]: !current[field],
+    }));
+  }
+
   async function handlePasswordSubmit(event) {
     event.preventDefault();
-    if (newPassword.length < 6) {
+    if (!currentPassword) {
       setPasswordStatus({
         type: "error",
-        text: "New password must be at least 6 characters.",
+        text: "Please enter your current password.",
+      });
+      return;
+    }
+    if (!passwordStrength.isStrong) {
+      setPasswordStatus({
+        type: "error",
+        text: "New password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.",
+      });
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordStatus({
+        type: "error",
+        text: "New password must be different from your current password.",
       });
       return;
     }
@@ -143,7 +216,10 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
       });
       return;
     }
-    if (typeof supabase?.auth?.updateUser !== "function") {
+    if (
+      typeof supabase?.auth?.updateUser !== "function" ||
+      typeof supabase?.auth?.signInWithPassword !== "function"
+    ) {
       setPasswordStatus({
         type: "error",
         text: "Password update is unavailable in this environment.",
@@ -153,10 +229,39 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
     setIsUpdatingPassword(true);
     setPasswordStatus(null);
     try {
+      let email = String(profile?.email || draft?.email || "").trim();
+      if (typeof supabase?.auth?.getUser === "function") {
+        const userResult = await supabase.auth.getUser();
+        if (userResult?.data?.user?.email) {
+          email = userResult.data.user.email;
+        }
+      }
+      if (!email) {
+        setPasswordStatus({
+          type: "error",
+          text: "Could not verify your account email.",
+        });
+        return;
+      }
+
+      const verifyResult = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      });
+      if (verifyResult?.error) {
+        setPasswordStatus({
+          type: "error",
+          text: "Current password is incorrect.",
+        });
+        return;
+      }
+
       const result = await supabase.auth.updateUser({ password: newPassword });
       if (result?.error) throw result.error;
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setShowPasswords({ current: false, next: false, confirm: false });
       setPasswordStatus({ type: "success", text: "Password updated." });
     } catch (err) {
       setPasswordStatus({
@@ -385,27 +490,82 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
           </p>
         )}
 
-        <form className="system-form-grid" onSubmit={handlePasswordSubmit}>
+        <form
+          className="system-form-grid"
+          onSubmit={handlePasswordSubmit}
+          noValidate
+        >
+          <label className="system-field system-field--full">
+            <span className="system-field__header">
+              <span className="system-field__label">Current password</span>
+              <span className="system-field__tag">Required</span>
+            </span>
+            <span className="system-input-wrap">
+              <span className="system-input-wrap__icon">
+                <SystemIcon name="shield" size={16} />
+              </span>
+              <input
+                type={showPasswords.current ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="Enter your current password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+              />
+              <button
+                type="button"
+                className="system-password-toggle"
+                onClick={() => togglePasswordVisibility("current")}
+                aria-label={
+                  showPasswords.current
+                    ? "Hide current password"
+                    : "Show current password"
+                }
+              >
+                <SystemIcon
+                  name={showPasswords.current ? "eyeOff" : "eye"}
+                  size={16}
+                />
+              </button>
+            </span>
+            <span className="system-field__helper">
+              Verify your existing password before setting a new one.
+            </span>
+          </label>
+
           <label className="system-field">
             <span className="system-field__header">
               <span className="system-field__label">New password</span>
-              <span className="system-field__tag">Min 6 chars</span>
+              <span className="system-field__tag">Strong password required</span>
             </span>
             <span className="system-input-wrap">
               <span className="system-input-wrap__icon">
                 <SystemIcon name="lock" size={16} />
               </span>
               <input
-                type="password"
-                minLength={6}
+                type={showPasswords.next ? "text" : "password"}
                 autoComplete="new-password"
-                placeholder="Minimum 6 characters"
+                placeholder="Create a strong password"
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
               />
+              <button
+                type="button"
+                className="system-password-toggle"
+                onClick={() => togglePasswordVisibility("next")}
+                aria-label={
+                  showPasswords.next
+                    ? "Hide new password"
+                    : "Show new password"
+                }
+              >
+                <SystemIcon
+                  name={showPasswords.next ? "eyeOff" : "eye"}
+                  size={16}
+                />
+              </button>
             </span>
             <span className="system-field__helper">
-              Use a strong password unique to your department account.
+              Use at least 8 characters with uppercase, lowercase, a number, and a symbol.
             </span>
           </label>
 
@@ -418,18 +578,81 @@ function ProfilePage({ role, profile, onSave, data, onNavigate }) {
                 <SystemIcon name="lock" size={16} />
               </span>
               <input
-                type="password"
-                minLength={6}
+                type={showPasswords.confirm ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Re-enter new password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
               />
+              <button
+                type="button"
+                className="system-password-toggle"
+                onClick={() => togglePasswordVisibility("confirm")}
+                aria-label={
+                  showPasswords.confirm
+                    ? "Hide confirm new password"
+                    : "Show confirm new password"
+                }
+              >
+                <SystemIcon
+                  name={showPasswords.confirm ? "eyeOff" : "eye"}
+                  size={16}
+                />
+              </button>
             </span>
-            <span className="system-field__helper">
-              Must match the new password entered on the left.
-            </span>
+            {confirmPassword ? (
+              <span
+                className={`system-field__helper ${
+                  newPassword === confirmPassword
+                    ? "system-field__helper--match"
+                    : "system-field__helper--mismatch"
+                }`}
+              >
+                {newPassword === confirmPassword
+                  ? "Passwords match."
+                  : "Passwords do not match."}
+              </span>
+            ) : (
+              <span className="system-field__helper">
+                Must match the new password entered on the left.
+              </span>
+            )}
           </label>
+
+          <div
+            className="system-field--full system-password-meter"
+            aria-live="polite"
+          >
+            <div className="system-password-meter__head">
+              <span className="system-password-meter__title">
+                Password strength
+              </span>
+              {passwordStrength.label && (
+                <span
+                  className="system-password-meter__label"
+                  data-level={passwordStrength.level}
+                >
+                  {passwordStrength.label}
+                </span>
+              )}
+            </div>
+            <div
+              className="system-password-meter__track"
+              role="progressbar"
+              aria-label="Password strength"
+              aria-valuemin={0}
+              aria-valuemax={PASSWORD_RULES.length}
+              aria-valuenow={passwordStrength.passedCount}
+            >
+              <span
+                className="system-password-meter__fill"
+                data-level={passwordStrength.level}
+                style={{
+                  width: `${(passwordStrength.passedCount / PASSWORD_RULES.length) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
 
           <div className="system-field--full system-actions">
             <span className="system-actions__spacer" />

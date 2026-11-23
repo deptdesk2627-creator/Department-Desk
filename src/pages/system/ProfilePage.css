@@ -201,6 +201,117 @@ button.system-workload-tile:hover {
   color: var(--muted);
 }
 
+/* Password visibility toggle & strength meter */
+.system-password-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 28px;
+  justify-content: center;
+  padding: 0;
+  transition: color 150ms ease, background-color 150ms ease;
+  width: 28px;
+}
+
+.system-password-toggle:hover {
+  background: var(--line-subtle);
+  color: var(--ink);
+}
+
+.system-password-toggle:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 1px;
+}
+
+.system-password-meter {
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.system-password-meter__head {
+  align-items: center;
+  display: flex;
+  font-size: 12px;
+  font-weight: 600;
+  justify-content: space-between;
+}
+
+.system-password-meter__title {
+  color: var(--ink-secondary);
+}
+
+.system-password-meter__label {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.system-password-meter__label[data-level="weak"] {
+  color: var(--red);
+}
+
+.system-password-meter__label[data-level="fair"] {
+  color: #d97706;
+}
+
+.system-password-meter__label[data-level="good"] {
+  color: #2563eb;
+}
+
+.system-password-meter__label[data-level="strong"] {
+  color: var(--green);
+}
+
+.system-password-meter__track {
+  background: var(--line);
+  border-radius: var(--radius-pill);
+  height: 6px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.system-password-meter__fill {
+  border-radius: var(--radius-pill);
+  display: block;
+  height: 100%;
+  transition: width 200ms ease, background-color 180ms ease;
+  width: 0;
+}
+
+.system-password-meter__fill[data-level="weak"] {
+  background: var(--red);
+}
+
+.system-password-meter__fill[data-level="fair"] {
+  background: #f59e0b;
+}
+
+.system-password-meter__fill[data-level="good"] {
+  background: #3b82f6;
+}
+
+.system-password-meter__fill[data-level="strong"] {
+  background: var(--green);
+}
+
+.system-field__helper--match {
+  color: var(--green);
+  font-weight: 500;
+}
+
+.system-field__helper--mismatch {
+  color: var(--red);
+  font-weight: 500;
+}
+
 @media (max-width: 720px) {
   .system-permissions-grid {
     grid-template-columns: 1fr;
@@ -208,7 +319,8 @@ button.system-workload-tile:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .system-workload-tile {
+  .system-workload-tile,
+  .system-password-meter__fill {
     transition: none;
   }
 }
