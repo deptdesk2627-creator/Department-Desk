@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PageHeader } from "../../components/ui";
 import { DEFAULT_SETTINGS } from "../../constants/system";
+import SettingsAccountsTab from "./components/SettingsAccountsTab";
 import SettingsAppearanceTab from "./components/SettingsAppearanceTab";
 import SettingsDataTab from "./components/SettingsDataTab";
 import SettingsOfficeTab from "./components/SettingsOfficeTab";
@@ -19,6 +20,15 @@ const NOTIFICATION_OPTIONS = [
     description:
       "Play an audio alert when a new notification arrives. Turn off to mute notification sound.",
     roles: ["secretary", "dean", "staff"],
+  },
+  {
+    key: "notifyAccountApprovals",
+    label: "New account approval requests",
+    badge: "Secretary & Dean",
+    icon: "shield",
+    description:
+      "Alert when a newly registered Faculty & Staff account is waiting for Secretary or Dean confirmation.",
+    roles: ["secretary", "dean"],
   },
   {
     key: "notifyRequests",
@@ -64,9 +74,14 @@ function SettingsPage({
   onNavigate,
   isSidebarOpen,
   onSidebarOpenChange,
+  onApproveAccount,
+  onDeclineAccount,
 }) {
   const canManageData = Boolean(
     role?.can?.editDocuments && role?.can?.manageInventory,
+  );
+  const canApproveAccounts = Boolean(
+    role?.can?.approveAccounts ?? role?.id !== "staff",
   );
   const showAdminPrefs = role?.id !== "staff";
   const visibleNotificationOptions = NOTIFICATION_OPTIONS.filter(
@@ -106,6 +121,15 @@ function SettingsPage({
       )}
 
       <div className="system-settings-stack">
+        {canApproveAccounts && (
+          <SettingsAccountsTab
+            userAccounts={data?.userAccounts || []}
+            onApproveAccount={onApproveAccount}
+            onDeclineAccount={onDeclineAccount}
+            onNotice={setNotice}
+          />
+        )}
+
         <SettingsAppearanceTab
           theme={theme}
           onThemeChange={(nextTheme) => {

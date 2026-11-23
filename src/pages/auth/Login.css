@@ -410,6 +410,83 @@
 }
 
 /* ==========================================================================
+   Awaiting Account Confirmation Card
+   ========================================================================== */
+.login-approval-card {
+  background-color: #fff7ed;
+  border: 1.5px solid #fed7aa;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 20px;
+}
+
+[data-theme="dark"] .login-approval-card,
+.login-split-page[data-theme="dark"] .login-approval-card {
+  background-color: rgba(249, 115, 22, 0.1);
+  border-color: rgba(251, 146, 60, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.login-approval-card__badge {
+  align-items: center;
+  align-self: flex-start;
+  background-color: #ffedd5;
+  border: 1px solid #fdba74;
+  border-radius: 9999px;
+  color: #c2410c;
+  display: inline-flex;
+  font-size: 11.5px;
+  font-weight: 700;
+  gap: 7px;
+  letter-spacing: 0.03em;
+  padding: 4px 11px;
+  text-transform: uppercase;
+}
+
+[data-theme="dark"] .login-approval-card__badge,
+.login-split-page[data-theme="dark"] .login-approval-card__badge {
+  background-color: rgba(234, 88, 12, 0.22);
+  border-color: rgba(251, 146, 60, 0.45);
+  color: #fdba74;
+}
+
+.login-approval-card__dot {
+  background-color: #ea580c;
+  border-radius: 50%;
+  height: 7px;
+  width: 7px;
+}
+
+.login-approval-card__text {
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+  margin: 0;
+}
+
+[data-theme="dark"] .login-approval-card__text,
+.login-split-page[data-theme="dark"] .login-approval-card__text {
+  color: #f8fafc;
+}
+
+.login-approval-card__meta {
+  border-top: 1px dashed rgba(234, 88, 12, 0.28);
+  color: #64748b;
+  font-size: 12.5px;
+  margin: 0;
+  padding-top: 10px;
+}
+
+[data-theme="dark"] .login-approval-card__meta,
+.login-split-page[data-theme="dark"] .login-approval-card__meta {
+  color: #cbd5e1;
+}
+
+/* ==========================================================================
    8-Digit OTP Verification Boxes & Resend Controls
    ========================================================================== */
 .login-otp-section {

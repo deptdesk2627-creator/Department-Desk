@@ -16,11 +16,37 @@ export function getNotifications(
   settings = {},
   inventoryRecords = [],
   roleId = "secretary",
+  pendingAccounts = [],
 ) {
   const showRequests = roleId !== "staff" && settings?.notifyRequests !== false;
   const showPendingReturns = settings?.notifyPendingReturns !== false;
+  const showAccountApprovals =
+    roleId !== "staff" && settings?.notifyAccountApprovals !== false;
   const showLowStock = roleId !== "staff" && settings?.notifyLowStock !== false;
   const showOverdueTasks = settings?.notifyOverdueTasks !== false;
+
+  const accountApprovalAlerts = showAccountApprovals
+    ? (Array.isArray(pendingAccounts) ? pendingAccounts : [])
+        .filter(
+          (account) =>
+            account &&
+            String(account.approvalStatus || account.approval_status || "")
+              .trim()
+              .toLowerCase() === "pending",
+        )
+        .map((account) => {
+          const userId = account.userId ?? account.user_id ?? account.id;
+          const displayName = account.username || account.name || "New user";
+          const emailPart = account.email ? ` (${account.email})` : "";
+          return {
+            id: `account-pending:${userId}`,
+            accountUserId: userId,
+            title: "Account approval needed",
+            message: `${displayName}${emailPart} is waiting for Secretary or Dean approval to sign in.`,
+            page: "settings",
+          };
+        })
+    : [];
 
   const waitingRequests = showRequests
     ? (Array.isArray(requests) ? requests : [])
@@ -110,6 +136,7 @@ export function getNotifications(
     : [];
 
   return [
+    ...accountApprovalAlerts,
     ...waitingRequests,
     ...pendingReturnAlerts,
     ...lowStockItems,

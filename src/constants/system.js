@@ -17,6 +17,7 @@ export const PERMISSION_LABELS = {
   editTasks: "Update and complete tasks",
   manageInventory: "Add items and manage stock levels",
   recordInventory: "Borrow, use, and return supplies",
+  approveAccounts: "Approve or decline new user account requests",
 };
 
 export const DEFAULT_SETTINGS = Object.freeze({
@@ -27,6 +28,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   notifySound: true,
   notifyRequests: true,
   notifyPendingReturns: true,
+  notifyAccountApprovals: true,
   notifyLowStock: true,
   notifyOverdueTasks: true,
   department: "",

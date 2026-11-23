@@ -7,6 +7,37 @@ import LoginBrandPanel from "./components/LoginBrandPanel";
 const OTP_LENGTH = 8;
 const EMPTY_OTP = Array(OTP_LENGTH).fill("");
 const RESEND_COOLDOWN_SECONDS = 60;
+const AWAITING_APPROVAL_MESSAGE =
+  "Please wait for confirmation of your account from the Secretary or Dean. If you have any questions or clarifications, please proceed to the OIC / Department Office.";
+
+async function checkAccountApproval(authUserId, userRole) {
+  if (!authUserId || userRole === "secretary" || userRole === "dean") {
+    return "approved";
+  }
+  if (typeof supabase?.from !== "function") {
+    return "approved";
+  }
+
+  try {
+    const query = supabase
+      .from("users")
+      .select("approval_status")
+      .eq("auth_user_id", authUserId);
+    const result =
+      typeof query?.maybeSingle === "function"
+        ? await query.maybeSingle()
+        : await query;
+    if (result?.error || !result?.data) {
+      return "approved";
+    }
+    const status = String(result.data.approval_status || "approved")
+      .trim()
+      .toLowerCase();
+    return status === "pending" || status === "declined" ? status : "approved";
+  } catch {
+    return "approved";
+  }
+}
 
 function Login({ onLogin, theme = "light" }) {
   const [mode, setMode] = useState("login");
@@ -229,22 +260,63 @@ function Login({ onLogin, theme = "light" }) {
         if (verifyResult.error) throw verifyResult.error;
         const { data } = verifyResult;
 
+        let verifiedRole = role;
         if (data?.session) {
           const { data: claimsData } = await supabase.auth.getClaims();
-          const userRole =
+          verifiedRole =
             claimsData?.claims?.app_metadata?.role ||
             data.user?.app_metadata?.role ||
-            data.user?.user_metadata?.role;
-          if (ROLE_LIST.some((item) => item.id === userRole)) {
+            data.user?.user_metadata?.role ||
+            role;
+          const approvalStatus = await checkAccountApproval(
+            data.user?.id,
+            verifiedRole,
+          );
+          if (approvalStatus === "declined") {
+            await supabase.auth.signOut().catch(() => {});
+            setMode("login");
+            setOtpDigits(EMPTY_OTP);
+            setPassword("");
+            setConfirmPassword("");
+            setResendCooldown(0);
+            setError(
+              "Your account registration was declined by the department. Contact the Secretary or Dean.",
+            );
+            return;
+          }
+          if (
+            approvalStatus === "pending" ||
+            verifiedRole === "staff"
+          ) {
+            await supabase.auth.signOut().catch(() => {});
+            setMode("awaiting-approval");
+            setOtpDigits(EMPTY_OTP);
+            setPassword("");
+            setConfirmPassword("");
+            setResendCooldown(0);
+            setMessage(AWAITING_APPROVAL_MESSAGE);
+            return;
+          }
+          if (ROLE_LIST.some((item) => item.id === verifiedRole)) {
             onLogin?.({
               ...data.user,
               app_metadata: {
                 ...data.user?.app_metadata,
-                role: userRole,
+                role: verifiedRole,
               },
             });
             return;
           }
+        }
+
+        if (verifiedRole === "staff") {
+          setMode("awaiting-approval");
+          setOtpDigits(EMPTY_OTP);
+          setPassword("");
+          setConfirmPassword("");
+          setResendCooldown(0);
+          setMessage(AWAITING_APPROVAL_MESSAGE);
+          return;
         }
 
         setMode("login");
@@ -382,6 +454,24 @@ function Login({ onLogin, theme = "light" }) {
         );
       }
 
+      const approvalStatus = await checkAccountApproval(
+        data.user?.id,
+        userRole,
+      );
+      if (approvalStatus === "pending") {
+        await supabase.auth.signOut().catch(() => {});
+        setMode("awaiting-approval");
+        setPassword("");
+        setMessage(AWAITING_APPROVAL_MESSAGE);
+        return;
+      }
+      if (approvalStatus === "declined") {
+        await supabase.auth.signOut().catch(() => {});
+        throw new Error(
+          "Your account request was declined by the Secretary or Dean. Contact the department office for assistance.",
+        );
+      }
+
       onLogin?.({
         ...data.user,
         app_metadata: {
@@ -401,6 +491,7 @@ function Login({ onLogin, theme = "light" }) {
 
   const isSignup = mode === "signup";
   const isVerifyOtp = mode === "verify-otp";
+  const isAwaitingApproval = mode === "awaiting-approval";
   const signupRoles = signupRoleAvailabilityError
     ? ROLE_LIST.filter((item) => item.id === "staff")
     : ROLE_LIST.filter((item) => signupRoleAvailability[item.id] === true);
@@ -417,22 +508,57 @@ function Login({ onLogin, theme = "light" }) {
         <div className="login-form-container">
           <div className="login-form-header">
             <h2 id="login-heading" className="login-form-title">
-              {isVerifyOtp
-                ? "Verify your email"
-                : isSignup
-                  ? "Create your account"
-                  : "Sign in to DeptDesk"}
+              {isAwaitingApproval
+                ? "Awaiting account confirmation"
+                : isVerifyOtp
+                  ? "Verify your email"
+                  : isSignup
+                    ? "Create your account"
+                    : "Sign in to DeptDesk"}
             </h2>
             <p className="login-form-subtitle">
-              {isVerifyOtp
-                ? `Enter the 8-digit verification code sent to ${email.trim().toLowerCase() || "your email"}.`
-                : isSignup
-                  ? "Enter your details to create a DeptDesk account."
-                  : "Enter your account credentials to continue."}
+              {isAwaitingApproval
+                ? "Your email has been verified and your registration is in the approval queue."
+                : isVerifyOtp
+                  ? `Enter the 8-digit verification code sent to ${email.trim().toLowerCase() || "your email"}.`
+                  : isSignup
+                    ? "Enter your details to create a DeptDesk account."
+                    : "Enter your account credentials to continue."}
             </p>
           </div>
 
-          <form className="login-form" onSubmit={handleSubmit}>
+          {isAwaitingApproval ? (
+            <div
+              className="login-approval-card"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="login-approval-card__badge">
+                <span
+                  className="login-approval-card__dot"
+                  aria-hidden="true"
+                />
+                Pending Secretary or Dean Confirmation
+              </div>
+              <p className="login-approval-card__text">
+                {message || AWAITING_APPROVAL_MESSAGE}
+              </p>
+              {email && (
+                <p className="login-approval-card__meta">
+                  Registered email:{" "}
+                  <strong>{email.trim().toLowerCase()}</strong>
+                </p>
+              )}
+              <button
+                type="button"
+                className="login-btn-workspace"
+                onClick={() => changeMode("login")}
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : (
+            <form className="login-form" onSubmit={handleSubmit}>
             {isVerifyOtp ? (
               <div className="login-otp-section">
                 <div
@@ -655,28 +781,35 @@ function Login({ onLogin, theme = "light" }) {
                     : "Sign in to workspace"}
             </button>
           </form>
+          )}
 
-          <p className="login-not-member">
-            <span>
-              {isVerifyOtp
-                ? "Entered the wrong email?"
-                : isSignup
-                  ? "Already have an account?"
-                  : "Not a member yet?"}
-            </span>
-            <button
-              type="button"
-              className="login-mode-toggle"
-              onClick={() => changeMode(isSignup ? "login" : isVerifyOtp ? "login" : "signup")}
-              disabled={isSubmitting}
-            >
-              {isVerifyOtp
-                ? "Back to sign in"
-                : isSignup
-                  ? "Sign in"
-                  : "Create an account"}
-            </button>
-          </p>
+          {!isAwaitingApproval && (
+            <p className="login-not-member">
+              <span>
+                {isVerifyOtp
+                  ? "Entered the wrong email?"
+                  : isSignup
+                    ? "Already have an account?"
+                    : "Not a member yet?"}
+              </span>
+              <button
+                type="button"
+                className="login-mode-toggle"
+                onClick={() =>
+                  changeMode(
+                    isSignup ? "login" : isVerifyOtp ? "login" : "signup",
+                  )
+                }
+                disabled={isSubmitting}
+              >
+                {isVerifyOtp
+                  ? "Back to sign in"
+                  : isSignup
+                    ? "Sign in"
+                    : "Create an account"}
+              </button>
+            </p>
+          )}
         </div>
       </main>
     </div>

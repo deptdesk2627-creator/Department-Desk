@@ -14,6 +14,7 @@ function Header({
   tasks = [],
   inventory = [],
   inventoryRecords = [],
+  pendingAccounts = [],
   settings,
   isNotificationsReady = true,
   notificationStorageKey = "",
@@ -22,6 +23,7 @@ function Header({
   onNavigate,
   onSelectNotification,
   onConfirmReturn,
+  onApproveAccount,
   onToggleSidebar,
   isSidebarOpen = false,
   theme,
@@ -44,6 +46,9 @@ function Header({
   const isStaff = role?.id === "staff";
   const isDean = role?.id === "dean";
   const canConfirmReturns = role ? Boolean(role.can?.manageInventory) : true;
+  const canApproveAccounts = role
+    ? Boolean(role.can?.approveAccounts ?? role.id !== "staff")
+    : true;
   const {
     areNotificationsOpen,
     closeNotifications,
@@ -208,6 +213,7 @@ function Header({
           tasks={isDean ? [] : tasks}
           inventory={isStaff ? [] : inventory}
           inventoryRecords={inventoryRecords}
+          pendingAccounts={isStaff ? [] : pendingAccounts}
           roleId={role?.id || "secretary"}
           settings={settings}
           isReady={isNotificationsReady}
@@ -218,6 +224,7 @@ function Header({
           onNavigate={onNavigate}
           onSelectNotification={onSelectNotification}
           onConfirmReturn={canConfirmReturns ? onConfirmReturn : undefined}
+          onApproveAccount={canApproveAccounts ? onApproveAccount : undefined}
           notificationRef={notificationRef}
           notificationButtonRef={notificationButtonRef}
         />

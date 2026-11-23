@@ -15,6 +15,7 @@ export const ROLES = {
       editTasks: true,
       manageInventory: true,
       recordInventory: true,
+      approveAccounts: true,
     },
   },
   dean: {
@@ -32,6 +33,7 @@ export const ROLES = {
       manageInventory: false, // review only; cannot add or edit inventory items
       recordInventory: true,
       recordInventoryForCurrentUserOnly: true,
+      approveAccounts: true,
     },
   },
   staff: {
@@ -48,6 +50,7 @@ export const ROLES = {
       editTasks: true,
       manageInventory: false,
       recordInventory: true,
+      approveAccounts: false,
     },
   },
 };

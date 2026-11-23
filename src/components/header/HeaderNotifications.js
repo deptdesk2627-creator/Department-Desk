@@ -30,6 +30,7 @@ function HeaderNotifications({
   tasks,
   inventory,
   inventoryRecords = [],
+  pendingAccounts = [],
   roleId = "secretary",
   settings,
   isReady = true,
@@ -40,6 +41,7 @@ function HeaderNotifications({
   onNavigate,
   onSelectNotification,
   onConfirmReturn,
+  onApproveAccount,
   notificationRef,
   notificationButtonRef,
 }) {
@@ -78,6 +80,7 @@ function HeaderNotifications({
             settings,
             inventoryRecords,
             roleId,
+            pendingAccounts,
           ).filter(
             (notification) => !dismissedNotificationIds.has(notification.id),
           )
@@ -90,6 +93,7 @@ function HeaderNotifications({
       settings,
       inventoryRecords,
       roleId,
+      pendingAccounts,
       dismissedNotificationIds,
     ],
   );
@@ -179,6 +183,32 @@ function HeaderNotifications({
     }
   }
 
+  async function handleApproveAccount(notification) {
+    if (!onApproveAccount || !notification?.accountUserId) return;
+    if (confirmingIds.has(notification.id)) return;
+
+    setActionError("");
+    setConfirmingIds((current) => new Set(current).add(notification.id));
+    try {
+      await onApproveAccount(notification);
+      setReadNotificationIds((current) => {
+        const next = new Set(current).add(notification.id);
+        writeStoredNotificationIds(readStorageKey, next);
+        return next;
+      });
+    } catch (error) {
+      setActionError(
+        error?.message || "Could not approve this account. Please try again.",
+      );
+    } finally {
+      setConfirmingIds((current) => {
+        const next = new Set(current);
+        next.delete(notification.id);
+        return next;
+      });
+    }
+  }
+
   return (
     <div className="app-header__notifications" ref={notificationRef}>
       <button
@@ -247,6 +277,9 @@ function HeaderNotifications({
                 const canConfirm = Boolean(
                   onConfirmReturn && notification.recordId,
                 );
+                const canApprove = Boolean(
+                  onApproveAccount && notification.accountUserId,
+                );
                 const isConfirming = confirmingIds.has(notification.id);
                 return (
                   <div
@@ -278,6 +311,19 @@ function HeaderNotifications({
                             onClick={() => handleConfirmReturn(notification)}
                           >
                             {isConfirming ? "Confirming..." : "Confirm return"}
+                          </button>
+                        </div>
+                      )}
+                      {canApprove && (
+                        <div className="app-header__notification-actions">
+                          <button
+                            className="app-header__notification-confirm"
+                            type="button"
+                            disabled={isConfirming}
+                            aria-label={`Approve account: ${notification.message}`}
+                            onClick={() => handleApproveAccount(notification)}
+                          >
+                            {isConfirming ? "Approving..." : "Approve account"}
                           </button>
                         </div>
                       )}

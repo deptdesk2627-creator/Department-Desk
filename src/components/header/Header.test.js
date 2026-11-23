@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import Header from "./Header";
 
 test("toggles the profile menu and closes it after choosing an item", () => {
@@ -585,3 +585,52 @@ test("toggles the collapsible mobile search bar from the header search button", 
     "app-header__search-container--mobile-open",
   );
 });
+
+test.each(["secretary", "dean"])(
+  "allows the %s role to approve a pending user account directly from the notification bell",
+  async (roleId) => {
+    const onApproveAccount = jest.fn().mockResolvedValue(true);
+    render(
+      <Header
+        role={{
+          id: roleId,
+          can: { manageInventory: roleId === "secretary", approveAccounts: true },
+        }}
+        pendingAccounts={[
+          {
+            userId: 91,
+            username: "Prof. Santos",
+            email: "santos@deptdesk.edu",
+            role: "staff",
+            approvalStatus: "pending",
+          },
+        ]}
+        onApproveAccount={onApproveAccount}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Notifications, 1 unread" }),
+    );
+    expect(screen.getByText("Account approval needed")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Prof\. Santos \(santos@deptdesk\.edu\)/),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Approve account: Prof\. Santos/i,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(onApproveAccount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "account-pending:91",
+          accountUserId: 91,
+          page: "settings",
+        }),
+      ),
+    );
+  },
+);

@@ -10,6 +10,7 @@ function MainLayout({
   tasks = [],
   inventory = [],
   inventoryRecords = [],
+  pendingAccounts = [],
   settings,
   isNotificationsReady = true,
   notificationStorageKey = "",
@@ -17,6 +18,7 @@ function MainLayout({
   onNavigate,
   onSelectNotification,
   onConfirmReturn,
+  onApproveAccount,
   onSearchChange,
   isOpen = true,
   onToggle,
@@ -52,6 +54,7 @@ function MainLayout({
           tasks={tasks}
           inventory={inventory}
           inventoryRecords={inventoryRecords}
+          pendingAccounts={pendingAccounts}
           settings={settings}
           isNotificationsReady={isNotificationsReady}
           notificationStorageKey={notificationStorageKey}
@@ -59,6 +62,7 @@ function MainLayout({
           onNavigate={onNavigate}
           onSelectNotification={onSelectNotification}
           onConfirmReturn={onConfirmReturn}
+          onApproveAccount={onApproveAccount}
           onSearchChange={onSearchChange}
           onToggleSidebar={onToggle}
           isSidebarOpen={isOpen}

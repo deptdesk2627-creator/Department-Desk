@@ -13,11 +13,25 @@ jest.mock("../../supabase/supabaseClient", () => ({
       getClaims: jest.fn(),
     },
     rpc: jest.fn(),
+    from: jest.fn(),
   },
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
+  supabase.from.mockImplementation(() => {
+    const query = {
+      select: jest.fn(() => query),
+      eq: jest.fn(() => query),
+      maybeSingle: jest.fn(() =>
+        Promise.resolve({
+          data: { approval_status: "approved" },
+          error: null,
+        }),
+      ),
+    };
+    return query;
+  });
   supabase.rpc.mockResolvedValue({
     data: [
       { role: "secretary", is_available: true },
@@ -115,7 +129,7 @@ test("rejects accounts without an allowed app_metadata.role JWT claim", async ()
   expect(onLogin).not.toHaveBeenCalled();
 });
 
-test("creates an account, opens the 8-digit OTP verification step, verifies the OTP, and signs in directly when a session is returned", async () => {
+test("creates an account, opens the 8-digit OTP verification step, verifies the OTP, and shows the Awaiting Account Confirmation card for new staff", async () => {
   const onLogin = jest.fn();
   supabase.auth.signUp.mockResolvedValue({
     data: { session: null },
@@ -181,13 +195,17 @@ test("creates an account, opens the 8-digit OTP verification step, verifies the 
       type: "signup",
     }),
   );
-  expect(supabase.auth.signOut).not.toHaveBeenCalled();
-  expect(onLogin).toHaveBeenCalledWith(
-    expect.objectContaining({
-      email: "alex@example.com",
-      app_metadata: { role: "staff" },
+  expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+  expect(onLogin).not.toHaveBeenCalled();
+  expect(
+    await screen.findByRole("heading", {
+      name: /awaiting account confirmation/i,
     }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(
+    /please wait for confirmation of your account from the secretary or dean/i,
   );
+  expect(screen.getByRole("status")).toHaveTextContent(/proceed to the oic/i);
 });
 
 test("opens the 8-digit OTP screen and resends a code if an unconfirmed account attempts to sign in", async () => {
@@ -335,6 +353,58 @@ test("applies dark theme attribute to split page container", () => {
     "data-theme",
     "dark",
   );
+});
+
+test("blocks a pending staff account at sign-in until approved by the Secretary or Dean", async () => {
+  const onLogin = jest.fn();
+  supabase.from.mockImplementation(() => {
+    const query = {
+      select: jest.fn(() => query),
+      eq: jest.fn(() => query),
+      maybeSingle: jest.fn(() =>
+        Promise.resolve({
+          data: { approval_status: "pending" },
+          error: null,
+        }),
+      ),
+    };
+    return query;
+  });
+  supabase.auth.signInWithPassword.mockResolvedValue({
+    data: {
+      user: {
+        id: "staff-pending-1",
+        email: "newstaff@example.com",
+        app_metadata: { role: "staff" },
+      },
+    },
+    error: null,
+  });
+  supabase.auth.getClaims.mockResolvedValue({
+    data: { claims: { app_metadata: { role: "staff" } } },
+    error: null,
+  });
+
+  render(<Login onLogin={onLogin} />);
+
+  fireEvent.change(screen.getByLabelText(/email address/i), {
+    target: { value: "newstaff@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText(/^password$/i), {
+    target: { value: "secure-password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /sign in to workspace/i }));
+
+  expect(
+    await screen.findByRole("heading", {
+      name: /awaiting account confirmation/i,
+    }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(
+    /please wait for confirmation of your account from the secretary or dean/i,
+  );
+  expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+  expect(onLogin).not.toHaveBeenCalled();
 });
 
 test("does not offer demo sign-in", () => {

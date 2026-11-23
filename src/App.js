@@ -181,14 +181,23 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
 
+      if (!session) {
+        clearSessionData();
+        setIsAuthenticated(false);
+        return;
+      }
+
+      // Only transition on explicit session restoration or token updates;
+      // Login.js owns the sign-in / OTP / approval check before calling onLogin().
+      if (event === "SIGNED_IN") {
+        return;
+      }
+
       const sessionRole = session?.user?.app_metadata?.role;
-      if (
-        !session ||
-        !Object.prototype.hasOwnProperty.call(ROLES, sessionRole)
-      ) {
+      if (!Object.prototype.hasOwnProperty.call(ROLES, sessionRole)) {
         clearSessionData();
         setIsAuthenticated(false);
         return;
@@ -344,6 +353,69 @@ function App() {
     return true;
   }
 
+  async function updateAccountApprovalStatus(targetAccount, nextStatus) {
+    const canApprove = Boolean(
+      role?.can?.approveAccounts ?? role?.id !== "staff",
+    );
+    if (!canApprove) {
+      throw new Error("Only the Secretary or Dean can approve user accounts.");
+    }
+    const targetUserId = Number(
+      targetAccount?.accountUserId ??
+        targetAccount?.userId ??
+        targetAccount?.user_id ??
+        targetAccount?.id,
+    );
+    if (!Number.isFinite(targetUserId) || targetUserId <= 0) {
+      throw new Error("Could not identify the account to update.");
+    }
+
+    const reviewerName =
+      String(profile?.name || role?.name || "").trim() ||
+      (role?.id === "dean" ? "Dean" : "Secretary");
+    const approvedAt = new Date().toISOString();
+
+    if (typeof supabase?.from === "function") {
+      const updateQuery = supabase
+        .from("users")
+        .update({
+          approval_status: nextStatus,
+          approved_by: reviewerName,
+          approved_at: approvedAt,
+        })
+        .eq("user_id", targetUserId);
+      const updateResult =
+        typeof updateQuery?.select === "function"
+          ? await updateQuery.select("user_id").maybeSingle()
+          : await updateQuery;
+      if (updateResult?.error) {
+        throw updateResult.error;
+      }
+    }
+
+    data.setUserAccounts?.((current) =>
+      (Array.isArray(current) ? current : []).map((account) =>
+        Number(account?.userId ?? account?.id) === targetUserId
+          ? {
+              ...account,
+              approvalStatus: nextStatus,
+              approvedBy: reviewerName,
+              approvedAt,
+            }
+          : account,
+      ),
+    );
+    return true;
+  }
+
+  async function handleApproveAccount(targetAccount) {
+    return updateAccountApprovalStatus(targetAccount, "approved");
+  }
+
+  async function handleDeclineAccount(targetAccount) {
+    return updateAccountApprovalStatus(targetAccount, "declined");
+  }
+
   function saveProfile(nextProfile) {
     setProfiles((current) => ({
       ...(isPlainObject(current) ? current : {}),
@@ -457,6 +529,8 @@ function App() {
     onThemeChange: setTheme,
     isSidebarOpen,
     onSidebarOpenChange: setIsSidebarOpen,
+    onApproveAccount: handleApproveAccount,
+    onDeclineAccount: handleDeclineAccount,
   });
 
   return (
@@ -468,6 +542,7 @@ function App() {
       tasks={data.tasks}
       inventory={data.inventory}
       inventoryRecords={data.inventoryRecords}
+      pendingAccounts={data.pendingAccounts}
       settings={settings}
       isNotificationsReady={data.isReady}
       notificationStorageKey={`officeflow.notifications.${role.id}`}
@@ -476,6 +551,7 @@ function App() {
       onNavigate={navigate}
       onSelectNotification={handleSelectNotification}
       onConfirmReturn={handleConfirmReturnFromNotification}
+      onApproveAccount={handleApproveAccount}
       isOpen={isSidebarOpen}
       onToggle={() => setIsSidebarOpen((open) => !open)}
       onCloseSidebar={() => setIsSidebarOpen(false)}

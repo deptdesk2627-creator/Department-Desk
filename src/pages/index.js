@@ -21,6 +21,8 @@ export function getRolePages({
   onThemeChange,
   isSidebarOpen,
   onSidebarOpenChange,
+  onApproveAccount,
+  onDeclineAccount,
 }) {
   const systemPages = {
     profile: (
@@ -43,6 +45,8 @@ export function getRolePages({
         onNavigate={navigate}
         isSidebarOpen={isSidebarOpen}
         onSidebarOpenChange={onSidebarOpenChange}
+        onApproveAccount={onApproveAccount}
+        onDeclineAccount={onDeclineAccount}
       />
     ),
     help: (

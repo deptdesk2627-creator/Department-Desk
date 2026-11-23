@@ -44,6 +44,7 @@ export function useOfficeData({
     "officeflow.inventory-records.v5",
     EMPTY_ARRAY,
   );
+  const [userAccounts, setUserAccounts] = useState(EMPTY_ARRAY);
   const [isReady, setIsReady] = useState(false);
   const syncGenerationRef = useRef(0);
 
@@ -143,7 +144,7 @@ export function useOfficeData({
           } else {
             const usersQuery = supabase
               .from("users")
-              .select("user_id, username");
+              .select("*");
             usersPromise =
               typeof usersQuery?.order === "function"
                 ? usersQuery.order("username")
@@ -154,13 +155,35 @@ export function useOfficeData({
             txPromise,
             usersPromise,
           ]);
-          if (!isActive() || transactionsResult?.error) return;
+          if (!isActive()) return;
 
-          const users = Array.isArray(usersResult?.data)
+          const allUsersRows = Array.isArray(usersResult?.data)
             ? usersResult.data.filter((u) => u?.user_id && u?.username)
             : linkedUser
               ? [linkedUser]
               : [];
+          if (roleId !== "staff") {
+            setUserAccounts(
+              allUsersRows.map((row) => ({
+                id: row.user_id,
+                userId: row.user_id,
+                authUserId: row.auth_user_id || "",
+                username: row.username || "User",
+                email: row.email || "",
+                role: row.role || "staff",
+                approvalStatus: String(
+                  row.approval_status || "approved",
+                ).toLowerCase(),
+                approvedBy: row.approved_by || "",
+                approvedAt: row.approved_at || "",
+                createdAt: row.created_at || "",
+              })),
+            );
+          }
+
+          if (transactionsResult?.error) return;
+
+          const users = allUsersRows;
           const usersById = new Map(
             users.map((u) => [Number(u.user_id), u]),
           );
@@ -252,6 +275,11 @@ export function useOfficeData({
             "postgres_changes",
             { event: "*", schema: "public", table: "transactions_incoming" },
             scheduleSync,
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "users" },
+            scheduleSync,
           );
       }
       channel = channel
@@ -316,6 +344,17 @@ export function useOfficeData({
     () => asArray(inventoryRecords),
     [inventoryRecords],
   );
+  const safeUserAccounts = useMemo(
+    () => asArray(userAccounts),
+    [userAccounts],
+  );
+  const pendingAccounts = useMemo(
+    () =>
+      safeUserAccounts.filter(
+        (account) => account.approvalStatus === "pending",
+      ),
+    [safeUserAccounts],
+  );
 
   const normalizedRequests = useMemo(
     () =>
@@ -345,5 +384,8 @@ export function useOfficeData({
     setInventory,
     inventoryRecords: safeInventoryRecords,
     setInventoryRecords,
+    userAccounts: safeUserAccounts,
+    setUserAccounts,
+    pendingAccounts,
   };
 }
