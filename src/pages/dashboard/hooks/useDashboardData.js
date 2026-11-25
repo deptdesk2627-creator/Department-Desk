@@ -108,8 +108,6 @@ export function useDashboardData({
       metrics,
       recentOutgoing: outgoingRequests.slice(0, 5),
       recentIncoming: incomingRequests.slice(0, 5),
-      recentRequests: outgoingRequests.slice(0, 5),
-      recentDocuments: incomingRequests.slice(0, 5),
       recentInventory: filteredInventory.slice(0, 5),
       recentTasks: filteredTasks.slice(0, 5),
     };

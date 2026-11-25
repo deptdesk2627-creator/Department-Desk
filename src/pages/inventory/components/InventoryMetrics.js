@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MetricCard } from "../../../components/ui";
 import InventoryUsagePie, {
   buildPieSlices,
@@ -71,7 +71,7 @@ function InventoryMetrics({
   recordCount,
 }) {
   const [chartType, setChartType] = useState("pie");
-  const slices = buildPieSlices(usageBreakdown);
+  const slices = useMemo(() => buildPieSlices(usageBreakdown), [usageBreakdown]);
   const topItem = slices[0] || null;
 
   return (

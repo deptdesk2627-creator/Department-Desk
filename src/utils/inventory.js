@@ -25,7 +25,7 @@ export const RETURN_DECLINED_STATUS = "Return Declined";
 
 const EXTERNAL_BORROWER_PATTERN = /^\[Borrower:\s*([^\]]+)\]\s*(.*)$/s;
 
-export function encodePurposeWithBorrower(borrowerName, remarks = "") {
+function encodePurposeWithBorrower(borrowerName, remarks = "") {
   const cleanName = String(borrowerName || "")
     .replace(/[[\]]/g, "")
     .trim();
@@ -36,7 +36,7 @@ export function encodePurposeWithBorrower(borrowerName, remarks = "") {
     : `[Borrower: ${cleanName}]`;
 }
 
-export function parsePurposeWithBorrower(rawPurpose) {
+function parsePurposeWithBorrower(rawPurpose) {
   const text = String(rawPurpose ?? "");
   const match = text.match(EXTERNAL_BORROWER_PATTERN);
   if (!match) {

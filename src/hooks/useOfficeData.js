@@ -369,7 +369,17 @@ export function useOfficeData({
   );
 
   useEffect(() => {
-    if (JSON.stringify(requests) !== JSON.stringify(normalizedRequests)) {
+    const needsNormalization =
+      !Array.isArray(requests) ||
+      requests.some(
+        (req) =>
+          !req ||
+          !req.type ||
+          !Array.isArray(req.history) ||
+          (!req.office && req.location) ||
+          (!req.dateTime && req.history?.[0]?.dateTime),
+      );
+    if (needsNormalization) {
       setRequests(normalizedRequests);
     }
   }, [requests, normalizedRequests, setRequests]);

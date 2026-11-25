@@ -95,12 +95,13 @@ function App() {
   }, [setInventory, setInventoryRecords, setRequests, setTasks]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth <= 768) return;
-    setIsSidebarOpen(settings?.sidebarDefault !== "collapsed");
-  }, [settings?.sidebarDefault]);
+    if (typeof window === "undefined") return undefined;
 
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    if (window.innerWidth > 768) {
+      setIsSidebarOpen(settings?.sidebarDefault !== "collapsed");
+    }
+
+    if (typeof window.matchMedia !== "function") {
       return undefined;
     }
 
@@ -267,7 +268,7 @@ function App() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [clearSessionData, setProfiles, setRoleId, setTasks]);
+  }, [clearSessionData, setRoleId, setTasks]);
 
   // Never show a page the current role is not allowed to open.
   const activePage = canAccessPage(role.id, page) ? page : getHomePage(role.id);
@@ -511,12 +512,7 @@ function App() {
   if (!isAuthenticated) {
     return (
       <AuthLayout>
-        <Login
-          onLogin={handleLogin}
-          defaultRoleId={role.id}
-          theme={activeTheme}
-          onThemeChange={setTheme}
-        />
+        <Login onLogin={handleLogin} theme={activeTheme} />
       </AuthLayout>
     );
   }

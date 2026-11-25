@@ -44,7 +44,7 @@ export const KEYBOARD_SHORTCUTS = [
   { keys: "Enter", label: "Submit active forms or activate the focused action" },
 ];
 
-export const FAQ_SECTIONS = [
+const FAQ_SECTIONS = [
   {
     id: "getting-started",
     title: "Getting started",

@@ -1,4 +1,4 @@
-export const SLICE_COLORS = [
+const SLICE_COLORS = [
   "#f97316",
   "#fb923c",
   "#c2410c",
@@ -6,7 +6,7 @@ export const SLICE_COLORS = [
   "#fed7aa",
 ];
 
-export function polarToCartesian(cx, cy, radius, angleInDegrees) {
+function polarToCartesian(cx, cy, radius, angleInDegrees) {
   const radians = ((angleInDegrees - 90) * Math.PI) / 180;
   return {
     x: cx + radius * Math.cos(radians),
@@ -14,7 +14,7 @@ export function polarToCartesian(cx, cy, radius, angleInDegrees) {
   };
 }
 
-export function createSlicePath(cx, cy, radius, startAngle, endAngle) {
+function createSlicePath(cx, cy, radius, startAngle, endAngle) {
   const start = polarToCartesian(cx, cy, radius, startAngle);
   const end = polarToCartesian(cx, cy, radius, endAngle);
   const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;

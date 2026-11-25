@@ -17,7 +17,7 @@ function TaskManagement({
   search = "",
   defaultView = "table",
 }) {
-  const taskPersistence = useSupabaseTasks({ tasks, setTasks });
+  const taskPersistence = useSupabaseTasks({ setTasks });
   const {
     addTask,
     bulkComplete,

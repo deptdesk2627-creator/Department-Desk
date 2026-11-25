@@ -151,6 +151,9 @@ function Login({ onLogin, theme = "light" }) {
     setMode(nextMode);
     setError("");
     setMessage("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setHasInvalidCredentials(false);
     setOtpDigits(EMPTY_OTP);
     if (nextMode === "login" || nextMode === "forgot-password") {
       setPassword("");
@@ -880,28 +883,44 @@ function Login({ onLogin, theme = "light" }) {
                   </div>
                 )}
 
-                <div className="login-card-field">
-                  <div className="login-card-field__content">
-                    <label
-                      className="login-card-field__label"
-                      htmlFor="login-password"
-                    >
-                      Password
-                    </label>
-                    <input
-                      id="login-password"
-                      type="password"
-                      className="login-card-field__input"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      autoComplete={
-                        isSignup ? "new-password" : "current-password"
+                {!isForgotPassword && (
+                  <div className="login-card-field">
+                    <div className="login-card-field__content">
+                      <label
+                        className="login-card-field__label"
+                        htmlFor="login-password"
+                      >
+                        {isResetPassword ? "New password" : "Password"}
+                      </label>
+                      <input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        className="login-card-field__input"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        autoComplete={
+                          isSignup || isResetPassword
+                            ? "new-password"
+                            : "current-password"
+                        }
+                        required
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="login-password-toggle"
+                      onClick={() => setShowPassword((current) => !current)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
                       }
-                      required
+                      aria-pressed={showPassword}
                       disabled={isSubmitting}
-                    />
+                    >
+                      <PasswordEyeIcon visible={showPassword} />
+                    </button>
                   </div>
-                </div>
+                )}
 
                 {(isSignup || isResetPassword) && (
                   <div className="login-card-field">
