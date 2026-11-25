@@ -23,6 +23,36 @@ export const INVENTORY_TRANSACTION_COLUMNS =
 export const PENDING_RETURN_STATUS = "Pending Return";
 export const RETURN_DECLINED_STATUS = "Return Declined";
 
+const EXTERNAL_BORROWER_PATTERN = /^\[Borrower:\s*([^\]]+)\]\s*(.*)$/s;
+
+export function encodePurposeWithBorrower(borrowerName, remarks = "") {
+  const cleanName = String(borrowerName || "")
+    .replace(/[[\]]/g, "")
+    .trim();
+  const cleanRemarks = String(remarks || "").trim();
+  if (!cleanName) return cleanRemarks;
+  return cleanRemarks
+    ? `[Borrower: ${cleanName}] ${cleanRemarks}`
+    : `[Borrower: ${cleanName}]`;
+}
+
+export function parsePurposeWithBorrower(rawPurpose) {
+  const text = String(rawPurpose ?? "");
+  const match = text.match(EXTERNAL_BORROWER_PATTERN);
+  if (!match) {
+    return {
+      borrowerName: "",
+      remarks: text,
+      isExternalBorrower: false,
+    };
+  }
+  return {
+    borrowerName: match[1].trim(),
+    remarks: match[2].trim(),
+    isExternalBorrower: true,
+  };
+}
+
 function formatLocalDate(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
@@ -106,10 +136,18 @@ export async function persistInventoryTransaction({
               today,
           ).slice(0, 10)
         : null;
+  const isExternalBorrower = Boolean(
+    record.isExternalBorrower ||
+      (actionType === "Return" && matchedBorrowRecord?.isExternalBorrower),
+  );
+  const storedPurpose = isExternalBorrower
+    ? encodePurposeWithBorrower(record.person, record.remarks)
+    : record.remarks || "";
+
   const transaction = {
     item_id: itemId,
     is_issued_to: recipientId,
-    purpose: record.remarks || "",
+    purpose: storedPurpose,
     quantity: amount,
     action_type: actionType,
     return_date: actionType === "Return" && !isPendingReturn ? today : null,
@@ -133,11 +171,19 @@ export async function persistInventoryTransaction({
     if (error) throw error;
     if (!data) throw new Error("Supabase did not return the saved transaction.");
 
+    const parsedSaved = parsePurposeWithBorrower(data.purpose);
     return {
       ...record,
       id: data.transaction_id,
       itemId,
       dateTime: data.created_at || record.dateTime,
+      person: parsedSaved.isExternalBorrower
+        ? parsedSaved.borrowerName
+        : record.person,
+      remarks: parsedSaved.isExternalBorrower
+        ? parsedSaved.remarks
+        : record.remarks,
+      isExternalBorrower: parsedSaved.isExternalBorrower || isExternalBorrower,
       personUserId: recipientId,
       borrowDate: data.borrow_date,
       returnDate: data.return_date,
@@ -257,11 +303,15 @@ export async function declineInventoryReturn({
   const declinedBy = String(receivedBy || "").trim() || "Secretary";
   const trimmedReason = String(reason || "").trim();
   const baseRemarks = String(record?.remarks || "").trim();
-  const nextPurpose = trimmedReason
+  const rawNextRemarks = trimmedReason
     ? baseRemarks
       ? `${baseRemarks} [Declined: ${trimmedReason}]`
       : `[Declined: ${trimmedReason}]`
     : undefined;
+  const nextPurpose =
+    rawNextRemarks !== undefined && record?.isExternalBorrower && record?.person
+      ? encodePurposeWithBorrower(record.person, rawNextRemarks)
+      : rawNextRemarks;
 
   const updatePayload = {
     status: RETURN_DECLINED_STATUS,
@@ -312,9 +362,10 @@ export function reconcileBorrowReturnState(records) {
   const loansByOwnerAndItem = new Map();
 
   for (const record of chronologicalRecords) {
-    const ownerKey =
-      record.personUserId ??
-      String(record.person || "").trim().toLowerCase();
+    const normalizedPerson = String(record.person || "").trim().toLowerCase();
+    const ownerKey = record.isExternalBorrower
+      ? `external:${normalizedPerson}`
+      : (record.personUserId ?? normalizedPerson);
     const key = `${ownerKey}:${record.productId}`;
     const actionType = record.actionType
       ? String(record.actionType).toLowerCase()
@@ -482,6 +533,7 @@ export function mapInventoryTransactions(rows, inventoryById, usersById) {
   const mappedRecords = (Array.isArray(rows) ? rows : []).map((row) => {
     const item = inventoryById.get(Number(row.item_id));
     const user = usersById.get(Number(row.is_issued_to));
+    const parsedPurpose = parsePurposeWithBorrower(row.purpose);
     const actionType = String(row.action_type || "").toLowerCase();
     const rawStatus = String(row.status || "").trim();
     const status =
@@ -506,9 +558,12 @@ export function mapInventoryTransactions(rows, inventoryById, usersById) {
       unit: row.unit,
       status,
       actionType: row.action_type,
-      person: user?.username || "",
+      person: parsedPurpose.isExternalBorrower
+        ? parsedPurpose.borrowerName
+        : user?.username || "",
+      isExternalBorrower: parsedPurpose.isExternalBorrower,
       personUserId: row.is_issued_to,
-      remarks: row.purpose,
+      remarks: parsedPurpose.remarks,
       returnedBy: row.returned_by || "",
       receivedBy: row.recieved_by || "",
       borrowDate: row.borrow_date || null,

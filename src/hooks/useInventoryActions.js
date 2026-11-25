@@ -35,6 +35,7 @@ export function useInventoryActions({
   const [action, setAction] = useState(null);
   const [quantity, setQuantity] = useState("1");
   const [personName, setPersonName] = useState("");
+  const [isCustomPerson, setIsCustomPerson] = useState(false);
   const [returnedBy, setReturnedBy] = useState("");
   const [remarks, setRemarks] = useState("");
   const [error, setError] = useState("");
@@ -143,6 +144,7 @@ export function useInventoryActions({
     } else {
       setPersonName("");
     }
+    setIsCustomPerson(false);
     setReturnedBy("");
     setRemarks("");
     setError("");
@@ -357,6 +359,11 @@ export function useInventoryActions({
           }
         : {}),
       ...(trimmedPerson ? { person: trimmedPerson } : {}),
+      ...(isCustomPerson && action.type !== "Return"
+        ? { isExternalBorrower: true }
+        : action.type === "Return" && matchedBorrowRecord?.isExternalBorrower
+          ? { isExternalBorrower: true }
+          : {}),
       ...(trimmedRepresentative ? { returnedBy: trimmedRepresentative } : {}),
       ...(effectiveRemarks
         ? { remarks: effectiveRemarks }
@@ -509,6 +516,7 @@ export function useInventoryActions({
     closeAction,
     closeReceipt,
     error,
+    isCustomPerson,
     isSubmitting,
     getBorrowedBalance,
     getPendingReturnBalance,
@@ -520,6 +528,7 @@ export function useInventoryActions({
     receiptRecord,
     remarks,
     returnedBy,
+    setIsCustomPerson,
     setPersonName,
     setQuantity,
     setRemarks,

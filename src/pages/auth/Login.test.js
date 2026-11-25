@@ -415,3 +415,30 @@ test("does not offer demo sign-in", () => {
     screen.queryByRole("button", { name: /secretary/i }),
   ).not.toBeInTheDocument();
 });
+
+test("toggles password visibility on Sign In and Create Account forms", async () => {
+  render(<Login />);
+
+  const passwordInput = screen.getByLabelText(/^password$/i);
+  expect(passwordInput).toHaveAttribute("type", "password");
+
+  const togglePasswordBtn = screen.getByRole("button", {
+    name: /show password/i,
+  });
+  fireEvent.click(togglePasswordBtn);
+  expect(passwordInput).toHaveAttribute("type", "text");
+  expect(
+    screen.getByRole("button", { name: /hide password/i }),
+  ).toHaveAttribute("aria-pressed", "true");
+
+  await openSignupForm();
+  const signupPasswordInput = screen.getByLabelText(/^password$/i);
+  const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+  expect(signupPasswordInput).toHaveAttribute("type", "password");
+  expect(confirmPasswordInput).toHaveAttribute("type", "password");
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /show password confirmation/i }),
+  );
+  expect(confirmPasswordInput).toHaveAttribute("type", "text");
+});

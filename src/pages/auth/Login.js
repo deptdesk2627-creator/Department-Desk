@@ -10,6 +10,45 @@ const RESEND_COOLDOWN_SECONDS = 60;
 const AWAITING_APPROVAL_MESSAGE =
   "Please wait for confirmation of your account from the Secretary or Dean. If you have any questions or clarifications, please proceed to the OIC / Department Office.";
 
+function PasswordEyeIcon({ visible }) {
+  if (visible) {
+    return (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 async function checkAccountApproval(authUserId, userRole) {
   if (!authUserId || userRole === "secretary" || userRole === "dean") {
     return "approved";
@@ -46,6 +85,8 @@ function Login({ onLogin, theme = "light" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [otpDigits, setOtpDigits] = useState(EMPTY_OTP);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
@@ -106,6 +147,8 @@ function Login({ onLogin, theme = "light" }) {
     setMode(nextMode);
     setError("");
     setMessage("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setOtpDigits(EMPTY_OTP);
     if (nextMode === "signup") {
       loadSignupRoleAvailability();
@@ -706,7 +749,7 @@ function Login({ onLogin, theme = "light" }) {
                     </label>
                     <input
                       id="login-password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       className="login-card-field__input"
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
@@ -717,6 +760,16 @@ function Login({ onLogin, theme = "light" }) {
                       disabled={isSubmitting}
                     />
                   </div>
+                  <button
+                    type="button"
+                    className="login-password-toggle"
+                    onClick={() => setShowPassword((current) => !current)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    disabled={isSubmitting}
+                  >
+                    <PasswordEyeIcon visible={showPassword} />
+                  </button>
                 </div>
 
                 {isSignup && (
@@ -730,7 +783,7 @@ function Login({ onLogin, theme = "light" }) {
                       </label>
                       <input
                         id="signup-confirm-password"
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         className="login-card-field__input"
                         value={confirmPassword}
                         onChange={(event) =>
@@ -741,6 +794,22 @@ function Login({ onLogin, theme = "light" }) {
                         disabled={isSubmitting}
                       />
                     </div>
+                    <button
+                      type="button"
+                      className="login-password-toggle"
+                      onClick={() =>
+                        setShowConfirmPassword((current) => !current)
+                      }
+                      aria-label={
+                        showConfirmPassword
+                          ? "Hide password confirmation"
+                          : "Show password confirmation"
+                      }
+                      aria-pressed={showConfirmPassword}
+                      disabled={isSubmitting}
+                    >
+                      <PasswordEyeIcon visible={showConfirmPassword} />
+                    </button>
                   </div>
                 )}
               </>

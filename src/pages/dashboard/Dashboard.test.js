@@ -55,4 +55,10 @@ test("Dashboard recent tables render mobile-stack-table and data-label attribute
   expect(
     container.querySelector('td[data-label="Document / Request"]'),
   ).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: /track document/i }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /create document/i }),
+  ).not.toBeInTheDocument();
 });
