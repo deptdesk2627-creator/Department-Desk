@@ -2,12 +2,19 @@ import { useMemo } from "react";
 import { Modal } from "../../../components/ui";
 import { cabinetGroups, UNFILED_LOCATION } from "../constants";
 
-function ensureOtherOption(list = []) {
-  const items = Array.isArray(list) ? list.filter(Boolean) : [];
-  const hasOther = items.some((item) =>
-    ["other", "others"].includes(String(item).trim().toLowerCase()),
-  );
-  return hasOther ? items : [...items, "Other"];
+function cleanOfficeOptions(list = []) {
+  const seen = new Set();
+  const cleaned = [];
+  for (const raw of Array.isArray(list) ? list : []) {
+    const label = String(raw || "").trim();
+    const key = label.toLowerCase();
+    if (!label || key === "other" || key === "others" || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    cleaned.push(label);
+  }
+  return cleaned;
 }
 
 function TransactionForm({
@@ -32,17 +39,19 @@ function TransactionForm({
   forwardedDestinations = ["Not sent out", "Returned to Sender"],
 }) {
   const isIncoming = form.direction === "incoming";
-  const officeChoices = useMemo(() => ensureOtherOption(offices), [offices]);
+  const officeChoices = useMemo(() => cleanOfficeOptions(offices), [offices]);
   const forwardedChoices = useMemo(
-    () => ensureOtherOption(forwardedDestinations),
+    () => cleanOfficeOptions(forwardedDestinations),
     [forwardedDestinations],
   );
-  const isOtherOffice = ["other", "others"].includes(
-    String(form.office || "").trim().toLowerCase(),
-  );
-  const isOtherForwarded = ["other", "others"].includes(
-    String(form.forwardedTo || "").trim().toLowerCase(),
-  );
+  const isOtherOffice =
+    Boolean(form.isCustomOffice) ||
+    ["other", "others"].includes(String(form.office || "").trim().toLowerCase());
+  const isOtherForwarded =
+    Boolean(form.isCustomForwardedTo) ||
+    ["other", "others"].includes(
+      String(form.forwardedTo || "").trim().toLowerCase(),
+    );
   const activeStatuses = isIncoming
     ? incomingStatuses.length
       ? incomingStatuses
@@ -56,6 +65,28 @@ function TransactionForm({
       ...form,
       direction: nextDirection,
       status: nextDirection === "incoming" ? "Received" : "Pending",
+    });
+  }
+
+  function handleToggleOtherOffice() {
+    const nextCustom = !isOtherOffice;
+    setForm({
+      ...form,
+      isCustomOffice: nextCustom,
+      office: nextCustom ? form.office : officeChoices[0] || "Registrar",
+      customOffice: nextCustom ? form.customOffice || "" : "",
+    });
+  }
+
+  function handleToggleOtherForwarded() {
+    const nextCustom = !isOtherForwarded;
+    setForm({
+      ...form,
+      isCustomForwardedTo: nextCustom,
+      forwardedTo: nextCustom
+        ? form.forwardedTo
+        : forwardedChoices[0] || "Not sent out",
+      customForwardedTo: nextCustom ? form.customForwardedTo || "" : "",
     });
   }
 
@@ -138,20 +169,66 @@ function TransactionForm({
           />
         </label>
         <div className="transaction-office-field">
-          <label>
-            {isIncoming ? "From office (Origin)" : "Office (Where to go)"}
+          <div className="transaction-office-field__header">
+            <label
+              htmlFor={
+                isOtherOffice
+                  ? "transaction-custom-office"
+                  : "transaction-office-select"
+              }
+            >
+              {isIncoming ? "From office (Origin)" : "Office (Where to go)"}
+              {isOtherOffice ? " (Others)" : ""}
+            </label>
+            <button
+              type="button"
+              className={`transaction-office-mode-btn ${isOtherOffice ? "is-active" : ""}`}
+              aria-pressed={isOtherOffice}
+              aria-label={
+                isIncoming
+                  ? isOtherOffice
+                    ? "Others origin office ✓"
+                    : "+ Others origin office"
+                  : isOtherOffice
+                    ? "Others ✓"
+                    : "+ Others"
+              }
+              onClick={handleToggleOtherOffice}
+              disabled={isSubmitting}
+            >
+              {isOtherOffice ? "Others ✓" : "+ Others"}
+            </button>
+          </div>
+          {isOtherOffice ? (
+            <input
+              autoFocus
+              id="transaction-custom-office"
+              required
+              type="text"
+              value={form.customOffice || ""}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  isCustomOffice: true,
+                  customOffice: event.target.value,
+                })
+              }
+              placeholder={
+                isIncoming
+                  ? "Enter origin office (e.g. CHED Regional Office)"
+                  : "Enter destination office (e.g. Research & Extension)"
+              }
+            />
+          ) : (
             <select
+              id="transaction-office-select"
               value={form.office}
               onChange={(event) =>
                 setForm({
                   ...form,
+                  isCustomOffice: false,
                   office: event.target.value,
-                  customOffice:
-                    ["other", "others"].includes(
-                      event.target.value.trim().toLowerCase(),
-                    )
-                      ? form.customOffice || ""
-                      : "",
+                  customOffice: "",
                 })
               }
             >
@@ -161,26 +238,6 @@ function TransactionForm({
                 </option>
               ))}
             </select>
-          </label>
-          {isOtherOffice && (
-            <label className="transaction-other-office-input">
-              {isIncoming
-                ? "Specify origin office"
-                : "Specify destination office"}
-              <input
-                required
-                type="text"
-                value={form.customOffice || ""}
-                onChange={(event) =>
-                  setForm({ ...form, customOffice: event.target.value })
-                }
-                placeholder={
-                  isIncoming
-                    ? "Type the office this document came from..."
-                    : "Type the office where this request will go..."
-                }
-              />
-            </label>
           )}
         </div>
         <label>
@@ -248,19 +305,58 @@ function TransactionForm({
               </select>
             </label>
             <div className="transaction-office-field">
-              <label>
-                Sent out / Forwarded to
+              <div className="transaction-office-field__header">
+                <label
+                  htmlFor={
+                    isOtherForwarded
+                      ? "transaction-custom-forwarded"
+                      : "transaction-forwarded-select"
+                  }
+                >
+                  Sent out / Forwarded to
+                  {isOtherForwarded ? " (Others)" : ""}
+                </label>
+                <button
+                  type="button"
+                  className={`transaction-office-mode-btn ${isOtherForwarded ? "is-active" : ""}`}
+                  aria-pressed={isOtherForwarded}
+                  aria-label={
+                    isOtherForwarded
+                      ? "Others forwarded office ✓"
+                      : "+ Others forwarded office"
+                  }
+                  onClick={handleToggleOtherForwarded}
+                  disabled={isSubmitting}
+                >
+                  {isOtherForwarded ? "Others ✓" : "+ Others"}
+                </button>
+              </div>
+              {isOtherForwarded ? (
+                <input
+                  autoFocus
+                  id="transaction-custom-forwarded"
+                  required
+                  type="text"
+                  value={form.customForwardedTo || ""}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      isCustomForwardedTo: true,
+                      customForwardedTo: event.target.value,
+                    })
+                  }
+                  placeholder="Enter destination office (e.g. Legal Office)"
+                />
+              ) : (
                 <select
+                  id="transaction-forwarded-select"
                   value={form.forwardedTo || "Not sent out"}
                   onChange={(event) =>
                     setForm({
                       ...form,
+                      isCustomForwardedTo: false,
                       forwardedTo: event.target.value,
-                      customForwardedTo: ["other", "others"].includes(
-                        event.target.value.trim().toLowerCase(),
-                      )
-                        ? form.customForwardedTo || ""
-                        : "",
+                      customForwardedTo: "",
                     })
                   }
                 >
@@ -270,23 +366,6 @@ function TransactionForm({
                     </option>
                   ))}
                 </select>
-              </label>
-              {isOtherForwarded && (
-                <label className="transaction-other-office-input">
-                  Specify destination office
-                  <input
-                    required
-                    type="text"
-                    value={form.customForwardedTo || ""}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        customForwardedTo: event.target.value,
-                      })
-                    }
-                    placeholder="Type the office where this is sent out..."
-                  />
-                </label>
               )}
             </div>
           </>

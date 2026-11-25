@@ -156,6 +156,11 @@ function TransactionTable({
                             })
                           }
                         >
+                          {!forwardedDestinations.includes(forwardedValue) && (
+                            <option value={forwardedValue}>
+                              {forwardedValue}
+                            </option>
+                          )}
                           {forwardedDestinations
                             .filter(
                               (dest) =>
