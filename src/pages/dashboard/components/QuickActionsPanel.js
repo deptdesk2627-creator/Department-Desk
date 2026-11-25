@@ -29,7 +29,7 @@ const ACTION_ICONS = {
 
 const QUICK_ACTIONS = [
   {
-    label: "Create Document",
+    label: "Track Document",
     description: "Log outgoing or incoming office documents",
     targetPage: "transactions",
     permission: "createRequests",

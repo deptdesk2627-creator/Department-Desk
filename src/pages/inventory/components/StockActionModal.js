@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./StockActionModal.css";
 import { Modal } from "../../../components/ui";
 
@@ -6,6 +6,11 @@ const PERSON_LABEL = {
   Borrow: "Borrowed by",
   Return: "Borrowed by (Borrower account)",
   Use: "Used by",
+};
+
+const CUSTOM_PERSON_PLACEHOLDER = {
+  Borrow: "Enter borrower's full name (e.g. Juan Dela Cruz - BSIT 3A)",
+  Use: "Enter recipient's full name (e.g. Guest Lecturer)",
 };
 
 const REMARKS_LABEL = {
@@ -24,6 +29,8 @@ function StockActionModal({
   action,
   personName = "",
   setPersonName,
+  isCustomPerson = false,
+  setIsCustomPerson,
   returnedBy = "",
   setReturnedBy,
   activeBorrowers = [],
@@ -41,8 +48,21 @@ function StockActionModal({
 }) {
   const [isPersonListOpen, setIsPersonListOpen] = useState(false);
   const [activePersonIndex, setActivePersonIndex] = useState(0);
-  const isBorrowerSearch =
-    action?.type === "Borrow" &&
+  const [localCustomPerson, setLocalCustomPerson] = useState(false);
+
+  const customPersonActive = setIsCustomPerson
+    ? isCustomPerson
+    : localCustomPerson;
+  const updateCustomPerson = setIsCustomPerson || setLocalCustomPerson;
+
+  useEffect(() => {
+    setIsPersonListOpen(false);
+    setActivePersonIndex(0);
+    setLocalCustomPerson(false);
+  }, [action]);
+
+  const isAccountPickerSupported =
+    (action?.type === "Borrow" || action?.type === "Use") &&
     !lockPersonToOptions &&
     personOptions.length > 0;
   const filteredPersonOptions = useMemo(() => {
@@ -70,6 +90,26 @@ function StockActionModal({
     activePersonIndex,
     filteredPersonOptions.length - 1,
   );
+
+  function handleToggleOthersMode() {
+    const nextIsCustom = !customPersonActive;
+    updateCustomPerson(nextIsCustom);
+    setIsPersonListOpen(false);
+    setActivePersonIndex(0);
+    if (nextIsCustom) {
+      const normalizedCurrent = String(personName || "").trim().toLowerCase();
+      const matchesExistingAccount = personOptions.some(
+        (option) =>
+          String(option.username || "").trim().toLowerCase() ===
+          normalizedCurrent,
+      );
+      if (matchesExistingAccount) {
+        setPersonName?.("");
+      }
+    } else {
+      setPersonName?.("");
+    }
+  }
 
   function handlePersonKeyDown(event) {
     if (event.key === "ArrowDown" && filteredPersonOptions.length > 0) {
@@ -142,86 +182,132 @@ function StockActionModal({
       )}
 
       <form className="module-form action-form" onSubmit={onSubmit}>
-        {isBorrowerSearch ? (
+        {isAccountPickerSupported ? (
           <div className="action-form__person-picker">
-            <label htmlFor="inventory-borrower-search">
-              {PERSON_LABEL[action.type] || "Name"}
-            </label>
-            <div className="action-form__person-control">
-              <input
-                autoFocus
-                id="inventory-borrower-search"
-                required
-                type="text"
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded={isPersonListOpen}
-                aria-controls="inventory-borrower-options"
-                aria-activedescendant={
-                  isPersonListOpen && selectedPersonIndex >= 0
-                    ? `inventory-borrower-option-${selectedPersonIndex}`
-                    : undefined
+            <div className="action-form__person-header">
+              <label
+                htmlFor={
+                  customPersonActive
+                    ? "inventory-custom-person"
+                    : "inventory-borrower-search"
                 }
-                placeholder="Type to search usernames"
-                value={personName}
-                onFocus={() => {
-                  setIsPersonListOpen(true);
-                  setActivePersonIndex(0);
-                }}
-                onChange={(event) => {
-                  setPersonName?.(event.target.value);
-                  setIsPersonListOpen(true);
-                  setActivePersonIndex(0);
-                }}
-                onKeyDown={handlePersonKeyDown}
-                onBlur={(event) => {
-                  if (
-                    !event.currentTarget.parentElement.contains(
-                      event.relatedTarget,
-                    )
-                  ) {
-                    setIsPersonListOpen(false);
-                  }
-                }}
-              />
-              {isPersonListOpen && (
-                <div
-                  className="action-form__person-options"
-                  id="inventory-borrower-options"
-                  role="listbox"
-                  aria-label="Database usernames"
-                >
-                  {filteredPersonOptions.length > 0 ? (
-                    filteredPersonOptions.map((person, index) => (
-                      <button
-                        key={person.user_id}
-                        id={`inventory-borrower-option-${index}`}
-                        type="button"
-                        role="option"
-                        aria-selected={index === selectedPersonIndex}
-                        className={
-                          index === selectedPersonIndex
-                            ? "is-active"
-                            : undefined
-                        }
-                        onMouseDown={(event) => event.preventDefault()}
-                        onMouseEnter={() => setActivePersonIndex(index)}
-                        onClick={() => {
-                          setPersonName?.(person.username);
-                          setIsPersonListOpen(false);
-                        }}
-                      >
-                        {person.username}
-                      </button>
-                    ))
-                  ) : (
-                    <span className="action-form__person-empty">
-                      No matching usernames
-                    </span>
-                  )}
-                </div>
-              )}
+              >
+                {PERSON_LABEL[action.type] || "Name"}
+                {customPersonActive ? " (Others)" : ""}
+              </label>
+              <button
+                type="button"
+                className={`action-person-mode-btn ${customPersonActive ? "is-active" : ""}`}
+                aria-pressed={customPersonActive}
+                onClick={handleToggleOthersMode}
+                disabled={isSubmitting}
+              >
+                {customPersonActive ? "Others ✓" : "+ Others"}
+              </button>
             </div>
+            {customPersonActive ? (
+              <div className="action-form__person-control">
+                <input
+                  autoFocus
+                  id="inventory-custom-person"
+                  required
+                  type="text"
+                  placeholder={
+                    CUSTOM_PERSON_PLACEHOLDER[action.type] ||
+                    "Enter custom full name"
+                  }
+                  value={personName}
+                  onChange={(event) => setPersonName?.(event.target.value)}
+                />
+              </div>
+            ) : (
+              <div className="action-form__person-control">
+                <input
+                  autoFocus
+                  id="inventory-borrower-search"
+                  required
+                  type="text"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded={isPersonListOpen}
+                  aria-controls="inventory-borrower-options"
+                  aria-activedescendant={
+                    isPersonListOpen && selectedPersonIndex >= 0
+                      ? `inventory-borrower-option-${selectedPersonIndex}`
+                      : undefined
+                  }
+                  placeholder="Search approved accounts..."
+                  value={personName}
+                  onFocus={() => {
+                    setIsPersonListOpen(true);
+                    setActivePersonIndex(0);
+                  }}
+                  onChange={(event) => {
+                    setPersonName?.(event.target.value);
+                    setIsPersonListOpen(true);
+                    setActivePersonIndex(0);
+                  }}
+                  onKeyDown={handlePersonKeyDown}
+                  onBlur={(event) => {
+                    if (
+                      !event.currentTarget.parentElement.contains(
+                        event.relatedTarget,
+                      )
+                    ) {
+                      setIsPersonListOpen(false);
+                    }
+                  }}
+                />
+                {isPersonListOpen && (
+                  <div
+                    className="action-form__person-options"
+                    id="inventory-borrower-options"
+                    role="listbox"
+                    aria-label="Database usernames"
+                  >
+                    {filteredPersonOptions.length > 0 ? (
+                      filteredPersonOptions.map((person, index) => (
+                        <button
+                          key={person.user_id}
+                          id={`inventory-borrower-option-${index}`}
+                          type="button"
+                          role="option"
+                          aria-selected={index === selectedPersonIndex}
+                          className={
+                            index === selectedPersonIndex
+                              ? "is-active"
+                              : undefined
+                          }
+                          onMouseDown={(event) => event.preventDefault()}
+                          onMouseEnter={() => setActivePersonIndex(index)}
+                          onClick={() => {
+                            setPersonName?.(person.username);
+                            setIsPersonListOpen(false);
+                          }}
+                        >
+                          {person.username}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="action-form__person-empty">
+                        No matching approved accounts
+                      </span>
+                    )}
+                    <div className="action-form__person-footer">
+                      <button
+                        type="button"
+                        className="action-form__person-others-item"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={handleToggleOthersMode}
+                      >
+                        Not listed? Use <strong>Others</strong> (enter custom
+                        name)
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <label>

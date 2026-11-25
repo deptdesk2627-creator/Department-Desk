@@ -42,13 +42,60 @@
   position: relative;
 }
 
+.action-form__person-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.action-form__person-header > label,
 .action-form__person-picker > label {
   color: var(--ink-secondary);
-  display: grid;
   font-size: 13px;
   font-weight: 600;
+  margin: 0;
+}
+
+.action-form__person-picker > label {
+  display: grid;
   gap: 6px;
   margin-bottom: 6px;
+}
+
+.action-person-mode-btn {
+  background: var(--surface-subtle, #f1f5f9);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 10px;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+  white-space: nowrap;
+}
+
+.action-person-mode-btn:hover:not(:disabled) {
+  border-color: #ea580c;
+  color: #ea580c;
+}
+
+.action-person-mode-btn.is-active {
+  background: rgba(234, 88, 12, 0.14);
+  border-color: #ea580c;
+  color: #ea580c;
+}
+
+.action-person-mode-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .action-form__person-control {
@@ -91,6 +138,28 @@
   display: block;
   font-size: 13px;
   padding: 9px 12px;
+}
+
+.action-form__person-footer {
+  border-top: 1px solid var(--line);
+  padding: 4px;
+}
+
+.action-form__person-others-item {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #ea580c !important;
+  cursor: pointer;
+  display: block;
+  font-size: 12.5px !important;
+  padding: 8px 10px !important;
+  text-align: left;
+  width: 100%;
+}
+
+.action-form__person-others-item:hover {
+  background: rgba(234, 88, 12, 0.1) !important;
 }
 
 .action-form__remarks {

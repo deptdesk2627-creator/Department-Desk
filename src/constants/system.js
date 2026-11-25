@@ -1,7 +1,4 @@
-// Profile, settings, and help panel defaults. Everything here is stored in
-// the browser (localStorage) until a backend is added.
-
-export const SYSTEM_PAGES = ["profile", "settings", "help"];
+// Profile, settings, and workspace storage defaults.
 
 export const AVAILABILITY_OPTIONS = [
   { value: "available", label: "Available at desk" },

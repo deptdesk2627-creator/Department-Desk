@@ -124,7 +124,7 @@ export function useTransactionManager({
         ? current
         : { ...current, office: officeOptions[0] };
     });
-  }, [form.office, mergedOffices, officeOptions]);
+  }, [mergedOffices, officeOptions]);
 
   const statuses =
     activeTab === "incoming" ? incomingStatuses : outgoingStatuses;

@@ -245,6 +245,50 @@
   font-weight: 400;
 }
 
+.login-password-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.login-password-toggle:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  color: #ea580c;
+}
+
+.login-password-toggle:focus-visible {
+  outline: 2px solid #ea580c;
+  outline-offset: 1px;
+}
+
+.login-password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .login-password-toggle,
+.login-split-page[data-theme="dark"] .login-password-toggle {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .login-password-toggle:hover:not(:disabled),
+.login-split-page[data-theme="dark"] .login-password-toggle:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fb923c;
+}
+
 /* Options Row */
 .login-options-row {
   display: flex;

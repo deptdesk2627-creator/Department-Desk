@@ -129,7 +129,6 @@ export function useHeader() {
     profileRef,
     searchInputRef,
     searchRef,
-    setIsMobileSearchOpen,
     setIsSearchOpen,
     toggleMobileSearch,
     toggleNotifications,

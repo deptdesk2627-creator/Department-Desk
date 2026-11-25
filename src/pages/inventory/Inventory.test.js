@@ -1274,3 +1274,134 @@ test("Dean inventory view preserves other staff borrower names while locking the
   expect(personInput).toHaveValue(deanUser.username);
   expect(personInput).toHaveAttribute("readonly");
 });
+
+test("deduplicates borrower accounts, hides pending/declined signups, and records custom Others borrowers", async () => {
+  const item = {
+    item_id: 73,
+    item_name: "Projector",
+    stock_onhand: 5,
+    unit: "pcs",
+    min_stock: 1,
+    category: "Borrowable",
+    classification: "Equipment",
+    archived_at: null,
+    created_at: "2026-10-12",
+  };
+  const users = [
+    {
+      user_id: 10,
+      username: "Ma'am Aubrey",
+      auth_user_id: "auth-user-1",
+      approval_status: "approved",
+    },
+    {
+      user_id: 11,
+      username: "jjmon Kayung Lahat",
+      auth_user_id: "auth-dup-1",
+      approval_status: "approved",
+    },
+    {
+      user_id: 12,
+      username: "jjmon Kayung Lahat",
+      auth_user_id: "auth-dup-2",
+      approval_status: "approved",
+    },
+    {
+      user_id: 13,
+      username: "Pending Student",
+      auth_user_id: "auth-pending",
+      approval_status: "pending",
+    },
+  ];
+  const savedBorrow = {
+    transaction_id: 205,
+    item_id: 73,
+    is_issued_to: 10,
+    purpose: "[Borrower: Juan Dela Cruz - BSIT 3A] Room 302 presentation",
+    quantity: 1,
+    action_type: "Borrow",
+    return_date: null,
+    borrow_date: "2026-11-25",
+    status: "Borrowed",
+    unit: "pcs",
+    created_at: "2026-11-25T09:00:00.000Z",
+    recieved_by: null,
+    returned_by: null,
+  };
+
+  const itemQuery = createTableQuery({
+    rows: [item],
+    maybeSingleRow: { item_id: 73, stock_onhand: 4 },
+  });
+  const userQuery = createTableQuery({ rows: users });
+  const transactionQuery = createTableQuery({
+    rows: [],
+    singleRow: savedBorrow,
+  });
+
+  supabase.from.mockImplementation((table) => {
+    if (table === "items_masterlist") return itemQuery;
+    if (table === "users") return userQuery;
+    if (table === "inventory_transactions") return transactionQuery;
+    throw new Error(`Unexpected Supabase table: ${table}`);
+  });
+
+  await act(async () => {
+    render(
+      <InventoryWithState
+        inventory={[]}
+        records={[]}
+        userName="Ma'am Aubrey"
+      />,
+    );
+  });
+
+  fireEvent.click(await screen.findByRole("button", { name: /^borrow$/i }));
+  const actionDialog = within(screen.getByRole("dialog"));
+  const searchBox = actionDialog.getByRole("combobox", {
+    name: /borrowed by/i,
+  });
+  fireEvent.focus(searchBox);
+
+  expect(
+    actionDialog.getAllByRole("option", { name: /jjmon kayung lahat/i }),
+  ).toHaveLength(1);
+  expect(
+    actionDialog.queryByRole("option", { name: /pending student/i }),
+  ).not.toBeInTheDocument();
+
+  // Switch to Others custom borrower input
+  fireEvent.click(actionDialog.getByRole("button", { name: /^\+ others$/i }));
+  const customInput = actionDialog.getByLabelText(/borrowed by \(others\)/i);
+  fireEvent.change(customInput, {
+    target: { value: "Juan Dela Cruz - BSIT 3A" },
+  });
+  fireEvent.change(actionDialog.getByLabelText(/remark \/ reason/i), {
+    target: { value: "Room 302 presentation" },
+  });
+  fireEvent.click(
+    actionDialog.getByRole("button", { name: /record borrow/i }),
+  );
+
+  expect(
+    await screen.findByRole("heading", { name: /supply & equipment slip/i }),
+  ).toBeInTheDocument();
+  expect(transactionQuery.insert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      item_id: 73,
+      is_issued_to: 10,
+      purpose: "[Borrower: Juan Dela Cruz - BSIT 3A] Room 302 presentation",
+      action_type: "Borrow",
+      status: "Borrowed",
+    }),
+  );
+
+  fireEvent.click(screen.getByRole("tab", { name: /transaction/i }));
+  const txRegion = screen.getByRole("region", { name: "Transaction records" });
+  expect(
+    await within(txRegion).findByText("Juan Dela Cruz - BSIT 3A"),
+  ).toBeInTheDocument();
+  expect(
+    within(txRegion).getByText("Room 302 presentation"),
+  ).toBeInTheDocument();
+});

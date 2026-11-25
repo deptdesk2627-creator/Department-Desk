@@ -6,7 +6,7 @@ export const REQUEST_STATUSES = Object.freeze({
   ARCHIVED: "Archived",
 });
 
-export const INCOMING_REQUEST_STATUSES = Object.freeze({
+const INCOMING_REQUEST_STATUSES = Object.freeze({
   RECEIVED: "Received",
   FOR_SIGNATURE: "For Signature",
   SIGNED_BY_OFFICE: "Signed by Office",

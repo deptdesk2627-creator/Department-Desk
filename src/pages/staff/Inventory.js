@@ -180,7 +180,7 @@ function StaffInventory({
     return () => {
       isMounted = false;
     };
-  }, [profile?.name, role?.name, setInventory, setRecords]);
+  }, [setInventory, setRecords]);
 
   const inventoryItems = useMemo(
     () => (Array.isArray(inventory) ? inventory.filter(Boolean) : []),

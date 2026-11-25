@@ -36,6 +36,39 @@ const SEARCH_ICON = (
   </svg>
 );
 
+function filterAndDeduplicatePickerUsers(rawUsers, signedInAuthUserId = "") {
+  const approved = (Array.isArray(rawUsers) ? rawUsers : []).filter((user) => {
+    if (!user?.user_id || !String(user?.username || "").trim()) return false;
+    const status = String(user.approval_status || "approved")
+      .trim()
+      .toLowerCase();
+    return status !== "pending" && status !== "declined";
+  });
+
+  const byUsername = new Map();
+  for (const user of approved) {
+    const key = String(user.username).trim().toLowerCase();
+    const existing = byUsername.get(key);
+    if (!existing) {
+      byUsername.set(key, user);
+      continue;
+    }
+    const userMatchesSession =
+      signedInAuthUserId && user.auth_user_id === signedInAuthUserId;
+    const existingMatchesSession =
+      signedInAuthUserId && existing.auth_user_id === signedInAuthUserId;
+    if (
+      (userMatchesSession && !existingMatchesSession) ||
+      (!existingMatchesSession &&
+        Number(user.user_id) > Number(existing.user_id))
+    ) {
+      byUsername.set(key, user);
+    }
+  }
+
+  return Array.from(byUsername.values());
+}
+
 function Inventory({
   inventory = [],
   setInventory = () => {
@@ -61,6 +94,7 @@ function Inventory({
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [transactionsLoadError, setTransactionsLoadError] = useState("");
   const [transactionUsers, setTransactionUsers] = useState([]);
+  const [fallbackIssuerUserId, setFallbackIssuerUserId] = useState(null);
   const recordingUserId = recordInventoryForCurrentUserOnly
     ? transactionUsers[0]?.user_id
     : null;
@@ -145,6 +179,7 @@ function Inventory({
         setInventory([]);
         setRecords([]);
         setTransactionUsers([]);
+        setFallbackIssuerUserId(null);
         setInventoryLoadError(
           "This session is not authenticated with Supabase. Sign in with your account to load inventory.",
         );
@@ -156,20 +191,29 @@ function Inventory({
         return;
       }
 
-      const usersQuery = supabase
-        .from("users")
-        .select("user_id, username");
-      if (recordInventoryForCurrentUserOnly) {
-        usersQuery.eq("auth_user_id", authResult.data.user.id);
-      }
+      const signedInAuthId = authResult.data.user.id;
+      const runUsersQuery = async (onlyCurrentAuth = false) => {
+        const build = (columns) => {
+          const query = supabase.from("users").select(columns);
+          if (onlyCurrentAuth) {
+            query.eq("auth_user_id", signedInAuthId);
+          }
+          return query.order("username");
+        };
+        const primary = await build(
+          "user_id, username, auth_user_id, approval_status",
+        );
+        if (
+          primary?.error &&
+          /approval_status|auth_user_id/i.test(primary.error.message || "")
+        ) {
+          return build("user_id, username");
+        }
+        return primary;
+      };
 
       const directoryUsersPromise = recordInventoryForCurrentUserOnly
-        ? Promise.resolve(
-            supabase
-              .from("users")
-              .select("user_id, username")
-              .order("username"),
-          ).catch(() => ({ data: [], error: null }))
+        ? runUsersQuery(false).catch(() => ({ data: [], error: null }))
         : Promise.resolve({ data: [], error: null });
 
       const [
@@ -183,7 +227,7 @@ function Inventory({
           .select(MASTERLIST_COLUMNS)
           .is("archived_at", null)
           .order("item_name"),
-        usersQuery.order("username"),
+        runUsersQuery(recordInventoryForCurrentUserOnly),
         supabase
           .from("inventory_transactions")
           .select(INVENTORY_TRANSACTION_COLUMNS)
@@ -209,10 +253,24 @@ function Inventory({
         setInventoryLoadError("");
       }
 
-      const users = Array.isArray(usersResult.data)
+      const rawUsers = Array.isArray(usersResult.data)
         ? usersResult.data.filter((user) => user?.user_id && user?.username)
         : [];
-      setTransactionUsers(users);
+      const cleanedUsers = recordInventoryForCurrentUserOnly
+        ? rawUsers
+        : filterAndDeduplicatePickerUsers(rawUsers, signedInAuthId);
+      const signedInAccount =
+        rawUsers.find((u) => u.auth_user_id === signedInAuthId) ||
+        cleanedUsers.find(
+          (u) =>
+            String(u.username || "").trim().toLowerCase() ===
+            String(userName || "").trim().toLowerCase(),
+        ) ||
+        cleanedUsers[0] ||
+        rawUsers[0] ||
+        null;
+      setFallbackIssuerUserId(signedInAccount?.user_id ?? null);
+      setTransactionUsers(cleanedUsers);
       if (usersResult.error) {
         console.error(
           "Could not load inventory recipient accounts.",
@@ -243,7 +301,7 @@ function Inventory({
             )
           : [];
         const usersById = new Map(
-          [...directoryUsers, ...users].map((user) => [
+          [...directoryUsers, ...rawUsers].map((user) => [
             Number(user.user_id),
             user,
           ]),
@@ -280,7 +338,7 @@ function Inventory({
     return () => {
       isMounted = false;
     };
-  }, [recordInventoryForCurrentUserOnly, setInventory, setRecords]);
+  }, [recordInventoryForCurrentUserOnly, setInventory, setRecords, userName]);
 
   async function persistInventoryAction({
     actionType,
@@ -294,9 +352,46 @@ function Inventory({
       (user) =>
         String(user.username).trim().toLowerCase() === username.toLowerCase(),
     );
+    const isExternalFlow = Boolean(
+      record.isExternalBorrower ||
+        (actionType === "Return" &&
+          (matchedBorrowRecord?.isExternalBorrower ||
+            (!recipient && matchedBorrowRecord))),
+    );
+
+    if (isExternalFlow && (!recipient || record.isExternalBorrower)) {
+      if (!username) {
+        throw new Error("Enter the full name of the borrower or recipient.");
+      }
+      const issuerUserId =
+        matchedBorrowRecord?.personUserId ||
+        fallbackIssuerUserId ||
+        transactionUsers[0]?.user_id;
+      if (!issuerUserId) {
+        throw new Error(
+          "Could not identify an active department account to log this transaction.",
+        );
+      }
+      return persistInventoryTransaction({
+        supabaseClient: supabase,
+        item,
+        recipientId: issuerUserId,
+        actionType,
+        amount,
+        matchedBorrowRecord,
+        record: {
+          ...record,
+          isExternalBorrower: true,
+          ...(actionType === "Return"
+            ? { receivedBy: record.receivedBy || userName }
+            : {}),
+        },
+      });
+    }
+
     if (!recipient) {
       throw new Error(
-        "Choose a name that matches a username in the Supabase users table.",
+        "Select an approved account from the list, or click '+ Others' to enter a custom name.",
       );
     }
 
@@ -503,7 +598,7 @@ function Inventory({
             recordingDisabled={
               transactionsLoading ||
               Boolean(transactionsLoadError) ||
-              transactionUsers.length === 0
+              (transactionUsers.length === 0 && !fallbackIssuerUserId)
             }
             loadError={inventoryLoadError || inventoryError}
             onOpenAction={stockActions.openAction}
@@ -561,6 +656,8 @@ function Inventory({
         action={stockActions.action}
         personName={stockActions.personName}
         setPersonName={stockActions.setPersonName}
+        isCustomPerson={stockActions.isCustomPerson}
+        setIsCustomPerson={stockActions.setIsCustomPerson}
         returnedBy={stockActions.returnedBy}
         setReturnedBy={stockActions.setReturnedBy}
         activeBorrowers={stockActions.activeBorrowers}
