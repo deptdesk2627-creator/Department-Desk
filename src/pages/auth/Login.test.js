@@ -10,6 +10,8 @@ jest.mock("../../supabase/supabaseClient", () => ({
       signOut: jest.fn(),
       verifyOtp: jest.fn(),
       resend: jest.fn(),
+      resetPasswordForEmail: jest.fn(),
+      updateUser: jest.fn(),
       getClaims: jest.fn(),
     },
     rpc: jest.fn(),
@@ -50,6 +52,14 @@ beforeEach(() => {
     error: null,
   });
   supabase.auth.resend.mockResolvedValue({ data: {}, error: null });
+  supabase.auth.resetPasswordForEmail.mockResolvedValue({
+    data: {},
+    error: null,
+  });
+  supabase.auth.updateUser.mockResolvedValue({
+    data: { user: { id: "user-1" } },
+    error: null,
+  });
 });
 
 async function openSignupForm() {
@@ -413,5 +423,107 @@ test("does not offer demo sign-in", () => {
   expect(screen.queryByText(/quick demo sign-in/i)).not.toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: /secretary/i }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /forgot password\?/i }),
+  ).not.toBeInTheDocument();
+});
+
+test("shows Forgot password inside the invalid-credentials alert and completes the 8-digit OTP password reset flow", async () => {
+  const onLogin = jest.fn();
+  supabase.auth.signInWithPassword.mockResolvedValueOnce({
+    data: { user: null, session: null },
+    error: new Error("Invalid login credentials"),
+  });
+  supabase.auth.verifyOtp.mockResolvedValueOnce({
+    data: {
+      user: { id: "user-1", email: "dept.desk2627@gmail.com" },
+      session: { access_token: "recovery-session" },
+    },
+    error: null,
+  });
+
+  render(<Login onLogin={onLogin} />);
+
+  fireEvent.change(screen.getByLabelText(/email address/i), {
+    target: { value: "Dept.Desk2627@gmail.com" },
+  });
+  fireEvent.change(screen.getByLabelText(/^password$/i), {
+    target: { value: "wrong-password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /sign in to workspace/i }));
+
+  const errorAlert = await screen.findByRole("alert");
+  expect(errorAlert).toHaveTextContent(/invalid login credentials/i);
+  const forgotButton = screen.getByRole("button", {
+    name: /forgot password\?/i,
+  });
+  expect(errorAlert).toContainElement(forgotButton);
+
+  fireEvent.click(forgotButton);
+  expect(
+    await screen.findByRole("heading", { name: /reset your password/i }),
+  ).toBeInTheDocument();
+  expect(screen.getByLabelText(/email address/i)).toHaveValue(
+    "Dept.Desk2627@gmail.com",
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /send recovery code/i }));
+  await waitFor(() =>
+    expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
+      "dept.desk2627@gmail.com",
+    ),
+  );
+  expect(
+    await screen.findByRole("heading", { name: /verify recovery code/i }),
+  ).toBeInTheDocument();
+
+  const firstDigitBox = screen.getByLabelText(/verification code digit 1/i);
+  fireEvent.paste(firstDigitBox, {
+    clipboardData: { getData: () => "84729103" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /verify code/i }));
+
+  await waitFor(() =>
+    expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
+      email: "dept.desk2627@gmail.com",
+      token: "84729103",
+      type: "recovery",
+    }),
+  );
+  expect(
+    await screen.findByRole("heading", { name: /set a new password/i }),
+  ).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText(/^new password$/i), {
+    target: { value: "new-secure-password" },
+  });
+  fireEvent.change(screen.getByLabelText(/confirm new password/i), {
+    target: { value: "mismatch" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /update password/i }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    /passwords do not match/i,
+  );
+  expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+
+  fireEvent.change(screen.getByLabelText(/confirm new password/i), {
+    target: { value: "new-secure-password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /update password/i }));
+
+  await waitFor(() =>
+    expect(supabase.auth.updateUser).toHaveBeenCalledWith({
+      password: "new-secure-password",
+    }),
+  );
+  expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+  expect(onLogin).not.toHaveBeenCalled();
+  expect(
+    await screen.findByRole("heading", { name: /sign in to deptdesk/i }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(/password updated/i);
+  expect(
+    screen.queryByRole("button", { name: /forgot password\?/i }),
   ).not.toBeInTheDocument();
 });

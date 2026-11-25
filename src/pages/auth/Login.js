@@ -50,6 +50,7 @@ function Login({ onLogin, theme = "light" }) {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [error, setError] = useState("");
+  const [hasInvalidCredentials, setHasInvalidCredentials] = useState(false);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupRoleAvailability, setSignupRoleAvailability] = useState({});
@@ -103,10 +104,18 @@ function Login({ onLogin, theme = "light" }) {
   }
 
   function changeMode(nextMode) {
+    if (mode === "reset-password" && nextMode !== "reset-password") {
+      supabase.auth?.signOut?.().catch(() => {});
+    }
     setMode(nextMode);
     setError("");
     setMessage("");
+    setHasInvalidCredentials(false);
     setOtpDigits(EMPTY_OTP);
+    if (nextMode === "login" || nextMode === "forgot-password") {
+      setPassword("");
+      setConfirmPassword("");
+    }
     if (nextMode === "signup") {
       loadSignupRoleAvailability();
     }
@@ -202,16 +211,27 @@ function Login({ onLogin, theme = "light" }) {
     setMessage("");
     setIsResendingOtp(true);
     try {
-      const { error: resendError } = await supabase.auth.resend({
-        type: "signup",
-        email: trimmedEmail,
-      });
-      if (resendError) throw resendError;
-      setOtpDigits(EMPTY_OTP);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      setMessage(
-        `A new 8-digit verification code has been sent to ${trimmedEmail}.`,
-      );
+      if (mode === "verify-recovery-otp") {
+        const { error: resetError } =
+          await supabase.auth.resetPasswordForEmail(trimmedEmail);
+        if (resetError) throw resetError;
+        setOtpDigits(EMPTY_OTP);
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+        setMessage(
+          `A new 8-digit recovery code has been sent to ${trimmedEmail}.`,
+        );
+      } else {
+        const { error: resendError } = await supabase.auth.resend({
+          type: "signup",
+          email: trimmedEmail,
+        });
+        if (resendError) throw resendError;
+        setOtpDigits(EMPTY_OTP);
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+        setMessage(
+          `A new 8-digit verification code has been sent to ${trimmedEmail}.`,
+        );
+      }
       focusOtpBox(0);
     } catch (resendError) {
       setError(
@@ -226,8 +246,102 @@ function Login({ onLogin, theme = "light" }) {
     event.preventDefault();
     setError("");
     setMessage("");
+    setHasInvalidCredentials(false);
 
     const trimmedEmail = email.trim().toLowerCase();
+    if (mode === "forgot-password") {
+      if (!trimmedEmail) {
+        setError("Enter your account email address.");
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const { error: resetError } =
+          await supabase.auth.resetPasswordForEmail(trimmedEmail);
+        if (resetError) throw resetError;
+        setMode("verify-recovery-otp");
+        setOtpDigits(EMPTY_OTP);
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+        setMessage(
+          `We sent an 8-digit recovery code to ${trimmedEmail}. Enter it below to reset your password.`,
+        );
+      } catch (resetError) {
+        setError(
+          resetError.message ||
+            "Could not send password recovery code. Please try again.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (mode === "verify-recovery-otp") {
+      const token = otpDigits.join("");
+      if (token.length !== OTP_LENGTH) {
+        setError(`Enter all ${OTP_LENGTH} digits of your recovery code.`);
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          email: trimmedEmail,
+          token,
+          type: "recovery",
+        });
+        if (verifyError) throw verifyError;
+        setMode("reset-password");
+        setOtpDigits(EMPTY_OTP);
+        setPassword("");
+        setConfirmPassword("");
+        setResendCooldown(0);
+        setMessage("Code verified. Create a new password for your account.");
+      } catch (verifyError) {
+        const rawMessage = verifyError.message || "";
+        setError(
+          /expired|invalid/i.test(rawMessage)
+            ? "That recovery code has expired or is invalid. Check your latest email or click Resend OTP code."
+            : rawMessage ||
+                "Invalid or expired recovery code. Please try again.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (mode === "reset-password") {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Your password must be at least 6 characters.");
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const { error: updateError } = await supabase.auth.updateUser({
+          password,
+        });
+        if (updateError) throw updateError;
+        await supabase.auth?.signOut?.().catch(() => {});
+        setMode("login");
+        setPassword("");
+        setConfirmPassword("");
+        setMessage(
+          "Password updated! You can now sign in with your new password.",
+        );
+      } catch (updateError) {
+        setError(
+          updateError.message ||
+            "Could not update your password. Please try again.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
     if (mode === "verify-otp") {
       const token = otpDigits.join("");
       if (token.length !== OTP_LENGTH) {
@@ -434,6 +548,13 @@ function Login({ onLogin, theme = "light" }) {
           );
           return;
         }
+        if (
+          /invalid login credentials|invalid credentials|invalid email or password/i.test(
+            signInError.message || "",
+          )
+        ) {
+          setHasInvalidCredentials(true);
+        }
         throw signInError;
       }
 
@@ -491,7 +612,12 @@ function Login({ onLogin, theme = "light" }) {
 
   const isSignup = mode === "signup";
   const isVerifyOtp = mode === "verify-otp";
+  const isForgotPassword = mode === "forgot-password";
+  const isVerifyRecoveryOtp = mode === "verify-recovery-otp";
+  const isResetPassword = mode === "reset-password";
+  const isAnyOtp = isVerifyOtp || isVerifyRecoveryOtp;
   const isAwaitingApproval = mode === "awaiting-approval";
+  const showForgotPasswordAction = mode === "login" && hasInvalidCredentials;
   const signupRoles = signupRoleAvailabilityError
     ? ROLE_LIST.filter((item) => item.id === "staff")
     : ROLE_LIST.filter((item) => signupRoleAvailability[item.id] === true);
@@ -512,18 +638,30 @@ function Login({ onLogin, theme = "light" }) {
                 ? "Awaiting account confirmation"
                 : isVerifyOtp
                   ? "Verify your email"
-                  : isSignup
-                    ? "Create your account"
-                    : "Sign in to DeptDesk"}
+                  : isForgotPassword
+                    ? "Reset your password"
+                    : isVerifyRecoveryOtp
+                      ? "Verify recovery code"
+                      : isResetPassword
+                        ? "Set a new password"
+                        : isSignup
+                          ? "Create your account"
+                          : "Sign in to DeptDesk"}
             </h2>
             <p className="login-form-subtitle">
               {isAwaitingApproval
                 ? "Your email has been verified and your registration is in the approval queue."
                 : isVerifyOtp
                   ? `Enter the 8-digit verification code sent to ${email.trim().toLowerCase() || "your email"}.`
-                  : isSignup
-                    ? "Enter your details to create a DeptDesk account."
-                    : "Enter your account credentials to continue."}
+                  : isForgotPassword
+                    ? "Enter your account email to receive an 8-digit recovery code."
+                    : isVerifyRecoveryOtp
+                      ? `Enter the 8-digit recovery code sent to ${email.trim().toLowerCase() || "your email"}.`
+                      : isResetPassword
+                        ? `Create a new password for ${email.trim().toLowerCase() || "your account"}.`
+                        : isSignup
+                          ? "Enter your details to create a DeptDesk account."
+                          : "Enter your account credentials to continue."}
             </p>
           </div>
 
@@ -559,12 +697,16 @@ function Login({ onLogin, theme = "light" }) {
             </div>
           ) : (
             <form className="login-form" onSubmit={handleSubmit}>
-            {isVerifyOtp ? (
+            {isAnyOtp ? (
               <div className="login-otp-section">
                 <div
                   className="login-otp-grid"
                   role="group"
-                  aria-label="8-digit verification code"
+                  aria-label={
+                    isVerifyRecoveryOtp
+                      ? "8-digit recovery code"
+                      : "8-digit verification code"
+                  }
                 >
                   {otpDigits.map((digit, index) => (
                     <input
@@ -674,59 +816,67 @@ function Login({ onLogin, theme = "light" }) {
                   </>
                 )}
 
-                <div className="login-card-field">
-                  <div className="login-card-field__content">
-                    <label
-                      className="login-card-field__label"
-                      htmlFor="login-email"
-                    >
-                      Email address
-                    </label>
-                    <input
-                      id="login-email"
-                      type="email"
-                      className="login-card-field__input"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="name@deptdesk.edu"
-                      autoComplete="email"
-                      required
-                      disabled={isSubmitting}
-                    />
+                {!isResetPassword && (
+                  <div className="login-card-field">
+                    <div className="login-card-field__content">
+                      <label
+                        className="login-card-field__label"
+                        htmlFor="login-email"
+                      >
+                        Email address
+                      </label>
+                      <input
+                        id="login-email"
+                        type="email"
+                        className="login-card-field__input"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="name@deptdesk.edu"
+                        autoComplete="email"
+                        required
+                        disabled={isSubmitting}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="login-card-field">
-                  <div className="login-card-field__content">
-                    <label
-                      className="login-card-field__label"
-                      htmlFor="login-password"
-                    >
-                      Password
-                    </label>
-                    <input
-                      id="login-password"
-                      type="password"
-                      className="login-card-field__input"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      autoComplete={
-                        isSignup ? "new-password" : "current-password"
-                      }
-                      required
-                      disabled={isSubmitting}
-                    />
+                {!isForgotPassword && (
+                  <div className="login-card-field">
+                    <div className="login-card-field__content">
+                      <label
+                        className="login-card-field__label"
+                        htmlFor="login-password"
+                      >
+                        {isResetPassword ? "New password" : "Password"}
+                      </label>
+                      <input
+                        id="login-password"
+                        type="password"
+                        className="login-card-field__input"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        autoComplete={
+                          isSignup || isResetPassword
+                            ? "new-password"
+                            : "current-password"
+                        }
+                        required
+                        disabled={isSubmitting}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {isSignup && (
+                {(isSignup || isResetPassword) && (
                   <div className="login-card-field">
                     <div className="login-card-field__content">
                       <label
                         className="login-card-field__label"
                         htmlFor="signup-confirm-password"
                       >
-                        Confirm password
+                        {isResetPassword
+                          ? "Confirm new password"
+                          : "Confirm password"}
                       </label>
                       <input
                         id="signup-confirm-password"
@@ -753,9 +903,26 @@ function Login({ onLogin, theme = "light" }) {
             )}
 
             {error && (
-              <p className="login-error-alert" role="alert">
-                {error}
-              </p>
+              <div
+                className={`login-error-alert${
+                  showForgotPasswordAction
+                    ? " login-error-alert--with-action"
+                    : ""
+                }`}
+                role="alert"
+              >
+                <span>{error}</span>
+                {showForgotPasswordAction && (
+                  <button
+                    type="button"
+                    className="login-error-alert__action"
+                    onClick={() => changeMode("forgot-password")}
+                    disabled={isSubmitting}
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
             )}
             {message && (
               <p className="login-success-alert" role="status">
@@ -769,16 +936,24 @@ function Login({ onLogin, theme = "light" }) {
               disabled={isSubmitting || (isSignup && isLoadingSignupRoles)}
             >
               {isSubmitting
-                ? isVerifyOtp
+                ? isAnyOtp
                   ? "Verifying code..."
-                  : isSignup
-                    ? "Creating account..."
-                    : "Signing in..."
-                : isVerifyOtp
+                  : isForgotPassword
+                    ? "Sending recovery code..."
+                    : isResetPassword
+                      ? "Updating password..."
+                      : isSignup
+                        ? "Creating account..."
+                        : "Signing in..."
+                : isAnyOtp
                   ? "Verify code"
-                  : isSignup
-                    ? "Create account"
-                    : "Sign in to workspace"}
+                  : isForgotPassword
+                    ? "Send recovery code"
+                    : isResetPassword
+                      ? "Update password"
+                      : isSignup
+                        ? "Create account"
+                        : "Sign in to workspace"}
             </button>
           </form>
           )}
@@ -786,27 +961,29 @@ function Login({ onLogin, theme = "light" }) {
           {!isAwaitingApproval && (
             <p className="login-not-member">
               <span>
-                {isVerifyOtp
+                {isAnyOtp
                   ? "Entered the wrong email?"
-                  : isSignup
-                    ? "Already have an account?"
-                    : "Not a member yet?"}
+                  : isForgotPassword
+                    ? "Remembered your password?"
+                    : isResetPassword
+                      ? "Changed your mind?"
+                      : isSignup
+                        ? "Already have an account?"
+                        : "Not a member yet?"}
               </span>
               <button
                 type="button"
                 className="login-mode-toggle"
                 onClick={() =>
-                  changeMode(
-                    isSignup ? "login" : isVerifyOtp ? "login" : "signup",
-                  )
+                  changeMode(mode === "login" ? "signup" : "login")
                 }
                 disabled={isSubmitting}
               >
-                {isVerifyOtp
-                  ? "Back to sign in"
+                {mode === "login"
+                  ? "Create an account"
                   : isSignup
                     ? "Sign in"
-                    : "Create an account"}
+                    : "Back to sign in"}
               </button>
             </p>
           )}

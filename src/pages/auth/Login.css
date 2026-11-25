@@ -313,6 +313,47 @@
   margin: 0 0 16px;
 }
 
+.login-error-alert--with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.login-error-alert__action {
+  background: none;
+  border: none;
+  padding: 2px 0;
+  margin-left: auto;
+  color: #991b1b;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.login-error-alert__action:hover {
+  color: #7f1d1d;
+}
+
+.login-error-alert__action:focus-visible {
+  outline: 2px solid #b91c1c;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.login-error-alert__action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* Button 1: White Sign In To Workspace (Dark Mode Aware) */
 .login-btn-workspace {
   background-color: #ffffff;
