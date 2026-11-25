@@ -22,7 +22,7 @@ function ControlledTransactionForm() {
   );
 }
 
-test("renders office select options and custom office input on outgoing request form", () => {
+test("renders clean office select options and toggles + Others custom office input on outgoing request form", () => {
   render(<ControlledTransactionForm />);
   const dialog = within(screen.getByRole("dialog"));
   const officeSelect = dialog.getByRole("combobox", {
@@ -35,44 +35,50 @@ test("renders office select options and custom office input on outgoing request 
   expect(
     dialog.getByRole("option", { name: "Registrar" }),
   ).toBeInTheDocument();
-  expect(dialog.getByRole("option", { name: "Other" })).toBeInTheDocument();
+  expect(
+    dialog.queryByRole("option", { name: "Other" }),
+  ).not.toBeInTheDocument();
 
   fireEvent.change(officeSelect, { target: { value: "Registrar" } });
   expect(officeSelect).toHaveValue("Registrar");
-  expect(
-    dialog.queryByLabelText(/specify destination office/i),
-  ).not.toBeInTheDocument();
 
-  fireEvent.change(officeSelect, { target: { value: "Other" } });
+  fireEvent.click(dialog.getByRole("button", { name: /^\+ others$/i }));
   const customOfficeInput = dialog.getByLabelText(
-    /specify destination office/i,
+    /office \(where to go\) \(others\)/i,
   );
   fireEvent.change(customOfficeInput, { target: { value: "Research Office" } });
   expect(customOfficeInput).toHaveValue("Research Office");
 });
 
-test("renders origin and forwarded office selects with custom inputs for incoming requests", () => {
+test("toggles + Others custom inputs for origin and forwarded offices on incoming requests", () => {
   render(<ControlledTransactionForm />);
 
   fireEvent.click(
     screen.getByRole("button", { name: /incoming from other office/i }),
   );
   const dialog = within(screen.getByRole("dialog"));
-  const originSelect = dialog.getByRole("combobox", {
-    name: /from office \(origin\)/i,
-  });
-  const forwardedSelect = dialog.getByRole("combobox", {
-    name: /sent out \/ forwarded to/i,
-  });
 
-  fireEvent.change(originSelect, { target: { value: "Other" } });
-  const originCustomInput = dialog.getByLabelText(/specify origin office/i);
+  expect(
+    dialog.getByRole("combobox", { name: /from office \(origin\)/i }),
+  ).toBeInTheDocument();
+  expect(
+    dialog.getByRole("combobox", { name: /sent out \/ forwarded to/i }),
+  ).toBeInTheDocument();
+
+  fireEvent.click(
+    dialog.getByRole("button", { name: /\+ others origin office/i }),
+  );
+  const originCustomInput = dialog.getByLabelText(
+    /from office \(origin\) \(others\)/i,
+  );
   fireEvent.change(originCustomInput, { target: { value: "External Board" } });
   expect(originCustomInput).toHaveValue("External Board");
 
-  fireEvent.change(forwardedSelect, { target: { value: "Other" } });
+  fireEvent.click(
+    dialog.getByRole("button", { name: /\+ others forwarded office/i }),
+  );
   const forwardedCustomInput = dialog.getByLabelText(
-    /specify destination office/i,
+    /sent out \/ forwarded to \(others\)/i,
   );
   fireEvent.change(forwardedCustomInput, {
     target: { value: "Legal Office" },

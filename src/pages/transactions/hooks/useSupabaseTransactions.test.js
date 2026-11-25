@@ -23,6 +23,7 @@ function createQuery(table) {
           { office_id: 1, name: "Registrar" },
           { office_id: 2, name: "Secretary's Office" },
           { office_id: 3, name: "Dean's Office" },
+          { office_id: 9, name: "Dean's Offic" },
         ],
         file_location: [],
         transactions_ongoing: [],
@@ -232,4 +233,50 @@ test("persists incoming status, signature, forwarding, and delete changes", asyn
     "transaction_table",
     "transactions_incoming",
   );
+});
+
+test("filters out non-standard office clutter from dropdowns and persists custom Others offices without inserting into public.offices", async () => {
+  const { result } = renderHook(() => useSupabaseTransactions({ setRequests }));
+  await waitFor(() => expect(result.current.isReady).toBe(true));
+
+  expect(result.current.officeNames).toEqual([
+    "Registrar",
+    "Secretary's Office",
+    "Dean's Office",
+  ]);
+  expect(result.current.officeNames).not.toContain("Dean's Offic");
+
+  let savedCustom;
+  await act(async () => {
+    savedCustom = await result.current.persistAdd({
+      direction: "outgoing",
+      document: "CHED Accreditation Endorsement",
+      student: "Prof. Reyes",
+      dateTime: "2026-11-25T14:00",
+      office: "CHED Regional Office VI",
+      isExternalOffice: true,
+      type: "Document",
+      status: "Pending",
+      description: "Deliver sealed envelope",
+      fileLocation: "In Process (Not yet filed)",
+    });
+  });
+
+  expect(queries.offices).toBeDefined();
+  expect(queries.offices.insert).not.toHaveBeenCalled();
+  expect(queries.transactions_ongoing.insert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      origin_office: 2,
+      current_office: 2,
+      notes: "[Office: CHED Regional Office VI] Deliver sealed envelope",
+    }),
+  );
+  expect(savedCustom).toEqual(
+    expect.objectContaining({
+      office: "CHED Regional Office VI",
+      description: "Deliver sealed envelope",
+      notes: "Deliver sealed envelope",
+    }),
+  );
+  expect(result.current.officeNames).not.toContain("CHED Regional Office VI");
 });

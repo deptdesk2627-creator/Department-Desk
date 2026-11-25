@@ -205,7 +205,7 @@ test("places a transaction in a CICT cabinet drawer, logs history, and filters b
   expect(result.current.visibleRequests).toEqual([storedRequests[1]]);
 });
 
-test("resolves typed custom office and forwarded destination when Other is selected and adds them to office options", () => {
+test("resolves typed custom office and forwarded destination in Others mode without cluttering office options", () => {
   const setRequests = jest.fn();
   const { result } = renderHook(() =>
     useTransactionManager({ requests: [], setRequests, search: "" }),
@@ -218,9 +218,9 @@ test("resolves typed custom office and forwarded destination when Other is selec
       direction: "incoming",
       student: "Registrar Messenger",
       document: "Academic Council Memo",
-      office: "Other",
+      isCustomOffice: true,
       customOffice: "Alumni Relations Office",
-      forwardedTo: "Other",
+      isCustomForwardedTo: true,
       customForwardedTo: "Quality Assurance Office",
     });
   });
@@ -234,9 +234,11 @@ test("resolves typed custom office and forwarded destination when Other is selec
   const updater = setRequests.mock.calls[0][0];
   const [saved] = updater([]);
   expect(saved.office).toBe("Alumni Relations Office");
+  expect(saved.isExternalOffice).toBe(true);
   expect(saved.forwardedTo).toBe("Quality Assurance Office");
-  expect(result.current.offices).toContain("Alumni Relations Office");
-  expect(result.current.forwardedDestinations).toContain(
+  expect(saved.isExternalForwardedTo).toBe(true);
+  expect(result.current.offices).not.toContain("Alumni Relations Office");
+  expect(result.current.forwardedDestinations).not.toContain(
     "Quality Assurance Office",
   );
 });

@@ -74,45 +74,42 @@ export function useTransactionManager({
     }
   }, [defaultView]);
 
-  const [customOffices, setCustomOffices] = useState([]);
-
   const mergedOffices = useMemo(() => {
-    const base = Array.isArray(officeOptions) ? officeOptions.filter(Boolean) : [];
-    const withoutOther = base.filter(
-      (item) => !["other", "others"].includes(String(item).trim().toLowerCase()),
-    );
-    const extras = customOffices.filter(
-      (extra) =>
-        !withoutOther.some(
-          (item) =>
-            String(item).trim().toLowerCase() ===
-            String(extra).trim().toLowerCase(),
-        ),
-    );
-    return [...withoutOther, ...extras, "Other"];
-  }, [customOffices, officeOptions]);
+    const seen = new Set();
+    const cleaned = [];
+    for (const item of Array.isArray(officeOptions) ? officeOptions : []) {
+      const label = String(item || "").trim();
+      const key = label.toLowerCase();
+      if (!label || key === "other" || key === "others" || seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      cleaned.push(label);
+    }
+    return cleaned;
+  }, [officeOptions]);
 
   const mergedForwardedOptions = useMemo(() => {
-    const base = Array.isArray(forwardedOptions)
-      ? forwardedOptions.filter(Boolean)
-      : [];
-    const withoutOther = base.filter(
-      (item) => !["other", "others"].includes(String(item).trim().toLowerCase()),
-    );
-    const extras = customOffices.filter(
-      (extra) =>
-        !withoutOther.some(
-          (item) =>
-            String(item).trim().toLowerCase() ===
-            String(extra).trim().toLowerCase(),
-        ),
-    );
-    return [...withoutOther, ...extras, "Other"];
-  }, [customOffices, forwardedOptions]);
+    const seen = new Set();
+    const cleaned = [];
+    for (const item of Array.isArray(forwardedOptions)
+      ? forwardedOptions
+      : []) {
+      const label = String(item || "").trim();
+      const key = label.toLowerCase();
+      if (!label || key === "other" || key === "others" || seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      cleaned.push(label);
+    }
+    return cleaned;
+  }, [forwardedOptions]);
 
   useEffect(() => {
-    if (!officeOptions.length) return;
+    if (!mergedOffices.length) return;
     setForm((current) => {
+      if (current.isCustomOffice) return current;
       const currentVal = String(current.office || "").trim().toLowerCase();
       if (currentVal === "other" || currentVal === "others") {
         return current;
@@ -122,9 +119,9 @@ export function useTransactionManager({
           String(office).trim().toLowerCase() === currentVal,
       )
         ? current
-        : { ...current, office: officeOptions[0] };
+        : { ...current, office: mergedOffices[0] };
     });
-  }, [mergedOffices, officeOptions]);
+  }, [mergedOffices]);
 
   const statuses =
     activeTab === "incoming" ? incomingStatuses : outgoingStatuses;
@@ -327,26 +324,27 @@ export function useTransactionManager({
       return false;
     }
     const isIncoming = form.direction === "incoming";
-    const isOtherOffice = ["other", "others"].includes(
-      String(form.office || "").trim().toLowerCase(),
-    );
+    const isOtherOffice =
+      Boolean(form.isCustomOffice) ||
+      ["other", "others"].includes(String(form.office || "").trim().toLowerCase());
     const resolvedOffice = isOtherOffice
       ? String(form.customOffice || "").trim()
       : String(form.office || "").trim();
     if (!resolvedOffice) {
       setFormError(
         isIncoming
-          ? "Please type the origin office name for Other."
-          : "Please type the destination office name for Other.",
+          ? "Please type the origin office name for Others."
+          : "Please type the destination office name for Others.",
       );
       return false;
     }
 
     const isOtherForwarded =
       isIncoming &&
-      ["other", "others"].includes(
-        String(form.forwardedTo || "").trim().toLowerCase(),
-      );
+      (Boolean(form.isCustomForwardedTo) ||
+        ["other", "others"].includes(
+          String(form.forwardedTo || "").trim().toLowerCase(),
+        ));
     const resolvedForwarded = isIncoming
       ? isOtherForwarded
         ? String(form.customForwardedTo || "").trim()
@@ -358,30 +356,6 @@ export function useTransactionManager({
     }
 
     setFormError("");
-    if (isOtherOffice && !["other", "others"].includes(resolvedOffice.toLowerCase())) {
-      setCustomOffices((current) =>
-        current.some(
-          (item) => item.toLowerCase() === resolvedOffice.toLowerCase(),
-        )
-          ? current
-          : [...current, resolvedOffice],
-      );
-    }
-    if (
-      isOtherForwarded &&
-      resolvedForwarded &&
-      !["other", "others", "not sent out", "returned to sender"].includes(
-        resolvedForwarded.toLowerCase(),
-      )
-    ) {
-      setCustomOffices((current) =>
-        current.some(
-          (item) => item.toLowerCase() === resolvedForwarded.toLowerCase(),
-        )
-          ? current
-          : [...current, resolvedForwarded],
-      );
-    }
 
     const submittedAt = Date.now();
     const prefix = isIncoming ? "INC" : "REQ";
@@ -418,6 +392,7 @@ export function useTransactionManager({
     const request = {
       ...form,
       office: resolvedOffice,
+      isExternalOffice: isOtherOffice,
       direction: isIncoming ? "incoming" : "outgoing",
       status: resolvedStatus,
       fileLocation: resolvedFileLocation,
@@ -425,6 +400,7 @@ export function useTransactionManager({
         ? {
             signedByOffice: resolvedSigned,
             forwardedTo: resolvedForwarded,
+            isExternalForwardedTo: isOtherForwarded,
           }
         : {}),
       id: `${prefix}-${new Date(submittedAt).getFullYear()}-${submittedAt.toString().slice(-6)}`,

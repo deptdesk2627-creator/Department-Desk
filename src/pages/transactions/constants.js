@@ -14,7 +14,7 @@ export const incomingStatuses = [
   "Archived",
 ];
 
-export const offices = [
+export const STANDARD_OFFICES = [
   "Registrar",
   "Office of the President",
   "Dean's Office",
@@ -22,8 +22,9 @@ export const offices = [
   "Finance Office",
   "Facilities Office",
   "HR Office",
-  "Other",
 ];
+
+export const offices = [...STANDARD_OFFICES];
 
 export const categories = ["Document", "Request"];
 
@@ -37,7 +38,7 @@ export const signatureOptions = [
 export const forwardedDestinations = [
   "Not sent out",
   "Returned to Sender",
-  ...offices,
+  ...STANDARD_OFFICES,
 ];
 
 export const UNFILED_LOCATION = "In Process (Not yet filed)";
@@ -106,11 +107,13 @@ export const emptyForm = (direction = "outgoing") => ({
   document: "",
   student: "",
   office: "Registrar",
+  isCustomOffice: false,
   customOffice: "",
   type: "Document",
   status: direction === "incoming" ? "Received" : "Pending",
   signedByOffice: "Unsigned",
   forwardedTo: "Not sent out",
+  isCustomForwardedTo: false,
   customForwardedTo: "",
   fileLocation: UNFILED_LOCATION,
 });
