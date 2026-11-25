@@ -55,6 +55,8 @@ function clearCachedWorkspaceStorage() {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const isAuthenticatedRef = useRef(false);
+  isAuthenticatedRef.current = isAuthenticated;
   const taskOwnerAuthId = useRef(null);
   const [roleId, setRoleId] = useStoredState("officeflow.role", "secretary");
   const [theme, setTheme] = useStoredState("officeflow.theme", "light", {
@@ -191,8 +193,12 @@ function App() {
       }
 
       // Only transition on explicit session restoration or token updates;
-      // Login.js owns the sign-in / OTP / approval check before calling onLogin().
-      if (event === "SIGNED_IN") {
+      // Login.js owns the sign-in / OTP / recovery / approval check before calling onLogin().
+      if (
+        event === "SIGNED_IN" ||
+        event === "PASSWORD_RECOVERY" ||
+        !isAuthenticatedRef.current
+      ) {
         return;
       }
 

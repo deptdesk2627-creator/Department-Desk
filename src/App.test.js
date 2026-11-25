@@ -153,6 +153,35 @@ test("clears previously saved local profiles without removing Supabase accounts"
   expect(supabase.auth.getSession).toHaveBeenCalled();
 });
 
+test("keeps Login mounted during PASSWORD_RECOVERY auth events so the user can set a new password", async () => {
+  let authListener;
+  supabase.auth.onAuthStateChange.mockImplementation((callback) => {
+    authListener = callback;
+    return { data: { subscription: { unsubscribe: jest.fn() } } };
+  });
+
+  render(<App />);
+  expect(
+    await screen.findByRole("heading", { name: /sign in to deptdesk/i }),
+  ).toBeInTheDocument();
+
+  authListener("PASSWORD_RECOVERY", {
+    access_token: "recovery-jwt",
+    user: {
+      id: "secretary-user",
+      email: "secretary@example.com",
+      app_metadata: { role: "secretary" },
+    },
+  });
+
+  expect(
+    screen.getByRole("heading", { name: /sign in to deptdesk/i }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("complementary", { name: /main navigation/i }),
+  ).not.toBeInTheDocument();
+});
+
 test("applies sidebar, table density, and default view buttons in Settings immediately", async () => {
   const user = {
     id: "secretary-user",
