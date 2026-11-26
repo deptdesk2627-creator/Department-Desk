@@ -527,14 +527,15 @@ test("displays all chronological return batches (2 pcs then 3 pcs), preserves re
     />,
   );
 
-  expect(
-    screen.getByText(/Batch 1 · 2 pieces returned/i),
-  ).toBeInTheDocument();
-  expect(screen.getByText(/\(3 pieces left\)/i)).toBeInTheDocument();
-  expect(
-    screen.getByText(/Batch 2 · 3 pieces returned/i),
-  ).toBeInTheDocument();
-  expect(screen.getByText(/\(Full clearance\)/i)).toBeInTheDocument();
+  const batchItems = screen.getAllByRole("listitem");
+  expect(batchItems).toHaveLength(2);
+  expect(batchItems[0]).toHaveTextContent(/Batch 1 · 2 pieces returned/i);
+  expect(batchItems[0]).toHaveTextContent(/\(3 pieces left\)/i);
+  expect(batchItems[1]).toHaveTextContent(/Batch 2 · 3 pieces returned/i);
+  expect(batchItems[1]).toHaveTextContent(/\(Full clearance\)/i);
+  expect(screen.getByTestId("receipt-return-date-line")).not.toHaveTextContent(
+    /8:00 AM/i,
+  );
   expect(
     screen.getByText("All borrowed units returned in good condition"),
   ).toBeInTheDocument();
