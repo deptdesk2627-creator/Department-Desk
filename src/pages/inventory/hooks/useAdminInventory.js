@@ -377,6 +377,7 @@ export function useAdminInventory({
       });
       const nextStock = result.updatedStock;
       const savedReturnDate = result.updatedTransaction?.return_date || today;
+      const confirmedAt = new Date().toISOString();
 
       setInventory((current) =>
         (Array.isArray(current) ? current : []).map((item) =>
@@ -397,6 +398,7 @@ export function useAdminInventory({
                 ...entry,
                 status: "Returned",
                 returnDate: savedReturnDate,
+                confirmedAt,
                 receivedBy: confirmedBy,
                 isPendingConfirmation: false,
               }

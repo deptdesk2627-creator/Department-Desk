@@ -28,6 +28,15 @@ export function formatReceiptTimeOnly(value) {
   });
 }
 
+function hasExplicitTime(value) {
+  return /[T\s]\d{2}:\d{2}/.test(String(value || ""));
+}
+
+function preferFullTimestamp(...candidates) {
+  const valid = candidates.filter(Boolean);
+  return valid.find(hasExplicitTime) || valid[0] || null;
+}
+
 export function computeReceiptDetails(record, inventory = [], records = []) {
   if (!record) return null;
 
@@ -160,46 +169,96 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
     ? record.borrowedAt || linkedBorrowRecord?.dateTime || null
     : record.dateTime;
 
-  // ONLY populate the final Date & Time Returned when 100% of the borrowed quantity has been confirmed returned!
-  const completedReturnDateTime = isFullyReturned
-    ? (isReturnedStatus
-        ? record.returnedAt || record.dateTime
-        : linkedBorrowRecord?.returnedAt ||
-          record.returnedAt ||
-          matchingReturnRecords[0]?.dateTime) || null
-    : null;
+  const rawReturnEvents = (() => {
+    const borrowEvents = Array.isArray(linkedBorrowRecord?.returnEvents)
+      ? linkedBorrowRecord.returnEvents
+      : [];
+    const recordEvents = Array.isArray(record.returnEvents)
+      ? record.returnEvents
+      : [];
 
-  const returnEvents = (() => {
     if (
-      isReturnedStatus &&
-      Array.isArray(record.returnEvents) &&
-      record.returnEvents.length > 0
+      borrowEvents.length > 0 &&
+      borrowEvents.length >= recordEvents.length
     ) {
-      return record.returnEvents;
+      return borrowEvents;
     }
-    if (
-      Array.isArray(linkedBorrowRecord?.returnEvents) &&
-      linkedBorrowRecord.returnEvents.length > 0
-    ) {
-      return linkedBorrowRecord.returnEvents;
-    }
-    if (Array.isArray(record.returnEvents) && record.returnEvents.length > 0) {
-      return record.returnEvents;
+    if (recordEvents.length > 0) {
+      return recordEvents;
     }
     if (matchingReturnRecords.length > 0) {
+      const borrowNote = String(
+        record.borrowRemarks || linkedBorrowRecord?.remarks || "",
+      )
+        .trim()
+        .toLowerCase();
       return [...matchingReturnRecords]
-        .reverse()
-        .map((r) => ({
-          id: r.id,
-          dateTime: r.dateTime,
-          quantity: r.quantity,
-          person: r.person,
-          returnedBy: r.returnedBy || r.person,
-          remarks: r.returnRemarks || r.remarks,
-        }));
+        .sort(
+          (a, b) =>
+            new Date(a.dateTime || 0).getTime() -
+              new Date(b.dateTime || 0).getTime() ||
+            Number(a.id || 0) - Number(b.id || 0),
+        )
+        .map((r) => {
+          const candidateRemark = String(r.returnRemarks ?? r.remarks ?? "").trim();
+          const cleanedRemark =
+            borrowNote && candidateRemark.toLowerCase() === borrowNote
+              ? ""
+              : candidateRemark;
+          return {
+            id: r.id,
+            dateTime: r.dateTime,
+            quantity: r.quantity,
+            person: r.person,
+            returnedBy: r.returnedBy || r.person,
+            remarks: cleanedRemark,
+          };
+        });
     }
     return [];
   })();
+
+  let runningRemaining = totalBorrowedQty;
+  const returnEvents = rawReturnEvents.map((batch, index) => {
+    const qty = Number(batch.quantity) || 0;
+    runningRemaining = Math.max(0, runningRemaining - qty);
+    const borrowNote = String(
+      record.borrowRemarks || linkedBorrowRecord?.remarks || "",
+    )
+      .trim()
+      .toLowerCase();
+    const rawBatchRemark = String(batch.remarks || "").trim();
+    const cleanBatchRemark =
+      borrowNote && rawBatchRemark.toLowerCase() === borrowNote
+        ? ""
+        : rawBatchRemark;
+    return {
+      ...batch,
+      remarks: cleanBatchRemark,
+      batchNumber: index + 1,
+      remainingAfter:
+        typeof batch.remainingAfter === "number"
+          ? batch.remainingAfter
+          : runningRemaining,
+    };
+  });
+
+  // ONLY populate the final Date & Time Returned when 100% of the borrowed quantity has been confirmed returned!
+  const latestBatchDateTime =
+    returnEvents.length > 0
+      ? returnEvents[returnEvents.length - 1]?.dateTime
+      : null;
+  const completedReturnDateTime = isFullyReturned
+    ? preferFullTimestamp(
+        isReturnedStatus ? record.confirmedAt : null,
+        isReturnedStatus ? record.returnedAt : null,
+        isReturnedStatus ? record.dateTime : null,
+        latestBatchDateTime,
+        linkedBorrowRecord?.returnedAt,
+        matchingReturnRecords[0]?.dateTime,
+        record.returnedAt,
+      )
+    : null;
 
   const latestRepresentative =
     record.returnedBy ||
@@ -220,18 +279,21 @@ export function computeReceiptDetails(record, inventory = [], records = []) {
       ""
     : record.remarks || "";
 
-  const returnConditionNote = isReturnRecord
-    ? record.returnRemarks ||
-      (record.borrowRemarks || linkedBorrowRecord?.remarks
-        ? record.remarks !==
-          (record.borrowRemarks || linkedBorrowRecord?.remarks)
-          ? record.remarks
-          : ""
-        : record.remarks || "")
+  const normalizedBorrowRemark = String(primaryRemark || "")
+    .trim()
+    .toLowerCase();
+  const rawReturnConditionNote = isReturnRecord
+    ? record.returnRemarks || record.remarks || ""
     : linkedBorrowRecord?.returnRemarks ||
       record.returnRemarks ||
       returnEvents[returnEvents.length - 1]?.remarks ||
       "";
+  const returnConditionNote =
+    normalizedBorrowRemark &&
+    String(rawReturnConditionNote).trim().toLowerCase() ===
+      normalizedBorrowRemark
+      ? ""
+      : rawReturnConditionNote;
 
   const remarksHeading = isBorrowable
     ? "Remark / Reason for Borrowing"

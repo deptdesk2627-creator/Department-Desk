@@ -330,6 +330,7 @@ function App() {
     });
     const nextStock = result.updatedStock;
     const savedReturnDate = result.updatedTransaction?.return_date || today;
+    const confirmedAt = new Date().toISOString();
 
     data.setInventory((current) =>
       (Array.isArray(current) ? current : []).map((item) =>
@@ -350,6 +351,7 @@ function App() {
               ...entry,
               status: "Returned",
               returnDate: savedReturnDate,
+              confirmedAt,
               receivedBy: confirmedBy,
               isPendingConfirmation: false,
             }

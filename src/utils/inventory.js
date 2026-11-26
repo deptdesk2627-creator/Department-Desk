@@ -349,6 +349,15 @@ export function mapMasterlistItem(item) {
   };
 }
 
+function resolveFullTimestamp(...candidates) {
+  const valid = candidates.filter(Boolean);
+  return (
+    valid.find((val) => /[T\s]\d{2}:\d{2}/.test(String(val))) ||
+    valid[0] ||
+    null
+  );
+}
+
 export function reconcileBorrowReturnState(records) {
   const nextRecords = (Array.isArray(records) ? records : [])
     .filter(Boolean)
@@ -481,19 +490,36 @@ export function reconcileBorrowReturnState(records) {
       firstMatchedLoan ||= loan;
       matchedLoans.push(loan);
 
+      const loanBorrowRemark = String(loan.record.remarks || "")
+        .trim()
+        .toLowerCase();
+      const rawReturnRemark = String(record.remarks || "").trim();
+      const cleanEventRemark =
+        loanBorrowRemark && rawReturnRemark.toLowerCase() === loanBorrowRemark
+          ? ""
+          : rawReturnRemark;
+
       const event = {
         id: record.id,
-        dateTime: record.dateTime,
+        dateTime: resolveFullTimestamp(
+          record.confirmedAt,
+          record.dateTime,
+          record.returnDate,
+        ),
         quantity: returnedFromLoan,
         person: record.person,
         returnedBy: record.returnedBy || record.person,
-        remarks: record.remarks,
+        remarks: cleanEventRemark,
         remainingAfter: loan.remaining,
       };
       returnEvents.push(event);
       loan.record.returnEvents = [...(loan.record.returnEvents || []), event];
       if (loan.remaining === 0) {
-        loan.record.returnedAt = record.returnDate || record.dateTime;
+        loan.record.returnedAt = resolveFullTimestamp(
+          record.confirmedAt,
+          record.dateTime,
+          record.returnDate,
+        );
       }
     }
 
@@ -511,6 +537,18 @@ export function reconcileBorrowReturnState(records) {
 
     account.returned += appliedQuantity;
     const remainingBalance = Math.max(0, account.borrowed - account.returned);
+    const borrowRemarkText = firstMatchedLoan?.record.remarks || "";
+    const rawRecordRemark = String(record.remarks || "").trim();
+    const cleanReturnRemark =
+      borrowRemarkText &&
+      rawRecordRemark.toLowerCase() === borrowRemarkText.trim().toLowerCase()
+        ? ""
+        : rawRecordRemark;
+    const cumulativeReturnEvents =
+      matchedLoans.length > 0
+        ? matchedLoans.flatMap((loan) => loan.record.returnEvents || [])
+        : returnEvents;
+
     record.isPendingConfirmation = false;
     record.isPartialReturn = remainingBalance > 0;
     record.borrowedQuantity = account.borrowed;
@@ -520,10 +558,16 @@ export function reconcileBorrowReturnState(records) {
     record.borrowRecordId =
       matchedLoans.length === 1 ? firstMatchedLoan?.record.id || null : null;
     record.returnedAt =
-      remainingBalance === 0 ? record.returnDate || record.dateTime : null;
-    record.returnEvents = returnEvents;
-    record.borrowRemarks = firstMatchedLoan?.record.remarks || "";
-    record.returnRemarks = record.remarks;
+      remainingBalance === 0
+        ? resolveFullTimestamp(
+            record.confirmedAt,
+            record.dateTime,
+            record.returnDate,
+          )
+        : null;
+    record.returnEvents = cumulativeReturnEvents;
+    record.borrowRemarks = borrowRemarkText;
+    record.returnRemarks = cleanReturnRemark;
   }
 
   return nextRecords;

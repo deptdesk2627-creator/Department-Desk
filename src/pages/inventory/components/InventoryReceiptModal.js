@@ -254,18 +254,32 @@ function InventoryReceiptModal({
                   {record.unit} returned)
                 </span>
                 <ul className="inventory-receipt__batch-list">
-                  {returnEvents.map((batch, index) => (
-                    <li key={batch.id || index}>
-                      <strong>
-                        {batch.quantity} {record.unit} returned
-                      </strong>{" "}
-                      on {formatDateTime(batch.dateTime)}
-                      {batch.returnedBy
-                        ? ` · Brought back by ${batch.returnedBy}`
-                        : ""}
-                      {batch.remarks ? ` (${batch.remarks})` : ""}
-                    </li>
-                  ))}
+                  {returnEvents.map((batch, index) => {
+                    const remaining =
+                      typeof batch.remainingAfter === "number"
+                        ? batch.remainingAfter
+                        : null;
+                    const balanceLabel =
+                      remaining === 0
+                        ? "Full clearance"
+                        : remaining !== null
+                          ? `${remaining} ${record.unit} left`
+                          : "";
+                    return (
+                      <li key={batch.id || index}>
+                        <strong>
+                          Batch {batch.batchNumber || index + 1} ·{" "}
+                          {batch.quantity} {record.unit} returned
+                        </strong>{" "}
+                        on {formatDateTime(batch.dateTime)}
+                        {batch.returnedBy
+                          ? ` · Brought back by ${batch.returnedBy}`
+                          : ""}
+                        {balanceLabel ? ` (${balanceLabel})` : ""}
+                        {batch.remarks ? ` — ${batch.remarks}` : ""}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
