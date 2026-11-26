@@ -334,10 +334,7 @@ export function useInventoryActions({
           ]
         : [];
 
-    const effectiveRemarks =
-      action.type === "Return"
-        ? trimmedRemarks || matchedBorrowRecord?.remarks || ""
-        : trimmedRemarks;
+    const effectiveRemarks = trimmedRemarks;
 
     const record = {
       id: newRecordId,

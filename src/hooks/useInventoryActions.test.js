@@ -1,5 +1,6 @@
 import { act, render, renderHook, screen } from "@testing-library/react";
 import InventoryReceiptModal from "../pages/inventory/components/InventoryReceiptModal";
+import { mapInventoryTransactions } from "../utils/inventory";
 import { useInventoryActions } from "./useInventoryActions";
 
 test("validates stock actions and records successful borrow/return operations", () => {
@@ -446,4 +447,96 @@ test("keeps stock_onhand synchronized with quantity across consecutive borrow, u
   act(() => result.current.submitAction({ preventDefault: jest.fn() }));
   expect(inventory[0].quantity).toBe(7);
   expect(inventory[0].stock_onhand).toBe(7);
+});
+
+test("displays all chronological return batches (2 pcs then 3 pcs), preserves real return timestamp over date-only return_date, and keeps blank return condition notes separate from borrow reason", () => {
+  const item = {
+    item_id: 2,
+    name: "Keyboard",
+    usageType: "Borrowable",
+  };
+  const user = {
+    user_id: 15,
+    username: "Edrome Charles Otocan",
+  };
+  const rows = [
+    {
+      transaction_id: 303,
+      item_id: 2,
+      is_issued_to: 15,
+      purpose: "for a lecture",
+      quantity: 3,
+      action_type: "Return",
+      return_date: "2026-11-26",
+      borrow_date: "2026-11-26",
+      status: "Returned",
+      unit: "pieces",
+      created_at: "2026-11-26T01:19:00.000Z",
+      recieved_by: "deptdesk",
+      returned_by: "Edrome Charles Otocan",
+    },
+    {
+      transaction_id: 302,
+      item_id: 2,
+      is_issued_to: 15,
+      purpose: "",
+      quantity: 2,
+      action_type: "Return",
+      return_date: "2026-11-26",
+      borrow_date: "2026-11-26",
+      status: "Returned",
+      unit: "pieces",
+      created_at: "2026-11-26T01:17:00.000Z",
+      recieved_by: "deptdesk",
+      returned_by: "Edrome Charles Otocan",
+    },
+    {
+      transaction_id: 301,
+      item_id: 2,
+      is_issued_to: 15,
+      purpose: "for a lecture",
+      quantity: 5,
+      action_type: "Borrow",
+      return_date: null,
+      borrow_date: "2026-11-26",
+      status: "Borrowed",
+      unit: "pieces",
+      created_at: "2026-11-26T01:15:00.000Z",
+      recieved_by: null,
+      returned_by: null,
+    },
+  ];
+
+  const mapped = mapInventoryTransactions(
+    rows,
+    new Map([[2, item]]),
+    new Map([[15, user]]),
+  );
+  const finalReturnRecord = mapped.find((entry) => entry.id === 303);
+
+  expect(finalReturnRecord.returnEvents).toHaveLength(2);
+  expect(finalReturnRecord.returnedAt).toBe("2026-11-26T01:19:00.000Z");
+  expect(finalReturnRecord.returnRemarks).toBe("");
+
+  render(
+    <InventoryReceiptModal
+      record={finalReturnRecord}
+      inventory={[item]}
+      records={mapped}
+      onClose={jest.fn()}
+    />,
+  );
+
+  const batchItems = screen.getAllByRole("listitem");
+  expect(batchItems).toHaveLength(2);
+  expect(batchItems[0]).toHaveTextContent(/Batch 1 · 2 pieces returned/i);
+  expect(batchItems[0]).toHaveTextContent(/\(3 pieces left\)/i);
+  expect(batchItems[1]).toHaveTextContent(/Batch 2 · 3 pieces returned/i);
+  expect(batchItems[1]).toHaveTextContent(/\(Full clearance\)/i);
+  expect(screen.getByTestId("receipt-return-date-line")).not.toHaveTextContent(
+    /8:00 AM/i,
+  );
+  expect(
+    screen.getByText("All borrowed units returned in good condition"),
+  ).toBeInTheDocument();
 });
